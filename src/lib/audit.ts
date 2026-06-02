@@ -1,4 +1,4 @@
-import type { AuditEventType } from "@prisma/client";
+import type { AuditEventType, Prisma } from "@prisma/client";
 import { prisma } from "./db";
 
 export async function logAuditEvent(params: {
@@ -7,7 +7,7 @@ export async function logAuditEvent(params: {
   actorId?: string;
   projectRequestId?: string;
   appointmentId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 }) {
   return prisma.auditEvent.create({
     data: {
@@ -16,7 +16,7 @@ export async function logAuditEvent(params: {
       actorId: params.actorId,
       projectRequestId: params.projectRequestId,
       appointmentId: params.appointmentId,
-      metadata: params.metadata ?? undefined,
+      metadata: params.metadata,
     },
   });
 }

@@ -57,36 +57,32 @@
     @apply mb-1 block text-xs font-medium uppercase tracking-wide text-muted;
   }
 
-  .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
-  }
-
   .badge-green {
-    @apply badge bg-[#E8F5EE] text-success;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#E8F5EE] text-success;
   }
 
   .badge-blue {
-    @apply badge bg-[#E8F0FA] text-[#1A56A0];
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#E8F0FA] text-[#1A56A0];
   }
 
   .badge-amber {
-    @apply badge bg-[#FEF3E2] text-warning;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FEF3E2] text-warning;
   }
 
   .badge-red {
-    @apply badge bg-[#FDECEA] text-danger;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FDECEA] text-danger;
   }
 
   .badge-neutral {
-    @apply badge bg-[#F3F4F6] text-[#6B7280];
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#F3F4F6] text-[#6B7280];
   }
 
   .badge-copper {
-    @apply badge bg-[#FDF1EA] text-copper;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-[#FDF1EA] text-copper;
   }
 
   .kpi-card {
-    @apply card p-4;
+    @apply rounded-lg border border-rule bg-white p-4;
   }
 
   .portal-sidebar {
