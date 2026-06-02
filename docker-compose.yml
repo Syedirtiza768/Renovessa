@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: renovessa
+      POSTGRES_PASSWORD: renovessa
+      POSTGRES_DB: renovessa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U renovessa -d renovessa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "7090:7090"
+    environment:
+      DATABASE_URL: postgresql://renovessa:renovessa@db:5432/renovessa?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:-renovessa-dev-secret-change-in-production}
+      NEXT_PUBLIC_APP_URL: http://localhost:7090
+      PORT: 7090
+      RUN_SEED: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

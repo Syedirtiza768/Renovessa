@@ -1,0 +1,312 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  HOMEOWNER
+  CONTRACTOR
+  SUPER_ADMIN
+  OPS_AGENT
+  SCHEDULER
+  FINANCE_MANAGER
+  OPS_MANAGER
+  QA_MANAGER
+  CONTRACTOR_ACQUISITION
+}
+
+enum LeadStatus {
+  NEW
+  ASSIGNED
+  CALLING
+  QUALIFICATION_IN_PROGRESS
+  QUALIFIED
+  UNQUALIFIED
+  SCHEDULING
+  APPOINTMENT_OFFERED
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_COMPLETED
+  HOMEOWNER_CONFIRMED
+  BILLING_PENDING
+  BILLING_APPROVED
+  DISPUTED
+  CLOSED
+  RECYCLE
+}
+
+enum AppointmentStatus {
+  OFFERED
+  ACCEPTED
+  DECLINED
+  SCHEDULED
+  REMINDER_SENT
+  IN_PROGRESS
+  CHECKED_IN
+  COMPLETED
+  HOMEOWNER_CONFIRMED
+  NO_SHOW
+  DISPUTED
+  BILLED
+  CANCELLED
+}
+
+enum ContractorTier {
+  TRIAL
+  STANDARD
+  PREFERRED
+  WATCH
+  SUSPENDED
+  BANNED
+}
+
+enum CapacityCellStatus {
+  OPEN
+  TESTING
+  FULL
+  WAITLIST
+  PAUSED
+  UNDERPERFORMING
+  EXPANSION_CANDIDATE
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  ESCALATED
+}
+
+enum DisputeOutcome {
+  BILL_STANDS
+  FULL_CREDIT
+  PARTIAL_CREDIT
+  RESCHEDULE
+  CONTRACTOR_WARNING
+}
+
+enum InvoiceStatus {
+  PENDING
+  APPROVED
+  CHARGED
+  FAILED
+  CREDITED
+  REFUNDED
+}
+
+enum AuditEventType {
+  FORM_SUBMITTED
+  CONSENT_RECORDED
+  SMS_SENT
+  CALL_MADE
+  QUALIFICATION_DECISION
+  CONTRACTOR_OFFERED
+  CONTRACTOR_ACCEPTED
+  CONTRACTOR_DECLINED
+  CALENDAR_INVITE_SENT
+  REMINDER_SENT
+  CHECK_IN_RECORDED
+  HOMEOWNER_CONFIRMED
+  BILLING_TRIGGER
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  STATUS_CHANGED
+  NOTE_ADDED
+  CREDIT_ISSUED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  role         UserRole
+  isDemo       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  contractorProfile ContractorProfile?
+  projectRequests   ProjectRequest[]   @relation("HomeownerProjects")
+  assignedLeads     ProjectRequest[]   @relation("AssignedAgent")
+  auditEvents       AuditEvent[]       @relation("AuditActor")
+  notifications     Notification[]
+}
+
+model ContractorProfile {
+  id                String         @id @default(cuid())
+  userId            String         @unique
+  companyName       String
+  trade             String
+  tier              ContractorTier @default(TRIAL)
+  status            String         @default("active")
+  licenseVerified   Boolean        @default(false)
+  insuranceVerified Boolean        @default(false)
+  yearsInBusiness   Int?
+  employeeCount     Int?
+  avgJobSize        String?
+  serviceZips       String[]
+  showRate          Float          @default(100)
+  acceptanceRate    Float          @default(100)
+  disputeRate       Float          @default(0)
+  isDemo            Boolean        @default(false)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments  Appointment[]
+  capacityCells CapacityCell[] @relation("CellContractors")
+  invoices      Invoice[]
+  disputes      Dispute[]
+}
+
+model CapacityCell {
+  id               String             @id @default(cuid())
+  name             String
+  trade            String
+  zipCluster       String[]
+  jobSizeMin       Int?
+  jobSizeMax       Int?
+  maxSlots         Int                @default(2)
+  appointmentLimit Int                @default(20)
+  status           CapacityCellStatus @default(OPEN)
+  isDemo           Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  contractors ContractorProfile[] @relation("CellContractors")
+}
+
+model ProjectRequest {
+  id              String     @id @default(cuid())
+  referenceNumber String     @unique
+  homeownerId     String?
+  assignedAgentId String?
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  zipCode         String
+  trade           String
+  description     String
+  urgency         String
+  budgetRange     String
+  preferredContact String?
+  tcpaConsent     Boolean    @default(false)
+  status          LeadStatus @default(NEW)
+  source          String     @default("organic")
+  qualificationNotes String?
+  disposition     String?
+  isDemo          Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  homeowner     User?          @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  assignedAgent User?          @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  appointment   Appointment?
+  auditEvents   AuditEvent[]
+  dispute       Dispute?
+}
+
+model Appointment {
+  id                    String            @id @default(cuid())
+  projectRequestId      String            @unique
+  contractorId          String
+  scheduledAt           DateTime?
+  acceptedAt            DateTime?
+  checkedInAt           DateTime?
+  homeownerConfirmedAt  DateTime?
+  status                AppointmentStatus @default(OFFERED)
+  calendarInviteSent    Boolean           @default(false)
+  billingTriggered      Boolean           @default(false)
+  billingApproved       Boolean           @default(false)
+  amount                Float?
+  isDemo                Boolean           @default(false)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  contractor     ContractorProfile @relation(fields: [contractorId], references: [id])
+  invoice        Invoice?
+  auditEvents    AuditEvent[]
+}
+
+model AuditEvent {
+  id               String         @id @default(cuid())
+  eventType        AuditEventType
+  description      String
+  metadata         Json?
+  actorId          String?
+  projectRequestId String?
+  appointmentId    String?
+  createdAt        DateTime       @default(now())
+
+  actor          User?           @relation("AuditActor", fields: [actorId], references: [id])
+  projectRequest ProjectRequest? @relation(fields: [projectRequestId], references: [id])
+  appointment    Appointment?    @relation(fields: [appointmentId], references: [id])
+}
+
+model Dispute {
+  id               String          @id @default(cuid())
+  projectRequestId String          @unique
+  contractorId     String
+  status           DisputeStatus   @default(OPEN)
+  outcome          DisputeOutcome?
+  reason           String
+  evidenceScore    Int             @default(0)
+  resolutionNotes  String?
+  isDemo           Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  projectRequest ProjectRequest    @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  contractor     ContractorProfile @relation(fields: [contractorId], references: [id])
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  appointmentId String        @unique
+  contractorId  String
+  amount        Float
+  status        InvoiceStatus @default(PENDING)
+  isDemo        Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  appointment Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  contractor  ContractorProfile @relation(fields: [contractorId], references: [id])
+}
+
+model ContractorInquiry {
+  id              String   @id @default(cuid())
+  companyName     String
+  contactName     String
+  phone           String
+  email           String
+  trade           String
+  serviceZips     String
+  yearsInBusiness Int?
+  employeeCount   Int?
+  licensedInsured Boolean  @default(false)
+  usesLeadGen     Boolean  @default(false)
+  avgJobSize      String?
+  referralSource  String?
+  status          String   @default("new")
+  isDemo          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  actionUrl String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
