@@ -12,25 +12,29 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build?schema=public
 RUN npm run build
 
 FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=7090
-RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs --create-home nextjs
+
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
-COPY --from=builder /app/package.json ./package.json
+COPY package.json package-lock.json ./
 COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
+
+# Install full Prisma CLI tree (do NOT copy prisma/@prisma alone — misses "effect")
+RUN npm install --omit=dev --no-save prisma bcryptjs && \
+    npm install --no-save --include=dev tsx && \
+    sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh && \
+    chown -R nextjs:nodejs /app/node_modules /app/prisma docker-entrypoint.sh
+
 USER nextjs
 EXPOSE 7090
 ENTRYPOINT ["./docker-entrypoint.sh"]

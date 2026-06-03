@@ -7,10 +7,22 @@ Renovessa connects homeowners with vetted contractors through **verified, exclus
 ## Quick Start (Docker — port 7090)
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
 
 Open [http://localhost:7090](http://localhost:7090)
+
+## Production (Ubuntu + Docker + Nginx + Certbot)
+
+Deploy at **https://renovessa.com** with Docker on the server, Nginx as reverse proxy, and Let's Encrypt via Certbot.
+
+```bash
+cp .env.production.example .env   # edit secrets on the server
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# then install deploy/nginx/renovessa.com.conf and run certbot --nginx
+```
+
+Full steps: [docs/operations/DEPLOYMENT.md](docs/operations/DEPLOYMENT.md)
 
 ## Demo Accounts
 
@@ -52,7 +64,7 @@ App runs at [http://localhost:3000](http://localhost:3000) in dev mode.
 - **Frontend/Backend:** Next.js 15 (App Router), TypeScript
 - **Database:** PostgreSQL + Prisma
 - **Auth:** JWT session cookies
-- **Deploy:** Docker Compose on port **7090**
+- **Deploy:** Docker Compose (dev port **7090**; production behind Nginx + TLS on **renovessa.com**)
 
 ## GitHub
 

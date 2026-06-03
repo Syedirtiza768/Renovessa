@@ -17,12 +17,12 @@ services:
   app:
     build: .
     restart: unless-stopped
-    ports:
-      - "7090:7090"
+    # Ports: use docker-compose.dev.yml (local) or docker-compose.prod.yml (server)
     environment:
       DATABASE_URL: postgresql://renovessa:renovessa@db:5432/renovessa?schema=public
       AUTH_SECRET: ${AUTH_SECRET:-renovessa-dev-secret-change-in-production}
       NEXT_PUBLIC_APP_URL: http://localhost:7090
+      HOSTNAME: "0.0.0.0"
       PORT: 7090
       RUN_SEED: "true"
     depends_on:

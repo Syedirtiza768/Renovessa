@@ -1,0 +1,31 @@
+# Production overlay — use on the Ubuntu server with a .env file (see .env.production.example)
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# App listens on 127.0.0.1:7090 only; Nginx on the host terminates TLS and proxies.
+
+services:
+  db:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-renovessa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-renovessa}
+
+  app:
+    ports: !reset
+      - "127.0.0.1:7090:7090"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-renovessa}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-renovessa}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://renovessa.com}
+      HOSTNAME: "0.0.0.0"
+      PORT: 7090
+      RUN_SEED: ${RUN_SEED:-false}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:7090/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 90s

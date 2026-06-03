@@ -38,7 +38,7 @@ The working hypothesis (needs product confirmation) is a platform related to **r
 
 ```bash
 # Docker (production-like, port 7090)
-docker compose up --build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 # Local development
 cp .env.example .env
