@@ -12,7 +12,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-renovessa}
 
   app:
-    ports: !reset
+    ports:
       - "127.0.0.1:7090:7090"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-renovessa}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-renovessa}?schema=public
