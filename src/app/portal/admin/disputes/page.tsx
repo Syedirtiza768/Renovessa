@@ -13,15 +13,17 @@ export default async function DisputesPage() {
       <div className="mt-6 space-y-4">
         {disputes.map((d) => (
           <div key={d.id} className="card-accent p-4">
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="font-semibold">{d.projectRequest.referenceNumber}</h2>
                 <p className="text-sm text-muted">{d.contractor.companyName}</p>
               </div>
-              <span className="badge-red">{d.status}</span>
+              <span className="badge-red shrink-0">{d.status}</span>
             </div>
             <p className="mt-3 text-sm">{d.reason}</p>
-            <p className="mt-2 text-xs text-muted">Evidence score: {d.evidenceScore}/100 · {formatDate(d.createdAt)}</p>
+            <p className="mt-2 text-xs text-muted">
+              Evidence score: {d.evidenceScore}/100 · {formatDate(d.createdAt)}
+            </p>
           </div>
         ))}
         {disputes.length === 0 && <p className="text-muted">No open disputes.</p>}

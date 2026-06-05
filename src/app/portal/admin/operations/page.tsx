@@ -23,8 +23,8 @@ export default async function OperationsPage() {
                 <li className="text-muted">No items in queue</li>
               ) : (
                 items.map((item) => (
-                  <li key={item.id} className="flex justify-between border-b border-rule/50 pb-2">
-                    <span>{item.referenceNumber} — {item.firstName} {item.lastName}</span>
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-rule/50 pb-2">
+                    <span className="min-w-0 break-words">{item.referenceNumber} — {item.firstName} {item.lastName}</span>
                     <StatusBadge status={item.status} />
                   </li>
                 ))

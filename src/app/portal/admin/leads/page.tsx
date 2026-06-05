@@ -12,7 +12,9 @@ export default async function AdminLeadsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Renovessa Lead Pipeline</h1>
-      <div className="mt-6 overflow-x-auto card">
+
+      {/* Desktop table */}
+      <div className="mt-6 hidden overflow-x-auto card sm:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule bg-blueprint text-left text-xs uppercase text-muted">
@@ -43,6 +45,28 @@ export default async function AdminLeadsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="mt-6 space-y-3 sm:hidden">
+        {leads.map((lead) => (
+          <div key={lead.id} className="card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-mono text-xs text-copper">{lead.referenceNumber}</p>
+                <p className="mt-0.5 font-semibold">{lead.firstName} {lead.lastName}</p>
+                <p className="text-sm text-muted">{lead.trade} · {lead.zipCode}</p>
+              </div>
+              <StatusBadge status={lead.status} />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-muted">
+              <span>{lead.assignedAgent?.name || "Unassigned"} · {formatDate(lead.createdAt)}</span>
+              <Link href={`/portal/admin/leads/${lead.id}`} className="font-medium text-copper hover:underline">
+                View →
+              </Link>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

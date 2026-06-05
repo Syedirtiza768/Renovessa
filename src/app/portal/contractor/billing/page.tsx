@@ -18,7 +18,9 @@ export default async function ContractorBillingPage() {
     <div>
       <h1 className="text-2xl font-bold">Billing</h1>
       <p className="text-sm text-muted">Renovessa Billing Review — charges only after homeowner verification</p>
-      <div className="mt-6 card overflow-x-auto">
+
+      {/* Desktop table */}
+      <div className="mt-6 hidden card overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule bg-blueprint text-left text-xs uppercase text-muted">
@@ -37,6 +39,22 @@ export default async function ContractorBillingPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="mt-6 space-y-3 sm:hidden">
+        {profile.invoices.map((inv) => (
+          <div key={inv.id} className="card p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-semibold">{formatCurrency(inv.amount)}</span>
+              <span className="badge-neutral">{inv.status}</span>
+            </div>
+            <p className="mt-1 text-xs text-muted">{formatDate(inv.createdAt)}</p>
+          </div>
+        ))}
+        {profile.invoices.length === 0 && (
+          <p className="text-muted">No invoices yet.</p>
+        )}
       </div>
     </div>
   );

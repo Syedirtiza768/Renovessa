@@ -20,8 +20,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div>
-      <div className="flex items-start justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">{lead.referenceNumber}</h1>
           <p className="text-muted">{lead.firstName} {lead.lastName} · {lead.trade} · {lead.zipCode}</p>
         </div>
@@ -35,7 +35,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div><dt className="text-muted">Description</dt><dd>{lead.description}</dd></div>
             <div><dt className="text-muted">Urgency</dt><dd>{lead.urgency}</dd></div>
             <div><dt className="text-muted">Budget</dt><dd>{lead.budgetRange}</dd></div>
-            <div><dt className="text-muted">Contact</dt><dd>{lead.phone} · {lead.email}</dd></div>
+            <div className="break-words"><dt className="text-muted">Contact</dt><dd>{lead.phone} · {lead.email}</dd></div>
             <div><dt className="text-muted">Source</dt><dd>{lead.source}</dd></div>
           </dl>
         </div>
@@ -57,9 +57,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <h2 className="font-semibold">Verification Trail</h2>
           <ul className="mt-4 space-y-3">
             {lead.auditEvents.map((event) => (
-              <li key={event.id} className="flex gap-3 border-b border-rule/50 pb-2 text-sm">
+              <li key={event.id} className="flex flex-wrap gap-2 border-b border-rule/50 pb-2 text-sm sm:gap-3">
                 <span className="font-mono text-xs text-muted whitespace-nowrap">{formatDate(event.createdAt)}</span>
-                <span>{event.description}</span>
+                <span className="flex-1">{event.description}</span>
               </li>
             ))}
           </ul>

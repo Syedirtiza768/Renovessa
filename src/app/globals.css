@@ -12,6 +12,24 @@
   --color-rule: #d0d7dd;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "DM Mono", ui-monospace, monospace;
+
+  /* Landing / blueprint design system */
+  --color-bone-0: #fbf9f4;
+  --color-bone-1: #f4f1e9;
+  --color-bone-2: #efebe2;
+  --color-ink-100: #1a1a1a;
+  --color-ink-70: #4a4a4a;
+  --color-ink-40: #8a8a8a;
+  --color-ink-15: #d8d4ca;
+  --color-ink-5: #efebe2;
+  --color-accent: #c17a2a;
+  --color-accent-100: #f5ebda;
+  --color-success-landing: #3f6b4e;
+  --color-success-50: #e3ece5;
+  --color-warning-landing: #a97a1e;
+  --color-danger-landing: #9a2f2f;
+  --font-serif: "DM Serif Display", Georgia, serif;
+  --font-mono-landing: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 
 @layer base {
@@ -30,11 +48,11 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-md bg-copper px-6 py-3 text-sm font-semibold text-white transition hover:bg-copper/90 focus:outline-none focus:ring-2 focus:ring-copper/50;
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-md bg-copper px-6 py-3 text-sm font-semibold text-white transition hover:bg-copper/90 focus:outline-none focus:ring-2 focus:ring-copper/50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-md border border-rule bg-white px-6 py-3 text-sm font-semibold text-slate transition hover:bg-blueprint focus:outline-none;
+    @apply inline-flex min-h-[44px] items-center justify-center rounded-md border border-rule bg-white px-6 py-3 text-sm font-semibold text-slate transition hover:bg-blueprint focus:outline-none;
   }
 
   .card {
@@ -50,7 +68,7 @@
   }
 
   .input {
-    @apply w-full rounded-md border border-rule bg-white px-3 py-2 text-sm text-slate placeholder:text-muted focus:border-copper focus:outline-none focus:ring-1 focus:ring-copper;
+    @apply w-full rounded-md border border-rule bg-white px-3 py-2.5 text-sm text-slate placeholder:text-muted focus:border-copper focus:outline-none focus:ring-1 focus:ring-copper;
   }
 
   .label {
@@ -85,15 +103,76 @@
     @apply rounded-lg border border-rule bg-white p-4;
   }
 
-  .portal-sidebar {
-    @apply flex h-full w-64 flex-col border-r border-rule bg-slate text-white;
-  }
-
+  /* Portal sidebar — layout handled by PortalShell component */
   .portal-nav-link {
-    @apply flex items-center gap-2 rounded-md px-3 py-2 text-sm text-white/80 transition hover:bg-white/10 hover:text-white;
+    @apply flex items-center gap-2 rounded-md px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/10 hover:text-white;
   }
 
   .portal-nav-link-active {
     @apply bg-white/15 text-white font-medium;
+  }
+
+  /* Marketing landing page */
+  .landing-page {
+    @apply bg-bone-0 text-ink-100 antialiased;
+    background-image: none;
+  }
+
+  .landing-eyebrow {
+    @apply font-mono-landing text-xs font-medium uppercase tracking-widest text-ink-40;
+  }
+
+  .landing-h1 {
+    font-family: var(--font-serif);
+    @apply text-ink-100 leading-[1.06];
+    font-size: clamp(2.25rem, 5vw, 4.5rem);
+  }
+
+  .landing-h2 {
+    font-family: var(--font-serif);
+    @apply text-ink-100;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    line-height: 1.1;
+  }
+
+  .landing-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-bone-0 transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  }
+
+  .landing-btn-primary-lg {
+    @apply inline-flex items-center justify-center rounded-lg bg-accent px-6 py-3.5 text-base font-semibold text-bone-0 transition hover:opacity-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  }
+
+  .landing-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg border border-ink-15 bg-transparent px-6 py-3 text-sm font-semibold text-ink-70 transition hover:border-ink-40 hover:text-ink-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+  }
+
+  .landing-card {
+    @apply rounded-lg border border-ink-15 bg-white;
+  }
+
+  .landing-input {
+    @apply w-full rounded-lg border border-ink-15 bg-white px-3 py-2.5 text-sm text-ink-100 placeholder:text-ink-40 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .landing-label {
+    @apply mb-1.5 block text-sm font-medium text-ink-100;
+  }
+
+  .landing-pulse {
+    @apply relative inline-flex h-2 w-2 rounded-full bg-success-landing;
+  }
+
+  .landing-pulse::after {
+    content: "";
+    @apply absolute inset-0 animate-ping rounded-full bg-success-landing opacity-60;
+  }
+
+  .font-mono-landing {
+    font-family: var(--font-mono-landing), ui-monospace, monospace;
+  }
+
+  .font-serif-landing {
+    font-family: var(--font-serif), Georgia, serif;
   }
 }

@@ -16,7 +16,9 @@ export default async function FinancePage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Renovessa Finance Control</h1>
-      <div className="mt-6 grid gap-4 sm:grid-cols-4">
+
+      {/* KPI grid — 2 cols on mobile, 4 on sm+ */}
+      <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         {totals.map((t) => (
           <div key={t.status} className="kpi-card">
             <p className="text-xs uppercase text-muted">{t.status}</p>
@@ -25,7 +27,9 @@ export default async function FinancePage() {
           </div>
         ))}
       </div>
-      <div className="mt-8 card overflow-x-auto">
+
+      {/* Desktop table */}
+      <div className="mt-8 hidden card overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule bg-blueprint text-left text-xs uppercase text-muted">
@@ -48,6 +52,25 @@ export default async function FinancePage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="mt-8 space-y-3 sm:hidden">
+        {invoices.map((inv) => (
+          <div key={inv.id} className="card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{inv.contractor.companyName}</p>
+                <p className="font-mono text-xs text-muted">{inv.appointment.projectRequest.referenceNumber}</p>
+              </div>
+              <span className="badge-neutral shrink-0">{inv.status}</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <span className="font-semibold text-slate">{formatCurrency(inv.amount)}</span>
+              <span className="text-xs text-muted">{formatDate(inv.createdAt)}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

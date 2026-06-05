@@ -21,22 +21,22 @@ export default async function HomeownerDashboard() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">My Projects</h1>
-        <Link href="/#project-form" className="btn-primary text-sm">Submit Another Project</Link>
+        <Link href="/#request" className="btn-primary text-sm">Submit Another Project</Link>
       </div>
 
       {projects.length === 0 ? (
         <div className="mt-8 card p-8 text-center">
           <p className="text-muted">No projects yet. Submit a project request to get started.</p>
-          <Link href="/#project-form" className="btn-primary mt-4 inline-flex">Submit My Project</Link>
+          <Link href="/#request" className="btn-primary mt-4 inline-flex">Submit My Project</Link>
         </div>
       ) : (
         <div className="mt-8 space-y-6">
           {projects.map((project) => (
-            <div key={project.id} className="card-accent p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+            <div key={project.id} className="card-accent p-5 sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                   <p className="font-mono text-sm text-copper">{project.referenceNumber}</p>
                   <h2 className="text-lg font-semibold">{project.trade}</h2>
                   <p className="text-sm text-muted">{project.description}</p>

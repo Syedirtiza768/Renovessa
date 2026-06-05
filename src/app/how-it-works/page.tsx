@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
             </div>
           ))}
         </div>
-        <Link href="/#project-form" className="btn-primary mt-10 inline-flex">Submit My Project Request</Link>
+        <Link href="/#request" className="btn-primary mt-10 inline-flex">Submit My Project Request</Link>
       </main>
       <SiteFooter />
     </>

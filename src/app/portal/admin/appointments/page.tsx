@@ -10,7 +10,9 @@ export default async function AppointmentsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold">Renovessa Appointment Timeline</h1>
-      <div className="mt-6 card overflow-x-auto">
+
+      {/* Desktop table */}
+      <div className="mt-6 hidden card overflow-x-auto sm:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-rule bg-blueprint text-left text-xs uppercase text-muted">
@@ -31,6 +33,22 @@ export default async function AppointmentsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="mt-6 space-y-3 sm:hidden">
+        {appointments.map((appt) => (
+          <div key={appt.id} className="card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-mono text-xs text-copper">{appt.projectRequest.referenceNumber}</p>
+                <p className="mt-0.5 font-semibold truncate">{appt.contractor.companyName}</p>
+              </div>
+              <span className="badge-neutral shrink-0">{appt.status}</span>
+            </div>
+            <p className="mt-2 text-xs text-muted">Scheduled: {formatDate(appt.scheduledAt)}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

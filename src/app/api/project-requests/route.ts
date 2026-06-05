@@ -6,7 +6,7 @@ import { logAuditEvent } from "@/lib/audit";
 
 const schema = z.object({
   trade: z.string().min(1),
-  description: z.string().min(20).max(500),
+  description: z.string().max(600).optional().default(""),
   urgency: z.string(),
   budgetRange: z.string(),
   firstName: z.string().min(1),

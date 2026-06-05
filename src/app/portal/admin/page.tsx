@@ -49,7 +49,8 @@ export default async function AdminDashboard() {
       <h1 className="text-2xl font-bold">Operations Command Center</h1>
       <p className="text-sm text-muted">Welcome, {session.name}</p>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* KPIs — 2 col on mobile, 4 on lg */}
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
           <div key={kpi.label} className="kpi-card">
             <p className="text-xs font-medium uppercase text-muted">{kpi.label}</p>
@@ -60,7 +61,7 @@ export default async function AdminDashboard() {
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="card p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-semibold">Renovessa Lead Pipeline</h2>
             <Link href="/portal/admin/leads" className="text-sm text-copper">View all →</Link>
           </div>
@@ -68,16 +69,16 @@ export default async function AdminDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-rule text-left text-xs uppercase text-muted">
-                  <th className="pb-2">Ref</th>
-                  <th className="pb-2">Trade</th>
+                  <th className="pb-2 pr-4">Ref</th>
+                  <th className="pb-2 pr-4">Trade</th>
                   <th className="pb-2">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {recentLeads.map((lead) => (
                   <tr key={lead.id} className="border-b border-rule/50">
-                    <td className="py-2 font-mono text-xs">{lead.referenceNumber}</td>
-                    <td className="py-2">{lead.trade}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">{lead.referenceNumber}</td>
+                    <td className="py-2 pr-4">{lead.trade}</td>
                     <td className="py-2"><StatusBadge status={lead.status} /></td>
                   </tr>
                 ))}
@@ -92,7 +93,9 @@ export default async function AdminDashboard() {
             {recentAudit.map((event) => (
               <li key={event.id} className="border-b border-rule/50 pb-2">
                 <p>{event.description}</p>
-                <p className="font-mono text-xs text-muted">{formatDate(event.createdAt)} {event.actor?.name && `· ${event.actor.name}`}</p>
+                <p className="font-mono text-xs text-muted">
+                  {formatDate(event.createdAt)}{event.actor?.name && ` · ${event.actor.name}`}
+                </p>
               </li>
             ))}
           </ul>
