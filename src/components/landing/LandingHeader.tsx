@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Wordmark } from "./Wordmark";
+import { OPS_PHONE } from "@/lib/first-job-config";
 
 const NAV = [
   { href: "#how", label: "How it works" },
@@ -21,6 +22,9 @@ export function LandingHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const phoneDisplay = OPS_PHONE || "(202) 555-0100";
+  const phoneHref = `tel:${phoneDisplay.replace(/\D/g, "")}`;
 
   return (
     <header
@@ -52,11 +56,11 @@ export function LandingHeader() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <a
-            href="tel:+12025550100"
+            href={phoneHref}
             className="hidden items-center gap-2 text-sm font-medium text-ink-70 sm:flex"
           >
             <span className="landing-pulse" aria-hidden />
-            <span className="font-mono-landing text-xs">(202) 555-0100</span>
+            <span className="font-mono-landing text-xs">{phoneDisplay}</span>
           </a>
           <a href="#request" className="landing-btn-primary whitespace-nowrap text-sm">
             Submit My Project →
@@ -93,11 +97,11 @@ export function LandingHeader() {
               </a>
             ))}
             <a
-              href="tel:+12025550100"
+              href={phoneHref}
               className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-ink-70 transition hover:bg-ink-5"
             >
               <span className="landing-pulse" aria-hidden />
-              <span className="font-mono-landing text-xs">(202) 555-0100</span>
+              <span className="font-mono-landing text-xs">{phoneDisplay}</span>
             </a>
           </nav>
         </div>

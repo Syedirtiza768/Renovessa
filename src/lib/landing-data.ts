@@ -1,4 +1,4 @@
-/** Static content for the marketing landing page */
+import { FIRST_JOB_MODE, PILOT_TRADE, OPS_PHONE } from "@/lib/first-job-config";
 
 export const LANDING_CATEGORIES = [
   { id: "hvac", ref: "01", label: "HVAC", description: "Furnace, AC, heat pumps, ductwork, tune-ups", houseZone: "hvac" },
@@ -17,29 +17,40 @@ export const LANDING_CATEGORIES = [
 
 export type LandingCategoryId = (typeof LANDING_CATEGORIES)[number]["id"];
 
-export const HERO_SERVICE_TAGS = [
-  "Roofing",
-  "HVAC",
-  "Kitchens",
-  "Bathrooms",
-  "Windows",
-  "Plumbing",
-  "Electrical",
-  "Flooring",
-  "Painting",
-  "Siding",
-  "Basement",
-  "Decks",
-];
+export function getVisibleCategories() {
+  if (!FIRST_JOB_MODE) return LANDING_CATEGORIES;
+  return LANDING_CATEGORIES.filter(
+    (c) => c.label.toLowerCase().includes(PILOT_TRADE.toLowerCase())
+  );
+}
 
-export const APPOINTMENT_LOG = [
-  { time: "09:12 EDT", project: "Full bathroom remodel, master suite", zip: "20910", isNew: true },
-  { time: "08:47 EDT", project: "Kitchen cabinet replacement + countertops", zip: "22308", isNew: true },
-  { time: "08:31 EDT", project: "Roof repair, missing shingles", zip: "20854", isNew: false },
-  { time: "07:58 EDT", project: "AC not cooling, two-story townhouse", zip: "22202", isNew: false },
-  { time: "07:14 EDT", project: "Replace 12 windows, double-hung", zip: "20815", isNew: false },
-  { time: "06:42 EDT", project: "Basement finishing, 800 sq ft", zip: "22101", isNew: false },
-];
+export const HERO_SERVICE_TAGS = FIRST_JOB_MODE
+  ? [PILOT_TRADE]
+  : [
+      "Roofing",
+      "HVAC",
+      "Kitchens",
+      "Bathrooms",
+      "Windows",
+      "Plumbing",
+      "Electrical",
+      "Flooring",
+      "Painting",
+      "Siding",
+      "Basement",
+      "Decks",
+    ];
+
+export const APPOINTMENT_LOG = FIRST_JOB_MODE
+  ? []
+  : [
+      { time: "09:12 EDT", project: "Full bathroom remodel, master suite", zip: "20910", isNew: true },
+      { time: "08:47 EDT", project: "Kitchen cabinet replacement + countertops", zip: "22308", isNew: true },
+      { time: "08:31 EDT", project: "Roof repair, missing shingles", zip: "20854", isNew: false },
+      { time: "07:58 EDT", project: "AC not cooling, two-story townhouse", zip: "22202", isNew: false },
+      { time: "07:14 EDT", project: "Replace 12 windows, double-hung", zip: "20815", isNew: false },
+      { time: "06:42 EDT", project: "Basement finishing, 800 sq ft", zip: "22101", isNew: false },
+    ];
 
 export const HOW_IT_WORKS_STEPS = [
   {
@@ -68,12 +79,14 @@ export const HOW_IT_WORKS_STEPS = [
   },
 ];
 
-export const STATS = [
-  { value: "312", unit: "this month", label: "Verified appointments confirmed in the DMV in the last 30 days.", source: "Updated daily" },
-  { value: "2–4 hrs", unit: "", label: "Median time from request submission to qualification call.", source: "Rolling 30-day median" },
-  { value: "94%", unit: "", label: "Homeowner confirmation rate on scheduled appointments.", source: "Q1 2025, n=1,847" },
-  { value: "412", unit: "", label: "DMV ZIP codes with active vetted contractor coverage.", source: "DC · MD · VA" },
-];
+export const STATS = FIRST_JOB_MODE
+  ? []
+  : [
+      { value: "312", unit: "this month", label: "Verified appointments confirmed in the DMV in the last 30 days.", source: "Updated daily" },
+      { value: "2–4 hrs", unit: "", label: "Median time from request submission to qualification call.", source: "Rolling 30-day median" },
+      { value: "94%", unit: "", label: "Homeowner confirmation rate on scheduled appointments.", source: "Q1 2025, n=1,847" },
+      { value: "412", unit: "", label: "DMV ZIP codes with active vetted contractor coverage.", source: "DC · MD · VA" },
+    ];
 
 export const TRUST_CARDS = [
   {
@@ -112,7 +125,9 @@ export const FAQ_ITEMS = [
   },
   {
     q: "What areas does Renovessa serve?",
-    a: "Washington DC, Maryland, and Northern Virginia. Enter your ZIP in the form — we'll let you know if your area is covered.",
+    a: FIRST_JOB_MODE
+      ? `Currently serving the DMV area for ${PILOT_TRADE} projects. Enter your ZIP in the form to check coverage.`
+      : "Washington DC, Maryland, and Northern Virginia. Enter your ZIP in the form — we'll let you know if your area is covered.",
   },
   {
     q: "How are contractors vetted?",
@@ -165,4 +180,10 @@ export const CONTACT_WINDOW_OPTIONS = [
   { value: "afternoon", label: "Afternoon (12pm–5pm)" },
   { value: "evening", label: "Evening (5pm–8pm)" },
   { value: "any", label: "Any time" },
+];
+
+export const OWNERSHIP_OPTIONS = [
+  { value: "owner", label: "I own the home" },
+  { value: "renter", label: "I rent the home" },
+  { value: "decision-maker", label: "I'm the decision-maker" },
 ];

@@ -118,6 +118,11 @@ enum AuditEventType {
   CREDIT_ISSUED
 }
 
+enum CaseStudyStatus {
+  DRAFT
+  FINAL
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -129,11 +134,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  contractorProfile ContractorProfile?
-  projectRequests   ProjectRequest[]   @relation("HomeownerProjects")
-  assignedLeads     ProjectRequest[]   @relation("AssignedAgent")
-  auditEvents       AuditEvent[]       @relation("AuditActor")
-  notifications     Notification[]
+  contractorProfile     ContractorProfile?
+  projectRequests       ProjectRequest[]   @relation("HomeownerProjects")
+  assignedLeads         ProjectRequest[]   @relation("AssignedAgent")
+  auditEvents           AuditEvent[]       @relation("AuditActor")
+  notifications         Notification[]
+  approvedInvoices      Invoice[]          @relation("ApprovedBy")
 }
 
 model ContractorProfile {
@@ -152,6 +158,14 @@ model ContractorProfile {
   showRate          Float          @default(100)
   acceptanceRate    Float          @default(100)
   disputeRate       Float          @default(0)
+  contactPerson     String?
+  availabilityNotes String?
+  pilotTerms        String?
+  firstAppointmentPricing String?  @default("free")
+  pilotPriceAmount  Float?
+  responseTimeHours Int?
+  googleBusinessUrl String?
+  internalNotes     String?
   isDemo            Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
@@ -200,6 +214,13 @@ model ProjectRequest {
   source          String     @default("organic")
   qualificationNotes String?
   disposition     String?
+  address         String?
+  ownershipAuthority String?
+  preferredAppointmentWindows String?
+  photoUrls       String[]
+  serviceCellMatch Boolean?
+  invalidReason   String?
+  reachable       Boolean?
   isDemo          Boolean    @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
@@ -209,6 +230,7 @@ model ProjectRequest {
   appointment   Appointment?
   auditEvents   AuditEvent[]
   dispute       Dispute?
+  caseStudy     CaseStudy?
 }
 
 model Appointment {
@@ -224,14 +246,25 @@ model Appointment {
   billingTriggered      Boolean           @default(false)
   billingApproved       Boolean           @default(false)
   amount                Float?
-  isDemo                Boolean           @default(false)
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  location              String?
+  homeownerPreConfirmed Boolean            @default(false)
+  contractorPreConfirmed Boolean           @default(false)
+  estimateGiven         String?
+  contractorOutcomeNotes String?
+  homeownerOutcomeNotes  String?
+  followUpRequired      Boolean            @default(false)
+  opportunitySentAt     DateTime?
+  declineReason         String?
+  pilotBillableReason   String?
+  isDemo                Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
 
   projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
   contractor     ContractorProfile @relation(fields: [contractorId], references: [id])
   invoice        Invoice?
   auditEvents    AuditEvent[]
+  feedbacks      Feedback[]
 }
 
 model AuditEvent {
@@ -272,12 +305,46 @@ model Invoice {
   contractorId  String
   amount        Float
   status        InvoiceStatus @default(PENDING)
+  pilotProof    Boolean       @default(true)
+  waivedReason  String?
+  approvedById  String?
+  approvedAt    DateTime?
   isDemo        Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   appointment Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
   contractor  ContractorProfile @relation(fields: [contractorId], references: [id])
+  approvedBy  User?             @relation("ApprovedBy", fields: [approvedById], references: [id])
+}
+
+model Feedback {
+  id            String   @id @default(cuid())
+  appointmentId String
+  actorType     String
+  responses     Json
+  createdAt     DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+}
+
+model CaseStudy {
+  id                  String          @id @default(cuid())
+  projectRequestId    String          @unique
+  trade               String
+  zipCode             String
+  leadSource          String?
+  timingMetrics       Json?
+  homeownerConfirmed  Boolean         @default(false)
+  contractorAttended  Boolean         @default(false)
+  estimateGiven       String?
+  disputeOccurred     Boolean         @default(false)
+  lessonsLearned      String?
+  nextImprovement     String?
+  status              CaseStudyStatus @default(DRAFT)
+  createdAt           DateTime        @default(now())
+
+  projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
 }
 
 model ContractorInquiry {

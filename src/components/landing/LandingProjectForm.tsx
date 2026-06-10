@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import {
   BUDGET_OPTIONS,
   CONTACT_WINDOW_OPTIONS,
-  LANDING_CATEGORIES,
   URGENCY_OPTIONS_LANDING,
+  OWNERSHIP_OPTIONS,
+  getVisibleCategories,
 } from "@/lib/landing-data";
 import type { LandingCategoryId } from "@/lib/landing-data";
 import { useCategories } from "./CategoryContext";
+import { FIRST_JOB_MODE, PILOT_ZIP_CLUSTERS } from "@/lib/first-job-config";
 
 type FormErrors = Record<string, string>;
 
@@ -56,10 +58,15 @@ export function LandingProjectForm() {
     phone: "",
     email: "",
     zip: "",
+    address: "",
+    ownership: "",
+    appointmentWindows: "",
     contactWindow: "any",
     urgency: "",
     consent: true,
   });
+
+  const categories = getVisibleCategories();
 
   const update = (field: string, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -88,6 +95,9 @@ export function LandingProjectForm() {
     if (digits.length !== 10) next.phone = "Enter a valid 10-digit US phone number.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email.";
     if (!/^\d{5}$/.test(form.zip)) next.zip = "Enter a 5-digit ZIP code.";
+    if (FIRST_JOB_MODE && PILOT_ZIP_CLUSTERS.length > 0 && !PILOT_ZIP_CLUSTERS.includes(form.zip)) {
+      next.zip = "Your ZIP is not currently in our service area.";
+    }
     if (!form.contactWindow) next.contactWindow = "Select a preferred contact time.";
     if (!form.urgency) next.urgency = "Select how urgent this is.";
     setErrors(next);
@@ -106,7 +116,7 @@ export function LandingProjectForm() {
       const trade =
         labels.length > 0
           ? labels.join(", ")
-          : LANDING_CATEGORIES.find((c) => c.id === selected[0])?.label ?? "General";
+          : categories.find((c) => c.id === selected[0])?.label ?? "General";
 
       const res = await fetch("/api/project-requests", {
         method: "POST",
@@ -123,6 +133,9 @@ export function LandingProjectForm() {
           zipCode: form.zip,
           preferredContact: mapContact(form.contactWindow),
           tcpaConsent: true,
+          address: form.address.trim() || undefined,
+          ownershipAuthority: form.ownership || undefined,
+          preferredAppointmentWindows: form.appointmentWindows.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -148,6 +161,9 @@ export function LandingProjectForm() {
       phone: "",
       email: "",
       zip: "",
+      address: "",
+      ownership: "",
+      appointmentWindows: "",
       contactWindow: "any",
       urgency: "",
       consent: true,
@@ -245,7 +261,7 @@ export function LandingProjectForm() {
                 role="group"
                 aria-describedby={errors.categories ? "err-categories" : undefined}
               >
-                {LANDING_CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat.id}
                     type="button"
@@ -403,6 +419,18 @@ export function LandingProjectForm() {
                   </p>
                 )}
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="address" className="landing-label">
+                  Project address
+                </label>
+                <input
+                  id="address"
+                  className="landing-input mt-1"
+                  placeholder="e.g. 1234 Main St, Fairfax, VA 22030"
+                  value={form.address}
+                  onChange={(e) => update("address", e.target.value)}
+                />
+              </div>
             </div>
 
             <fieldset>
@@ -469,6 +497,40 @@ export function LandingProjectForm() {
 
         {step === 3 && (
           <div className="mt-6 space-y-6">
+            <fieldset>
+              <legend className="landing-label">
+                Do you own the home?
+              </legend>
+              <div className="mt-2 space-y-2">
+                {OWNERSHIP_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="flex cursor-pointer items-center gap-2 text-sm text-ink-70">
+                    <input
+                      type="radio"
+                      name="ownership"
+                      value={opt.value}
+                      checked={form.ownership === opt.value}
+                      onChange={() => update("ownership", opt.value)}
+                      className="accent-accent"
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <div>
+              <label htmlFor="appointmentWindows" className="landing-label">
+                Preferred appointment windows
+              </label>
+              <input
+                id="appointmentWindows"
+                className="landing-input mt-1"
+                placeholder="e.g. Weekday mornings, or Saturday after 2pm"
+                value={form.appointmentWindows}
+                onChange={(e) => update("appointmentWindows", e.target.value)}
+              />
+            </div>
+
             <div>
               <p className="landing-label">Optional photos</p>
               <div className="mt-2 flex min-h-[120px] flex-col items-center justify-center rounded-lg border border-dashed border-ink-15 bg-bone-1 px-4 py-8 text-center">

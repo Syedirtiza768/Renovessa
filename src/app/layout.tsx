@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, DM_Serif_Display, JetBrains_Mono } from "next/font/google";
+import { DemoBanner } from "@/components/DemoBanner";
 import "./globals.css";
 
 const inter = Inter({
@@ -32,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${inter.variable} ${dmSerif.variable} ${jetbrains.variable} font-sans`}
       >
+        <DemoBanner />
         {children}
       </body>
     </html>

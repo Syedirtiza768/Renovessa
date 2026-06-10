@@ -48,10 +48,14 @@ export default async function HomeownerDashboard() {
                 <div className="mt-4 rounded-md bg-blueprint p-4 text-sm">
                   <p><strong>Contractor:</strong> {project.appointment.contractor.companyName}</p>
                   <p><strong>Scheduled:</strong> {formatDate(project.appointment.scheduledAt)}</p>
-                  <p><strong>Appointment Status:</strong> {project.appointment.status}</p>
-                  {project.appointment.status === "SCHEDULED" && (
-                    <ConfirmAppointmentButton appointmentId={project.appointment.id} />
+                  {project.appointment.location && (
+                    <p><strong>Location:</strong> {project.appointment.location}</p>
                   )}
+                  <p><strong>Appointment Status:</strong> {project.appointment.status}</p>
+                  <ConfirmAppointmentButton
+                    appointmentId={project.appointment.id}
+                    appointmentStatus={project.appointment.status}
+                  />
                 </div>
               )}
 

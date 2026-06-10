@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateReferenceNumber } from "@/lib/utils";
 import { logAuditEvent } from "@/lib/audit";
+import { getSession, canAccessAdmin } from "@/lib/auth";
+import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
 
 const schema = z.object({
   trade: z.string().min(1),
@@ -16,6 +18,9 @@ const schema = z.object({
   zipCode: z.string().length(5),
   preferredContact: z.string().optional(),
   tcpaConsent: z.literal(true),
+  address: z.string().optional(),
+  ownershipAuthority: z.string().optional(),
+  preferredAppointmentWindows: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,6 +29,7 @@ export async function POST(req: NextRequest) {
     const data = schema.parse(body);
 
     const referenceNumber = generateReferenceNumber();
+    const serviceCellMatch = matchesPilotCell(data.zipCode) && matchesPilotTrade(data.trade);
 
     const project = await prisma.projectRequest.create({
       data: {
@@ -39,8 +45,12 @@ export async function POST(req: NextRequest) {
         budgetRange: data.budgetRange,
         preferredContact: data.preferredContact,
         tcpaConsent: data.tcpaConsent,
+        address: data.address,
+        ownershipAuthority: data.ownershipAuthority,
+        preferredAppointmentWindows: data.preferredAppointmentWindows,
         status: "NEW",
         source: "organic",
+        serviceCellMatch,
       },
     });
 
@@ -74,6 +84,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
+  const session = await getSession();
+  if (!session || !canAccessAdmin(session.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const leads = await prisma.projectRequest.findMany({
     orderBy: { createdAt: "desc" },
     take: 100,

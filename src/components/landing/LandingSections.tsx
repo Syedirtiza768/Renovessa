@@ -5,11 +5,12 @@ import Link from "next/link";
 import {
   FAQ_ITEMS,
   HOW_IT_WORKS_STEPS,
-  LANDING_CATEGORIES,
   STATS,
   TRUST_CARDS,
   VERIFICATION_BADGES,
+  getVisibleCategories,
 } from "@/lib/landing-data";
+import { FIRST_JOB_MODE, LANDING_HEADLINE } from "@/lib/first-job-config";
 import { useCategories } from "./CategoryContext";
 
 function CategoryIcon({ id }: { id: string }) {
@@ -61,6 +62,8 @@ export function HowItWorksSection() {
 }
 
 export function StatsStrip() {
+  if (STATS.length === 0) return null;
+
   return (
     <section className="bg-bone-1 px-4 py-14 sm:px-6 sm:py-[72px]" aria-label="Key metrics">
       <div className="mx-auto grid max-w-[1440px] gap-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -83,17 +86,24 @@ export function StatsStrip() {
 
 export function CategoriesSection() {
   const { toggle, isSelected } = useCategories();
+  const categories = getVisibleCategories();
 
   return (
     <section id="services" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
         <p className="landing-eyebrow">III. What we schedule appointments for</p>
-        <h2 className="landing-h2 mt-3 max-w-3xl">
-          Twelve categories of home improvement — from a single repair to a full remodel.
-        </h2>
+        {FIRST_JOB_MODE ? (
+          <h2 className="landing-h2 mt-3 max-w-3xl">
+            {LANDING_HEADLINE || `Currently scheduling ${categories.length > 0 ? categories[0].label : "home improvement"} appointments.`}
+          </h2>
+        ) : (
+          <h2 className="landing-h2 mt-3 max-w-3xl">
+            Twelve categories of home improvement — from a single repair to a full remodel.
+          </h2>
+        )}
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {LANDING_CATEGORIES.map((cat) => {
+        <div className={`mt-10 grid gap-4 ${FIRST_JOB_MODE ? "sm:grid-cols-1 max-w-md" : "sm:grid-cols-2 lg:grid-cols-4"}`}>
+          {categories.map((cat) => {
             const active = isSelected(cat.id);
             return (
               <button
