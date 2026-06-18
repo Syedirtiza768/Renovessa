@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default async function HomeownerLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -15,6 +16,9 @@ export default async function HomeownerLayout({ children }: { children: React.Re
           </Link>
           <div className="flex items-center gap-3 text-sm">
             <span className="hidden truncate max-w-[160px] text-muted sm:inline">{session.name}</span>
+            <div className="flex items-center rounded-md bg-slate px-1">
+              <NotificationBell />
+            </div>
             <form action="/api/auth/logout" method="POST">
               <button type="submit" className="text-copper hover:underline">
                 Sign out

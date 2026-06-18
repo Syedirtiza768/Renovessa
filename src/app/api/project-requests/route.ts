@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { generateReferenceNumber } from "@/lib/utils";
 import { logAuditEvent } from "@/lib/audit";
@@ -23,6 +24,12 @@ const schema = z.object({
   preferredAppointmentWindows: z.string().optional(),
 });
 
+function generateTempPassword(): string {
+  // Avoids ambiguous characters: 0, O, I, l, 1
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -31,9 +38,42 @@ export async function POST(req: NextRequest) {
     const referenceNumber = generateReferenceNumber();
     const serviceCellMatch = matchesPilotCell(data.zipCode) && matchesPilotTrade(data.trade);
 
+    // Provision or refresh a homeowner portal account for this email.
+    let homeownerId: string | undefined;
+    let tempPassword: string | null = null;
+    let isExistingAccount = false;
+
+    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+
+    if (existingUser?.role === "HOMEOWNER") {
+      // Existing homeowner — reset their password so they can log in.
+      tempPassword = generateTempPassword();
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { passwordHash: await bcrypt.hash(tempPassword, 12) },
+      });
+      homeownerId = existingUser.id;
+      isExistingAccount = true;
+    } else if (!existingUser) {
+      // New homeowner — create portal account.
+      tempPassword = generateTempPassword();
+      const newUser = await prisma.user.create({
+        data: {
+          email: data.email,
+          name: `${data.firstName} ${data.lastName}`,
+          phone: data.phone,
+          passwordHash: await bcrypt.hash(tempPassword, 12),
+          role: "HOMEOWNER",
+        },
+      });
+      homeownerId = newUser.id;
+    }
+    // If email belongs to an admin/contractor, homeownerId stays undefined (no account change).
+
     const project = await prisma.projectRequest.create({
       data: {
         referenceNumber,
+        homeownerId: homeownerId ?? null,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -73,7 +113,13 @@ export async function POST(req: NextRequest) {
       metadata: { template: "project_received" },
     });
 
-    return NextResponse.json({ referenceNumber, id: project.id });
+    return NextResponse.json({
+      referenceNumber,
+      id: project.id,
+      email: data.email,
+      tempPassword,
+      isExistingAccount,
+    });
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: e.errors[0].message }, { status: 400 });

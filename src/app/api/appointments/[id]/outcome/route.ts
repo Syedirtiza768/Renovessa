@@ -16,12 +16,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const appointment = await prisma.appointment.findUnique({
     where: { id },
-    include: { projectRequest: true },
+    include: { projectRequest: true, contractor: true },
   });
   if (!appointment) return NextResponse.json({ error: "Appointment not found" }, { status: 404 });
 
   const isAdmin = canAccessAdmin(session.role);
-  const isContractor = appointment.contractorId === session.id;
+  // contractorId on Appointment is a ContractorProfile ID; compare via contractor.userId.
+  const isContractor = appointment.contractor.userId === session.id;
 
   if (!isAdmin && !isContractor) {
     return NextResponse.json({ error: "Not authorized" }, { status: 403 });
@@ -54,10 +55,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
 
   await logAuditEvent({
-    eventType: noShow ? "STATUS_CHANGED" : "CHECK_IN_RECORDED",
+    eventType: "STATUS_CHANGED",
     description: noShow
       ? "Contractor no-show recorded"
-      : `Appointment outcome recorded${outcome ? `: ${outcome}` : ""}`,
+      : `Appointment completed${estimateGiven ? ` — estimate: ${estimateGiven}` : ""}${followUpRequired ? " — follow-up required" : ""}`,
     actorId: session.id,
     projectRequestId: appointment.projectRequestId,
     appointmentId: id,

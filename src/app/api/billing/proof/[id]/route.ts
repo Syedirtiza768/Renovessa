@@ -24,11 +24,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     updateData = { status: "APPROVED", approvedById: session.id, approvedAt: new Date() };
     await prisma.appointment.update({
       where: { id: invoice.appointmentId },
-      data: { billingApproved: true },
+      data: { billingApproved: true, status: "BILLED" },
     });
     await prisma.projectRequest.update({
       where: { id: invoice.appointment.projectRequestId },
       data: { status: "BILLING_APPROVED" },
+    });
+    await logAuditEvent({
+      eventType: "BILLING_TRIGGER",
+      description: "Pilot billing proof approved — appointment marked BILLED",
+      actorId: session.id,
+      projectRequestId: invoice.appointment.projectRequestId,
+      appointmentId: invoice.appointmentId,
     });
   } else if (action === "waive") {
     updateData = { status: "CREDITED", waivedReason: waivedReason || null, approvedById: session.id, approvedAt: new Date() };

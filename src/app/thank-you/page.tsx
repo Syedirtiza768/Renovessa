@@ -5,11 +5,12 @@ import { SiteFooter } from "@/components/SiteFooter";
 export default async function ThankYouPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string; name?: string }>;
+  searchParams: Promise<{ ref?: string; name?: string; email?: string }>;
 }) {
   const params = await searchParams;
   const ref = params.ref || "RNV-2026-00000";
   const name = params.name || "there";
+  const email = params.email;
 
   const steps = ["Reviewing", "Qualifying", "Scheduling", "Confirmed"];
 
@@ -26,7 +27,6 @@ export default async function ThankYouPage({
           </p>
           <p className="mt-6 font-mono text-lg text-copper">{ref}</p>
 
-          {/* Progress steps — wraps gracefully on small screens */}
           <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
             {steps.map((step, i) => (
               <span key={step} className={i === 0 ? "font-semibold text-copper" : "text-muted"}>
@@ -35,8 +35,17 @@ export default async function ThankYouPage({
             ))}
           </div>
 
+          {email && (
+            <div className="mt-6 rounded-lg border border-rule bg-blueprint p-4 text-left text-sm">
+              <p className="font-semibold">Your homeowner portal account</p>
+              <p className="mt-1 text-muted">Use these credentials to track your project status.</p>
+              <p className="mt-3"><span className="text-muted">Email:</span> <span className="font-mono">{email}</span></p>
+              <p className="mt-1"><span className="text-muted">Password:</span> <span className="font-mono">shown on the form — check back on that page</span></p>
+            </div>
+          )}
+
           <Link href="/login" className="btn-secondary mt-8 inline-flex">
-            Track in Homeowner Portal
+            Log in to Homeowner Portal
           </Link>
         </div>
       </main>

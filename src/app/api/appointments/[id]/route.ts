@@ -3,7 +3,7 @@ import { getSession, canAccessAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { canTransitionAppointment } from "@/lib/appointment-state-machine";
-import type { AppointmentStatus } from "@prisma/client";
+import type { AppointmentStatus, LeadStatus } from "@prisma/client";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -63,12 +63,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id: appointment.projectRequestId },
       data: { status: "APPOINTMENT_CONFIRMED" },
     });
+    // Notify the contractor that appointment has been scheduled.
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: appointment.projectRequest.homeownerId ?? "",
+          title: "Appointment scheduled",
+          message: `Your appointment has been scheduled for ${new Date(scheduledAt).toLocaleString()}${location ? ` at ${location}` : ""}.`,
+          actionUrl: "/portal/homeowner",
+        },
+      });
+    } catch {
+      // Notification failure is non-fatal
+    }
+  }
+
+  if (newStatus === "CANCELLED") {
+    await prisma.projectRequest.update({
+      where: { id: appointment.projectRequestId },
+      data: { status: "CLOSED" as LeadStatus },
+    });
   }
 
   const eventDesc: Record<string, string> = {
-    schedule: `Appointment scheduled for ${scheduledAt} at ${location}`,
+    schedule: `Appointment scheduled for ${scheduledAt}${location ? ` at ${location}` : ""}`,
     reschedule: `Appointment rescheduled to ${scheduledAt}`,
-    cancel: "Appointment cancelled",
+    cancel: "Appointment cancelled — lead closed",
     mark_reminder_sent: "Reminder sent to homeowner and contractor",
   };
 

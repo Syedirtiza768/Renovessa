@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LEAD_STATUS_LABELS } from "@/lib/constants";
+import { AssignToMeButton } from "@/components/admin/AssignToMeButton";
 
 const QUEUES = [
   { key: "NEW", label: "New Leads" },
@@ -47,9 +48,13 @@ export default async function OperationsPage() {
                           {item.referenceNumber}
                         </Link>
                         <span className="ml-2">{item.firstName} {item.lastName}</span>
-                        {item.assignedAgent && (
+                        {item.assignedAgent ? (
                           <span className="ml-2 text-xs text-muted">→ {item.assignedAgent.name}</span>
-                        )}
+                        ) : item.status === "NEW" ? (
+                          <span className="ml-2 inline-flex">
+                            <AssignToMeButton leadId={item.id} />
+                          </span>
+                        ) : null}
                       </div>
                       <StatusBadge status={item.status} />
                     </li>

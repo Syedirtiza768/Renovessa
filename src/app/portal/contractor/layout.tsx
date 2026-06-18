@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { PortalShell } from "@/components/PortalShell";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const navItems = [
   { href: "/portal/contractor", label: "Appointments" },
@@ -18,6 +19,7 @@ export default async function ContractorLayout({ children }: { children: React.R
       subtitle={session.name}
       userName={session.name}
       navItems={navItems}
+      headerExtra={<NotificationBell />}
     >
       {children}
     </PortalShell>

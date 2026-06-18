@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { assertContractorOwnsAppointment } from "@/lib/authorization";
+import { canTransitionAppointment } from "@/lib/appointment-state-machine";
 
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -10,13 +11,16 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const appointment = await assertContractorOwnsAppointment(session, id);
 
-    const updated = await prisma.appointment.update({
+    if (!canTransitionAppointment(appointment.status, "ACCEPTED")) {
+      return NextResponse.json(
+        { error: `Cannot accept in status ${appointment.status} — must be OFFERED` },
+        { status: 400 }
+      );
+    }
+
+    await prisma.appointment.update({
       where: { id },
-      data: {
-        status: "ACCEPTED",
-        acceptedAt: new Date(),
-      },
-      include: { projectRequest: true },
+      data: { status: "ACCEPTED", acceptedAt: new Date() },
     });
 
     await prisma.projectRequest.update({

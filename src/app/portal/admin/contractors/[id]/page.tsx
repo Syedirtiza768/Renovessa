@@ -29,6 +29,8 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState<{ email: string; tempPassword: string } | null>(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState<Record<string, any>>({});
 
@@ -47,6 +49,20 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
 
   const update = (field: string, value: any) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  async function resetPassword() {
+    setResetting(true);
+    setResetResult(null);
+    const res = await fetch(`/api/contractors/${id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset-password" }),
+    });
+    if (res.ok) {
+      setResetResult(await res.json());
+    }
+    setResetting(false);
+  }
 
   async function save() {
     setSaving(true);
@@ -147,6 +163,26 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           <button type="button" className="btn-primary w-full" onClick={save} disabled={saving}>
             {saving ? "Saving…" : "Save Changes"}
           </button>
+
+          <div className="border-t border-rule pt-4">
+            <p className="text-xs font-medium text-muted mb-2">Portal Access</p>
+            <button
+              type="button"
+              className="btn-secondary w-full text-sm"
+              onClick={resetPassword}
+              disabled={resetting}
+            >
+              {resetting ? "Resetting…" : "Reset Contractor Password"}
+            </button>
+            {resetResult && (
+              <div className="mt-3 rounded border border-rule bg-blueprint p-3 text-sm space-y-1">
+                <p className="font-medium">New temporary password:</p>
+                <p><span className="text-muted">Email:</span> <span className="font-mono">{resetResult.email}</span></p>
+                <p><span className="text-muted">Password:</span> <span className="font-mono tracking-widest">{resetResult.tempPassword}</span></p>
+                <p className="text-xs text-muted">Share this with the contractor — shown once.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

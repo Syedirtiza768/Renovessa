@@ -50,6 +50,9 @@ export function LandingProjectForm() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [receiptId, setReceiptId] = useState("");
+  const [portalEmail, setPortalEmail] = useState("");
+  const [portalPassword, setPortalPassword] = useState("");
+  const [isExistingAccount, setIsExistingAccount] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [form, setForm] = useState({
     description: "",
@@ -141,6 +144,11 @@ export function LandingProjectForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
       setReceiptId(data.referenceNumber);
+      if (data.tempPassword) {
+        setPortalEmail(data.email);
+        setPortalPassword(data.tempPassword);
+        setIsExistingAccount(data.isExistingAccount ?? false);
+      }
       setSubmitted(true);
       document.getElementById("request")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (e) {
@@ -210,13 +218,46 @@ export function LandingProjectForm() {
               </li>
             ))}
           </ol>
+
+          {portalPassword && (
+            <div className="mt-6 rounded-lg border border-ink-15 bg-bone-1 p-4">
+              <p className="text-sm font-semibold text-ink-100">
+                {isExistingAccount ? "Your portal password has been reset" : "Your homeowner portal account is ready"}
+              </p>
+              <p className="mt-1 text-xs text-ink-70">
+                {isExistingAccount
+                  ? "Log in to track your project, view appointment details, and confirm visits."
+                  : "We created a portal account for you. Log in to track your project."}
+              </p>
+              <dl className="mt-3 space-y-2 font-mono-landing text-sm">
+                <div className="flex items-center justify-between gap-4 rounded bg-white px-3 py-2 border border-ink-15">
+                  <dt className="text-ink-40">Email</dt>
+                  <dd className="font-medium text-ink-100 break-all">{portalEmail}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4 rounded bg-white px-3 py-2 border border-ink-15">
+                  <dt className="text-ink-40">Password</dt>
+                  <dd className="font-medium text-ink-100 tracking-widest">{portalPassword}</dd>
+                </div>
+              </dl>
+              <p className="mt-3 text-xs text-ink-40">
+                Save this password — it is only shown once. You can change it after logging in.
+              </p>
+              <a
+                href="/login"
+                className="landing-btn-primary mt-4 block w-full text-center"
+              >
+                Log in to Homeowner Portal →
+              </a>
+            </div>
+          )}
+
           <p className="mt-6 text-sm text-ink-70">
-            Keep this reference number — you can quote it if you call us.
+            Keep your reference number — quote it if you call us.
           </p>
           <p className="mt-2 text-sm text-ink-70">
-            You&apos;ll receive a text message confirmation shortly at the number you provided.
+            You&apos;ll receive a text message confirmation shortly.
           </p>
-          <button type="button" className="landing-btn-ghost mt-8 w-full" onClick={resetForm}>
+          <button type="button" className="landing-btn-ghost mt-6 w-full" onClick={resetForm}>
             Submit another request
           </button>
         </div>

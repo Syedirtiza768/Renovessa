@@ -1,7 +1,7 @@
 # Renovessa — Development Status
 
-> **Last updated:** 2026-06-11
-> **Commit:** `433ba70` — Implement First-Job MVP
+> **Last updated:** 2026-06-18
+> **Commit:** `433ba70` — Implement First-Job MVP + Gap Fixes
 > **Deployment:** Docker Compose on port **7090**
 
 ---
@@ -243,6 +243,40 @@ App runs at **http://localhost:7090**
 
 ---
 
+### Phase 7 — Gap Fixes (2026-06-18)
+
+#### State Machine Fixes
+- **`lead-state-machine.ts`** — Added missing transitions: `APPOINTMENT_CONFIRMED → CLOSED` (cancelled), `APPOINTMENT_COMPLETED → RECYCLE | CLOSED` (no-show), `APPOINTMENT_OFFERED → QUALIFIED` (back-flow), `APPOINTMENT_CONFIRMED → APPOINTMENT_OFFERED` (reassign)
+- **`confirm/route.ts`** — Fixed state machine violation: lead now correctly passes through `HOMEOWNER_CONFIRMED` before advancing to `BILLING_PENDING`
+- **`outcome/route.ts`** — Fixed wrong audit event type (`CHECK_IN_RECORDED` → `STATUS_CHANGED` for completion)
+- **`appointments/[id]/route.ts`** — Cancelled appointments now set lead status to `CLOSED`; schedule action writes homeowner notification
+
+#### Contractor Assignment
+- **`POST /api/appointments/[id]/reassign`** — New admin-only endpoint to swap contractor on `ACCEPTED`, `SCHEDULED`, `REMINDER_SENT`, or `CHECKED_IN` appointments
+- **`POST /api/appointments`** — Added capacity check (rejects if contractor is at `appointmentLimit`); rejects `SUSPENDED`/`BANNED` contractors; writes contractor notification on offer
+- **`OpportunityPanel`** — Filters dropdown to trade-matched, active, non-suspended contractors only; shows previous offer history; shows SLA response deadline
+- **`ReassignContractorPanel`** — New admin component visible on `ACCEPTED+` appointments; select replacement contractor with reason; full audit trail
+
+#### Contractor Portal
+- **`AppointmentActions`** — Added outcome recording when status is `CHECKED_IN` (estimate given, notes, follow-up flag, complete/no-show)
+- **`contractor/page.tsx`** — Shows full project description, preferred appointment windows, budget, urgency alongside each appointment card; KPI strip includes pending count
+
+#### Notifications
+- **`POST /api/notifications`** / **`GET /api/notifications`** / **`PATCH /api/notifications`** — Full notifications API
+- **`NotificationBell`** — Client component with unread badge, dropdown list, mark-all-read; wired into contractor and homeowner portal layouts
+- Key events that now write notifications: opportunity sent, appointment scheduled, homeowner confirmed (notifies admin)
+
+#### Homeowner Portal
+- **`ConfirmAppointmentButton`** — Now gated by `scheduledAt` date — homeowner cannot pre-confirm before the appointment has occurred; `SCHEDULED` status removed from confirmable set
+- **`HomeownerFeedbackForm`** — First-party feedback form (rating 1–5, comments, would rebook) added directly to homeowner portal; appears after appointment is `HOMEOWNER_CONFIRMED`
+- **`homeowner/page.tsx`** — Shows feedback form, feedback submitted state, pass `scheduledAt` to confirm button
+
+#### Admin / Ops
+- **`NoShowPanel`** — New admin component shown when appointment is `NO_SHOW`; gives admin two actions: Recycle Lead (→ `RECYCLE` → `NEW`) or Close Lead (→ `CLOSED`)
+- **`leads/[id]/page.tsx`** — Wired in `ReassignContractorPanel`, `NoShowPanel`, offer history prop, SLA display, actor name in audit trail
+
+---
+
 ## What's NOT Implemented (Deferred)
 
 | Feature | Reason |
@@ -255,8 +289,10 @@ App runs at **http://localhost:7090**
 | Multi-contractor matching | Single contractor pilot |
 | 12 trade categories | Hidden in FIRST_JOB_MODE |
 | Contractor scorecard KPIs | Hidden for pilot |
-| Notifications UI | Model exists, no UI |
-| Homeowner self-registration | Portal accounts provisioned manually |
+| Contractor scheduling confirmation | Contractor cannot dispute proposed slot |
+| Agent workload balancing UI | No per-agent load view |
+| Bulk lead operations | Each lead requires individual navigation |
+| Forgot-password email flow | Admin can reset contractor; homeowner reset deferred |
 
 ---
 

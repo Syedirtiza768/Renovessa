@@ -15,9 +15,10 @@ interface PortalShellProps {
   userName: string;
   navItems: NavItem[];
   children: React.ReactNode;
+  headerExtra?: React.ReactNode;
 }
 
-export function PortalShell({ title, subtitle, userName, navItems, children }: PortalShellProps) {
+export function PortalShell({ title, subtitle, userName, navItems, children, headerExtra }: PortalShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -105,7 +106,15 @@ export function PortalShell({ title, subtitle, userName, navItems, children }: P
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <span className="text-sm font-semibold text-white">{title}</span>
+          {headerExtra && <div className="ml-auto">{headerExtra}</div>}
         </div>
+
+        {/* Desktop notification bar (md+) */}
+        {headerExtra && (
+          <div className="hidden md:flex items-center justify-end gap-2 border-b border-rule bg-slate px-6 py-1.5">
+            {headerExtra}
+          </div>
+        )}
 
         <div className="flex-1 overflow-auto bg-cream p-4 sm:p-6">
           {children}

@@ -1,7 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { getSession, canAccessAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
+
+function generateTempPassword(): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+}
+
+export async function GET() {
+  const session = await getSession();
+  if (!session || !canAccessAdmin(session.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const contractors = await prisma.contractorProfile.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: { select: { id: true, email: true, name: true, phone: true } },
+      capacityCells: { select: { id: true, name: true, status: true } },
+      _count: { select: { appointments: true } },
+    },
+  });
+
+  return NextResponse.json(contractors);
+}
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -27,12 +51,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "A user with this email already exists" }, { status: 409 });
   }
 
+  const tempPassword = generateTempPassword();
+  const passwordHash = await bcrypt.hash(tempPassword, 12);
+
   const user = await prisma.user.create({
     data: {
       email,
       name,
       phone: phone || null,
-      passwordHash: "provisioned-by-admin",
+      passwordHash,
       role: "CONTRACTOR",
       contractorProfile: {
         create: {
@@ -63,5 +90,6 @@ export async function POST(req: NextRequest) {
     metadata: { contractorId: user.id, companyName, trade },
   });
 
-  return NextResponse.json(user, { status: 201 });
+  // Return tempPassword so admin can share it with the contractor.
+  return NextResponse.json({ ...user, tempPassword }, { status: 201 });
 }
