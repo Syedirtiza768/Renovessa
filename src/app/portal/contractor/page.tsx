@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { AppointmentActions } from "@/components/AppointmentActions";
-import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { StatusBadge } from "@/components/StatusBadge";
 
 export default async function ContractorDashboard() {
@@ -48,10 +47,6 @@ export default async function ContractorDashboard() {
           <p className="text-xs text-muted">Tier</p>
           <p className="text-2xl font-bold">{profile.tier}</p>
         </div>
-      </div>
-
-      <div className="mt-6">
-        <ChangePasswordForm />
       </div>
 
       <div className="mt-8 space-y-4">

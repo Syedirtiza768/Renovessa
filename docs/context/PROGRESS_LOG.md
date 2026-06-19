@@ -1,5 +1,10 @@
 
-## 2026-06-11 — First-job MVP review and implementation plan
+## 2026-06-19 — Portal UX gap fixes
+
+- Homeowner portal: settings, in-portal submit, project detail pages
+- Contractor portal: settings page
+- Admin: My Leads view, Team CRUD, role-based nav, ops login redirect
+- API: session-aware `POST /api/project-requests`, `POST /api/team`
 
 - Completed first-job MVP gap review (~38% readiness; appointment lifecycle is primary blocker)
 - Authored comprehensive implementation plan: `docs/planning/FIRST_JOB_MVP_IMPLEMENTATION_PLAN.md`

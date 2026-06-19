@@ -34,41 +34,50 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = schema.parse(body);
+    const session = await getSession();
 
     const referenceNumber = generateReferenceNumber();
     const serviceCellMatch = matchesPilotCell(data.zipCode) && matchesPilotTrade(data.trade);
+    const isLoggedInHomeowner = session?.role === "HOMEOWNER";
 
-    // Provision or refresh a homeowner portal account for this email.
+    if (isLoggedInHomeowner && data.email !== session.email) {
+      return NextResponse.json(
+        { error: "Email must match your portal account" },
+        { status: 400 }
+      );
+    }
+
     let homeownerId: string | undefined;
     let tempPassword: string | null = null;
     let isExistingAccount = false;
 
-    const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
+    if (isLoggedInHomeowner) {
+      homeownerId = session.id;
+    } else {
+      const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
 
-    if (existingUser?.role === "HOMEOWNER") {
-      // Existing homeowner — reset their password so they can log in.
-      tempPassword = generateTempPassword();
-      await prisma.user.update({
-        where: { id: existingUser.id },
-        data: { passwordHash: await bcrypt.hash(tempPassword, 12) },
-      });
-      homeownerId = existingUser.id;
-      isExistingAccount = true;
-    } else if (!existingUser) {
-      // New homeowner — create portal account.
-      tempPassword = generateTempPassword();
-      const newUser = await prisma.user.create({
-        data: {
-          email: data.email,
-          name: `${data.firstName} ${data.lastName}`,
-          phone: data.phone,
-          passwordHash: await bcrypt.hash(tempPassword, 12),
-          role: "HOMEOWNER",
-        },
-      });
-      homeownerId = newUser.id;
+      if (existingUser?.role === "HOMEOWNER") {
+        tempPassword = generateTempPassword();
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: { passwordHash: await bcrypt.hash(tempPassword, 12) },
+        });
+        homeownerId = existingUser.id;
+        isExistingAccount = true;
+      } else if (!existingUser) {
+        tempPassword = generateTempPassword();
+        const newUser = await prisma.user.create({
+          data: {
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            phone: data.phone,
+            passwordHash: await bcrypt.hash(tempPassword, 12),
+            role: "HOMEOWNER",
+          },
+        });
+        homeownerId = newUser.id;
+      }
     }
-    // If email belongs to an admin/contractor, homeownerId stays undefined (no account change).
 
     const project = await prisma.projectRequest.create({
       data: {
@@ -89,15 +98,16 @@ export async function POST(req: NextRequest) {
         ownershipAuthority: data.ownershipAuthority,
         preferredAppointmentWindows: data.preferredAppointmentWindows,
         status: "NEW",
-        source: "organic",
+        source: isLoggedInHomeowner ? "homeowner_portal" : "organic",
         serviceCellMatch,
       },
     });
 
     await logAuditEvent({
       eventType: "FORM_SUBMITTED",
-      description: `Project request ${referenceNumber} submitted via landing page`,
+      description: `Project request ${referenceNumber} submitted via ${isLoggedInHomeowner ? "homeowner portal" : "landing page"}`,
       projectRequestId: project.id,
+      actorId: isLoggedInHomeowner ? session.id : undefined,
     });
 
     await logAuditEvent({

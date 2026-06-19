@@ -5,7 +5,6 @@ import { prisma } from "@/lib/db";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatDate } from "@/lib/utils";
 import { ConfirmAppointmentButton } from "@/components/ConfirmAppointmentButton";
-import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 import { HomeownerFeedbackForm } from "@/components/HomeownerFeedbackForm";
 
 export default async function HomeownerDashboard() {
@@ -21,7 +20,7 @@ export default async function HomeownerDashboard() {
           feedbacks: { where: { actorType: "homeowner" } },
         },
       },
-      auditEvents: { orderBy: { createdAt: "asc" }, take: 10 },
+      auditEvents: { orderBy: { createdAt: "asc" }, take: 5 },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -30,17 +29,17 @@ export default async function HomeownerDashboard() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">My Projects</h1>
-        <Link href="/#request" className="btn-primary text-sm">Submit Another Project</Link>
-      </div>
-
-      <div className="mt-6">
-        <ChangePasswordForm />
+        <Link href="/portal/homeowner/submit" className="btn-primary text-sm">
+          Submit Another Project
+        </Link>
       </div>
 
       {projects.length === 0 ? (
         <div className="mt-8 card p-8 text-center">
           <p className="text-muted">No projects yet. Submit a project request to get started.</p>
-          <Link href="/#request" className="btn-primary mt-4 inline-flex">Submit My Project</Link>
+          <Link href="/portal/homeowner/submit" className="btn-primary mt-4 inline-flex">
+            Submit My Project
+          </Link>
         </div>
       ) : (
         <div className="mt-8 space-y-6">
@@ -58,7 +57,7 @@ export default async function HomeownerDashboard() {
                   <div className="min-w-0">
                     <p className="font-mono text-sm text-copper">{project.referenceNumber}</p>
                     <h2 className="text-lg font-semibold">{project.trade}</h2>
-                    <p className="text-sm text-muted">{project.description}</p>
+                    <p className="text-sm text-muted line-clamp-2">{project.description}</p>
                   </div>
                   <StatusBadge status={project.status} />
                 </div>
@@ -90,13 +89,16 @@ export default async function HomeownerDashboard() {
                   <p className="mt-3 text-xs text-muted italic">Feedback submitted — thank you.</p>
                 )}
 
-                <div className="mt-4">
-                  <p className="text-xs font-semibold uppercase text-muted">Verification Trail</p>
-                  <ul className="mt-2 space-y-1 text-sm">
-                    {project.auditEvents.map((e) => (
-                      <li key={e.id} className="text-muted">· {e.description}</li>
-                    ))}
-                  </ul>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted">
+                    Submitted {formatDate(project.createdAt)}
+                  </p>
+                  <Link
+                    href={`/portal/homeowner/projects/${project.id}`}
+                    className="text-sm text-copper hover:underline"
+                  >
+                    View details →
+                  </Link>
                 </div>
               </div>
             );

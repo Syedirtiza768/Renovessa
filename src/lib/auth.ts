@@ -58,9 +58,52 @@ export function portalPathForRole(role: UserRole): string {
       return "/portal/homeowner";
     case "CONTRACTOR":
       return "/portal/contractor";
+    case "OPS_AGENT":
+    case "SCHEDULER":
+      return "/portal/admin/my-leads";
     default:
       return "/portal/admin";
   }
+}
+
+export function canManageTeam(role: UserRole): boolean {
+  return ["SUPER_ADMIN", "OPS_MANAGER"].includes(role);
+}
+
+export interface AdminNavItem {
+  href: string;
+  label: string;
+}
+
+export function getAdminNavItems(role: UserRole): AdminNavItem[] {
+  const isFieldAgent = ["OPS_AGENT", "SCHEDULER"].includes(role);
+
+  if (isFieldAgent) {
+    return [
+      { href: "/portal/admin/my-leads", label: "My Leads" },
+      { href: "/portal/admin/operations", label: "Operations Queues" },
+      { href: "/portal/admin/leads", label: "All Leads" },
+      { href: "/portal/admin/appointments", label: "Appointments" },
+    ];
+  }
+
+  const items: AdminNavItem[] = [
+    { href: "/portal/admin", label: "Command Center" },
+    { href: "/portal/admin/my-leads", label: "My Leads" },
+    { href: "/portal/admin/leads", label: "Lead Pipeline" },
+    { href: "/portal/admin/operations", label: "Operations Queues" },
+    { href: "/portal/admin/appointments", label: "Appointments" },
+    { href: "/portal/admin/contractors", label: "Contractors" },
+    { href: "/portal/admin/capacity", label: "Capacity Map" },
+    { href: "/portal/admin/finance", label: "Finance" },
+    { href: "/portal/admin/disputes", label: "Disputes" },
+  ];
+
+  if (canManageTeam(role)) {
+    items.splice(6, 0, { href: "/portal/admin/team", label: "Team" });
+  }
+
+  return items;
 }
 
 export function canAccessAdmin(role: UserRole): boolean {

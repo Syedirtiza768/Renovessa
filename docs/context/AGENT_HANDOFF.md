@@ -1,36 +1,40 @@
 # Agent Handoff
 
-> Session: 2026-06-02 — MVP implementation
+> Session: 2026-06-19 — Portal UX gap fixes
 
-## Completed
+## Completed This Session
 
-- Full MVP application from `docs/Renovessa_Product_Blueprint.docx`
-- Tech stack: Next.js 15, PostgreSQL, Prisma, Tailwind, JWT auth
-- Docker on port 7090 with seed data
-- Public site + 3 portals (homeowner, contractor, admin)
+- Homeowner: settings page, in-portal submit, project detail view
+- Contractor: settings page (password off dashboard)
+- Admin: My Leads for ops agents, Team CRUD, role-based nav
+- API: session-aware project submission, `POST /api/team`
 
 ## Run
 
 ```bash
-docker compose up --build
-open http://localhost:7090
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# → http://localhost:7090
 ```
 
-Demo login: `admin@renovessa.com` / `demo1234`
+Demo accounts (password: `demo1234`):
 
-## Push to GitHub
+| Email | Role |
+|-------|------|
+| admin@renovessa.com | Super Admin |
+| agent@renovessa.com | Ops Agent |
+| sarah.mitchell@demo.renovessa.com | Homeowner |
+| hvac@demo.renovessa.com | Contractor |
 
-```bash
-git init
-git add .
-git commit -m "Implement Renovessa MVP from product blueprint"
-git branch -M main
-git remote add origin https://github.com/Syedirtiza768/Renovessa.git
-git push -u origin main
-```
+## Key Routes Added
+
+- `/portal/homeowner/submit` — submit another project in-portal
+- `/portal/homeowner/projects/[id]` — homeowner lead detail
+- `/portal/homeowner/settings` — change password
+- `/portal/admin/my-leads` — agent assigned leads
+- `/portal/admin/team` — manage ops employees
 
 ## Next
 
-- Verify Docker build on stable network
-- Add real SMS/email providers
-- Phase 2 modules (QA, CRM, marketing attribution)
+- Stakeholder UAT on the five fixed gaps
+- Forgot-password email flow (still deferred)
+- Refactor `LandingProjectForm` to share more code with `PortalProjectForm` if desired

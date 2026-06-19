@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { getSession, canAccessAdmin } from "@/lib/auth";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LEAD_STATUS_LABELS } from "@/lib/constants";
 import { AssignToMeButton } from "@/components/admin/AssignToMeButton";
 
 const QUEUES = [
@@ -16,12 +17,23 @@ const QUEUES = [
   { key: "BILLING_PENDING", label: "Billing Pending" },
 ];
 
-export default async function OperationsPage() {
+export default async function OperationsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mine?: string }>;
+}) {
+  const session = await getSession();
+  if (!session || !canAccessAdmin(session.role)) redirect("/login");
+
+  const { mine } = await searchParams;
+  const mineOnly = mine === "1";
+  const agentFilter = mineOnly ? { assignedAgentId: session.id } : {};
+
   const queueStatuses = QUEUES.map((q) => q.key);
   const results = await Promise.all(
     queueStatuses.map((status) =>
       prisma.projectRequest.findMany({
-        where: { status: status as any },
+        where: { status: status as any, ...agentFilter },
         take: 20,
         include: { assignedAgent: true },
       })
@@ -30,7 +42,23 @@ export default async function OperationsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Operations Queues</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Operations Queues</h1>
+        <div className="flex gap-2 text-sm">
+          <Link
+            href="/portal/admin/operations"
+            className={`rounded-md px-3 py-1.5 ${!mineOnly ? "bg-slate text-white" : "border border-rule text-muted hover:text-slate"}`}
+          >
+            All leads
+          </Link>
+          <Link
+            href="/portal/admin/operations?mine=1"
+            className={`rounded-md px-3 py-1.5 ${mineOnly ? "bg-slate text-white" : "border border-rule text-muted hover:text-slate"}`}
+          >
+            My leads only
+          </Link>
+        </div>
+      </div>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {QUEUES.map((queue, i) => {
           const items = results[i];

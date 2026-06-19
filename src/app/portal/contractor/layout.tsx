@@ -7,6 +7,7 @@ const navItems = [
   { href: "/portal/contractor", label: "Appointments" },
   { href: "/portal/contractor/billing", label: "Billing" },
   { href: "/portal/contractor/profile", label: "Profile" },
+  { href: "/portal/contractor/settings", label: "Account" },
 ];
 
 export default async function ContractorLayout({ children }: { children: React.ReactNode }) {

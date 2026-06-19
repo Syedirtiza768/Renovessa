@@ -27,6 +27,9 @@ export function PortalShell({ title, subtitle, userName, navItems, children, hea
     if (href.endsWith("/portal/admin") || href.endsWith("/portal/contractor") || href.endsWith("/portal/homeowner")) {
       return pathname === href;
     }
+    if (href === "/portal/admin/my-leads") {
+      return pathname === href || pathname.startsWith("/portal/admin/my-leads");
+    }
     return pathname.startsWith(href);
   };
 

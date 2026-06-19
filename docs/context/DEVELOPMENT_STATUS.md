@@ -146,7 +146,7 @@ Both state machines enforce valid transitions at the API level — the UI cannot
 | POST | `/api/disputes` | Admin | Open dispute |
 | PATCH | `/api/disputes/[id]` | Admin | Resolve dispute |
 | POST | `/api/feedback` | Auth | Record feedback |
-| POST | `/api/case-studies` | Admin | Create/update case study |
+| POST | `/api/team` | Admin (manager) | Create ops team member |
 
 ---
 
@@ -162,7 +162,13 @@ Both state machines enforce valid transitions at the API level — the UI cannot
 | `/portal/admin/contractors` | Contractor list with create link |
 | `/portal/admin/contractors/new` | Add contractor form |
 | `/portal/admin/contractors/[id]` | Edit contractor |
-| `/portal/homeowner` | Homeowner dashboard with confirm gate fix |
+| `/portal/homeowner` | Homeowner dashboard with project cards and detail links |
+| `/portal/homeowner/submit` | In-portal project submission form |
+| `/portal/homeowner/projects/[id]` | Homeowner project detail |
+| `/portal/homeowner/settings` | Account settings (change password) |
+| `/portal/admin/my-leads` | Ops agent assigned leads |
+| `/portal/admin/team` | Team member list |
+| `/portal/admin/team/new` | Add ops employee |
 | `/portal/contractor` | Contractor portal with accept/check-in |
 
 ---
@@ -274,6 +280,28 @@ App runs at **http://localhost:7090**
 #### Admin / Ops
 - **`NoShowPanel`** — New admin component shown when appointment is `NO_SHOW`; gives admin two actions: Recycle Lead (→ `RECYCLE` → `NEW`) or Close Lead (→ `CLOSED`)
 - **`leads/[id]/page.tsx`** — Wired in `ReassignContractorPanel`, `NoShowPanel`, offer history prop, SLA display, actor name in audit trail
+
+---
+
+### Phase 8 — Portal UX Gaps (2026-06-19)
+
+#### Homeowner Portal
+- **`/portal/homeowner/settings`** — Change password moved off dashboard
+- **`/portal/homeowner/submit`** — In-portal project intake (`PortalProjectForm`); no redirect to public homepage
+- **`/portal/homeowner/projects/[id]`** — Full project detail view (submitted fields, appointment, homeowner-safe audit trail)
+- **`POST /api/project-requests`** — Session-aware: logged-in homeowners link project without password reset; source `homeowner_portal`
+- Homeowner layout nav: My Projects, Submit Project, Account
+
+#### Contractor Portal
+- **`/portal/contractor/settings`** — Change password moved off appointments dashboard
+
+#### Admin / Ops
+- **`/portal/admin/my-leads`** — Assigned leads view for ops agents
+- **`/portal/admin/team`** + **`/portal/admin/team/new`** — Add ops employees (OPS_AGENT, SCHEDULER, OPS_MANAGER)
+- **`POST /api/team`** — Create team member with temp password (SUPER_ADMIN, OPS_MANAGER only)
+- **Role-based admin nav** — Field agents see My Leads first; managers see Team link
+- **Ops login redirect** — OPS_AGENT / SCHEDULER land on `/portal/admin/my-leads`
+- **Operations queues** — All / My leads only toggle (`?mine=1`)
 
 ---
 
