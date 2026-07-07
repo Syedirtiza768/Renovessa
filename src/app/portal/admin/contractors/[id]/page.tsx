@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
+import { CallButton } from "@/components/admin/CallButton";
+import { EmailComposer } from "@/components/admin/EmailComposer";
 
 interface ContractorProfile {
   id: string;
@@ -91,6 +93,17 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
   return (
     <div>
       <h1 className="text-2xl font-bold">{form.companyName || "Contractor"}</h1>
+
+      <div className="mt-6 card p-4 max-w-2xl">
+        <h2 className="font-semibold">Contact</h2>
+        <div className="mt-4 space-y-3">
+          {form.user?.phone && (
+            <CallButton toNumber={form.user.phone} label="Call" contractorId={id} />
+          )}
+          {form.user?.email && <EmailComposer toEmail={form.user.email} contractorId={id} />}
+        </div>
+      </div>
+
       <div className="mt-6 card p-4 max-w-2xl">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">

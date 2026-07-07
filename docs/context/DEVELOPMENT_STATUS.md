@@ -303,6 +303,46 @@ App runs at **http://localhost:7090**
 - **Ops login redirect** — OPS_AGENT / SCHEDULER land on `/portal/admin/my-leads`
 - **Operations queues** — All / My leads only toggle (`?mine=1`)
 
+### Phase 9 — Browser Softphone (Twilio Voice SDK) (2026-07-07)
+
+Added a WebRTC softphone dock so ops agents call homeowners and contractors from the
+browser via `@twilio/voice-sdk`, replacing the click-to-call "ring my cell first" model
+as the primary path (click-to-call remains as fallback when the softphone isn't ready).
+
+- **`src/lib/twilio.ts`** — `issueVoiceToken()` issues a JWT access token (Voice grant,
+  identity = agent user id) using `TWILIO_API_KEY_SID` / `TWILIO_API_KEY_SECRET` /
+  `TWILIO_TWIML_APP_SID`.
+- **`GET /api/calls/token`** — Returns the token + the agent's assigned Twilio numbers
+  (for caller-ID selection). Admin-only.
+- **`POST /api/calls/connect`** — Now dual-mode: serves the existing click-to-call query
+  params AND the softphone's TwiML-App form body (`To`, `CallerId`, `AgentId`, `LeadId`,
+  `ContractorId`). For softphone calls (no server-side pre-registration), it creates the
+  `CallLog` here using the parent `CallSid` and writes a `CALL_MADE` audit event.
+- **`GET /api/calls/history`** — Last 25 `CallLog` rows for the agent, with lead/contractor
+  names, for the dialer's recent-calls list.
+- **`src/components/admin/Softphone.tsx`** — Docked client component in the admin layout.
+  Boots the SDK on mount, dynamically imports `@twilio/voice-sdk` (SSR-safe), refreshes the
+  token every 50 min, exposes readiness via `window.__renovessaSoftphoneReady`, and listens
+  for `renovessa:dial` events. UI: collapsed status pill, expandable keypad, caller-ID
+  picker, in-call timer + mute + DTMF + hang up, recent-calls list.
+- **`src/components/admin/CallButton.tsx`** — Dispatches `renovessa:dial` when the softphone
+  is registered; otherwise falls back to the existing click-to-call POST.
+- **Dedicated dialer page** — `Dialer` was refactored out of `Softphone` to support a
+  `variant: "dock" | "full"`. `/portal/admin/dialer` renders the full-screen inline dialer
+  (larger keypad, always open); the dock self-hides on that route to avoid duplication.
+  A "Dialer" nav item was added for all admin roles in `src/lib/auth.ts`.
+- **Post-call disposition** — `CallLog` gained `disposition` + `dispositionNote` columns.
+  `POST /api/calls/disposition` records an outcome (answered, no_answer, busy, voicemail,
+  wrong_number, confirmed, callback_requested) + note on the agent's most recent call and
+  writes a `CALL_MADE` audit event linked to the lead/contractor. The softphone pops a
+  disposition modal on hang-up so calls are logged into the audit trail without a separate
+  manual `CommunicationLogForm` entry. `GET /api/calls/history` now returns disposition.
+- **Twilio setup required**: API key, TwiML App with voice URL
+  `<NEXT_PUBLIC_APP_URL>/api/calls/connect`, and at least one Voice-enabled number
+  assigned to the agent (already managed at `/portal/admin/phone-numbers`). Env vars
+  added to `.env.example` and `.env.production.example`.
+
+
 ---
 
 ## What's NOT Implemented (Deferred)

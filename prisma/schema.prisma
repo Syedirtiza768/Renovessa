@@ -116,6 +116,7 @@ enum AuditEventType {
   STATUS_CHANGED
   NOTE_ADDED
   CREDIT_ISSUED
+  EMAIL_SENT
 }
 
 enum CaseStudyStatus {
@@ -134,47 +135,52 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  contractorProfile     ContractorProfile?
-  projectRequests       ProjectRequest[]   @relation("HomeownerProjects")
-  assignedLeads         ProjectRequest[]   @relation("AssignedAgent")
-  auditEvents           AuditEvent[]       @relation("AuditActor")
-  notifications         Notification[]
-  approvedInvoices      Invoice[]          @relation("ApprovedBy")
+  contractorProfile  ContractorProfile?
+  projectRequests    ProjectRequest[]    @relation("HomeownerProjects")
+  assignedLeads      ProjectRequest[]    @relation("AssignedAgent")
+  auditEvents        AuditEvent[]        @relation("AuditActor")
+  notifications      Notification[]
+  approvedInvoices   Invoice[]           @relation("ApprovedBy")
+  twilioPhoneNumbers TwilioPhoneNumber[] @relation("AssignedAgentNumbers")
+  callLogs           CallLog[]           @relation("AgentCalls")
+  emailMessages      EmailMessage[]      @relation("AgentEmails")
 }
 
 model ContractorProfile {
-  id                String         @id @default(cuid())
-  userId            String         @unique
-  companyName       String
-  trade             String
-  tier              ContractorTier @default(TRIAL)
-  status            String         @default("active")
-  licenseVerified   Boolean        @default(false)
-  insuranceVerified Boolean        @default(false)
-  yearsInBusiness   Int?
-  employeeCount     Int?
-  avgJobSize        String?
-  serviceZips       String[]
-  showRate          Float          @default(100)
-  acceptanceRate    Float          @default(100)
-  disputeRate       Float          @default(0)
-  contactPerson     String?
-  availabilityNotes String?
-  pilotTerms        String?
-  firstAppointmentPricing String?  @default("free")
-  pilotPriceAmount  Float?
-  responseTimeHours Int?
-  googleBusinessUrl String?
-  internalNotes     String?
-  isDemo            Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                      String         @id @default(cuid())
+  userId                  String         @unique
+  companyName             String
+  trade                   String
+  tier                    ContractorTier @default(TRIAL)
+  status                  String         @default("active")
+  licenseVerified         Boolean        @default(false)
+  insuranceVerified       Boolean        @default(false)
+  yearsInBusiness         Int?
+  employeeCount           Int?
+  avgJobSize              String?
+  serviceZips             String[]
+  showRate                Float          @default(100)
+  acceptanceRate          Float          @default(100)
+  disputeRate             Float          @default(0)
+  contactPerson           String?
+  availabilityNotes       String?
+  pilotTerms              String?
+  firstAppointmentPricing String?        @default("free")
+  pilotPriceAmount        Float?
+  responseTimeHours       Int?
+  googleBusinessUrl       String?
+  internalNotes           String?
+  isDemo                  Boolean        @default(false)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   appointments  Appointment[]
   capacityCells CapacityCell[] @relation("CellContractors")
   invoices      Invoice[]
   disputes      Dispute[]
+  callLogs      CallLog[]
+  emailMessages EmailMessage[]
 }
 
 model CapacityCell {
@@ -195,35 +201,35 @@ model CapacityCell {
 }
 
 model ProjectRequest {
-  id              String     @id @default(cuid())
-  referenceNumber String     @unique
-  homeownerId     String?
-  assignedAgentId String?
-  firstName       String
-  lastName        String
-  email           String
-  phone           String
-  zipCode         String
-  trade           String
-  description     String
-  urgency         String
-  budgetRange     String
-  preferredContact String?
-  tcpaConsent     Boolean    @default(false)
-  status          LeadStatus @default(NEW)
-  source          String     @default("organic")
-  qualificationNotes String?
-  disposition     String?
-  address         String?
-  ownershipAuthority String?
+  id                          String     @id @default(cuid())
+  referenceNumber             String     @unique
+  homeownerId                 String?
+  assignedAgentId             String?
+  firstName                   String
+  lastName                    String
+  email                       String
+  phone                       String
+  zipCode                     String
+  trade                       String
+  description                 String
+  urgency                     String
+  budgetRange                 String
+  preferredContact            String?
+  tcpaConsent                 Boolean    @default(false)
+  status                      LeadStatus @default(NEW)
+  source                      String     @default("organic")
+  qualificationNotes          String?
+  disposition                 String?
+  address                     String?
+  ownershipAuthority          String?
   preferredAppointmentWindows String?
-  photoUrls       String[]
-  serviceCellMatch Boolean?
-  invalidReason   String?
-  reachable       Boolean?
-  isDemo          Boolean    @default(false)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  photoUrls                   String[]
+  serviceCellMatch            Boolean?
+  invalidReason               String?
+  reachable                   Boolean?
+  isDemo                      Boolean    @default(false)
+  createdAt                   DateTime   @default(now())
+  updatedAt                   DateTime   @updatedAt
 
   homeowner     User?          @relation("HomeownerProjects", fields: [homeownerId], references: [id])
   assignedAgent User?          @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
@@ -231,36 +237,38 @@ model ProjectRequest {
   auditEvents   AuditEvent[]
   dispute       Dispute?
   caseStudy     CaseStudy?
+  callLogs      CallLog[]
+  emailMessages EmailMessage[]
 }
 
 model Appointment {
-  id                    String            @id @default(cuid())
-  projectRequestId      String            @unique
-  contractorId          String
-  scheduledAt           DateTime?
-  acceptedAt            DateTime?
-  checkedInAt           DateTime?
-  homeownerConfirmedAt  DateTime?
-  status                AppointmentStatus @default(OFFERED)
-  calendarInviteSent    Boolean           @default(false)
-  billingTriggered      Boolean           @default(false)
-  billingApproved       Boolean           @default(false)
-  amount                Float?
-  location              String?
-  homeownerPreConfirmed Boolean            @default(false)
+  id                     String            @id @default(cuid())
+  projectRequestId       String            @unique
+  contractorId           String
+  scheduledAt            DateTime?
+  acceptedAt             DateTime?
+  checkedInAt            DateTime?
+  homeownerConfirmedAt   DateTime?
+  status                 AppointmentStatus @default(OFFERED)
+  calendarInviteSent     Boolean           @default(false)
+  billingTriggered       Boolean           @default(false)
+  billingApproved        Boolean           @default(false)
+  amount                 Float?
+  location               String?
+  homeownerPreConfirmed  Boolean           @default(false)
   contractorPreConfirmed Boolean           @default(false)
-  estimateGiven         String?
+  estimateGiven          String?
   contractorOutcomeNotes String?
   homeownerOutcomeNotes  String?
-  followUpRequired      Boolean            @default(false)
-  opportunitySentAt     DateTime?
-  declineReason         String?
-  pilotBillableReason   String?
-  isDemo                Boolean            @default(false)
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  followUpRequired       Boolean           @default(false)
+  opportunitySentAt      DateTime?
+  declineReason          String?
+  pilotBillableReason    String?
+  isDemo                 Boolean           @default(false)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 
-  projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  projectRequest ProjectRequest    @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
   contractor     ContractorProfile @relation(fields: [contractorId], references: [id])
   invoice        Invoice?
   auditEvents    AuditEvent[]
@@ -329,20 +337,20 @@ model Feedback {
 }
 
 model CaseStudy {
-  id                  String          @id @default(cuid())
-  projectRequestId    String          @unique
-  trade               String
-  zipCode             String
-  leadSource          String?
-  timingMetrics       Json?
-  homeownerConfirmed  Boolean         @default(false)
-  contractorAttended  Boolean         @default(false)
-  estimateGiven       String?
-  disputeOccurred     Boolean         @default(false)
-  lessonsLearned      String?
-  nextImprovement     String?
-  status              CaseStudyStatus @default(DRAFT)
-  createdAt           DateTime        @default(now())
+  id                 String          @id @default(cuid())
+  projectRequestId   String          @unique
+  trade              String
+  zipCode            String
+  leadSource         String?
+  timingMetrics      Json?
+  homeownerConfirmed Boolean         @default(false)
+  contractorAttended Boolean         @default(false)
+  estimateGiven      String?
+  disputeOccurred    Boolean         @default(false)
+  lessonsLearned     String?
+  nextImprovement    String?
+  status             CaseStudyStatus @default(DRAFT)
+  createdAt          DateTime        @default(now())
 
   projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
 }
@@ -376,4 +384,61 @@ model Notification {
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TwilioPhoneNumber {
+  id             String   @id @default(cuid())
+  phoneNumber    String   @unique
+  label          String?
+  assignedUserId String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assignedUser User?     @relation("AssignedAgentNumbers", fields: [assignedUserId], references: [id])
+  callLogs     CallLog[]
+}
+
+model CallLog {
+  id                  String    @id @default(cuid())
+  twilioCallSid       String    @unique
+  direction           String    @default("outbound")
+  fromNumber          String
+  toNumber            String
+  status              String    @default("initiated")
+  durationSeconds     Int?
+  disposition         String?
+  dispositionNote     String?
+  agentId             String?
+  twilioPhoneNumberId String?
+  projectRequestId    String?
+  contractorId        String?
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  agent             User?              @relation("AgentCalls", fields: [agentId], references: [id])
+  twilioPhoneNumber TwilioPhoneNumber? @relation(fields: [twilioPhoneNumberId], references: [id])
+  projectRequest    ProjectRequest?    @relation(fields: [projectRequestId], references: [id])
+  contractor        ContractorProfile? @relation(fields: [contractorId], references: [id])
+}
+
+model EmailMessage {
+  id                String   @id @default(cuid())
+  sendgridMessageId String?
+  fromEmail         String
+  toEmail           String
+  subject           String
+  body              String
+  status            String   @default("sent")
+  agentId           String?
+  projectRequestId  String?
+  contractorId      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  agent          User?              @relation("AgentEmails", fields: [agentId], references: [id])
+  projectRequest ProjectRequest?    @relation(fields: [projectRequestId], references: [id])
+  contractor     ContractorProfile? @relation(fields: [contractorId], references: [id])
 }

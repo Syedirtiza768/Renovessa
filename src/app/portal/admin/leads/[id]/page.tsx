@@ -7,6 +7,8 @@ import { LeadActions } from "@/components/LeadActions";
 import { AssignAgentPanel } from "@/components/admin/AssignAgentPanel";
 import { QualificationPanel } from "@/components/admin/QualificationPanel";
 import { CommunicationLogForm } from "@/components/admin/CommunicationLogForm";
+import { CallButton } from "@/components/admin/CallButton";
+import { EmailComposer } from "@/components/admin/EmailComposer";
 import { OpportunityPanel } from "@/components/admin/OpportunityPanel";
 import { ReassignContractorPanel } from "@/components/admin/ReassignContractorPanel";
 import { ScheduleAppointmentForm } from "@/components/admin/ScheduleAppointmentForm";
@@ -24,7 +26,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const lead = await prisma.projectRequest.findUnique({
     where: { id },
     include: {
-      appointment: { include: { contractor: true, invoice: true, feedbacks: true } },
+      appointment: { include: { contractor: { include: { user: true } }, invoice: true, feedbacks: true } },
       assignedAgent: true,
       auditEvents: { orderBy: { createdAt: "desc" }, include: { actor: true } },
       dispute: true,
@@ -112,6 +114,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {appt.opportunitySentAt && <div><dt className="text-muted">Opportunity Sent</dt><dd>{formatDate(appt.opportunitySentAt)}</dd></div>}
               {appt.declineReason && <div><dt className="text-muted">Decline Reason</dt><dd>{appt.declineReason}</dd></div>}
             </dl>
+
+            <div className="mt-4 space-y-3 border-t border-rule/50 pt-4">
+              {appt.contractor.user.phone && (
+                <CallButton toNumber={appt.contractor.user.phone} label="Call Contractor" contractorId={appt.contractorId} projectRequestId={lead.id} />
+              )}
+              <EmailComposer toEmail={appt.contractor.user.email} contractorId={appt.contractorId} projectRequestId={lead.id} />
+            </div>
           </div>
         )}
 
@@ -132,6 +141,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           reachable={lead.reachable}
           invalidReason={lead.invalidReason}
         />
+
+        <div className="card p-4">
+          <h2 className="font-semibold">Contact Homeowner</h2>
+          <div className="mt-4 space-y-3">
+            <CallButton toNumber={lead.phone} label="Call" projectRequestId={lead.id} />
+            <EmailComposer toEmail={lead.email} projectRequestId={lead.id} />
+          </div>
+        </div>
 
         <CommunicationLogForm leadId={lead.id} />
 

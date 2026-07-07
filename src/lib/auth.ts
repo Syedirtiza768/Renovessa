@@ -81,6 +81,7 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
   if (isFieldAgent) {
     return [
       { href: "/portal/admin/my-leads", label: "My Leads" },
+      { href: "/portal/admin/dialer", label: "Dialer" },
       { href: "/portal/admin/operations", label: "Operations Queues" },
       { href: "/portal/admin/leads", label: "All Leads" },
       { href: "/portal/admin/appointments", label: "Appointments" },
@@ -90,6 +91,7 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
   const items: AdminNavItem[] = [
     { href: "/portal/admin", label: "Command Center" },
     { href: "/portal/admin/my-leads", label: "My Leads" },
+    { href: "/portal/admin/dialer", label: "Dialer" },
     { href: "/portal/admin/leads", label: "Lead Pipeline" },
     { href: "/portal/admin/operations", label: "Operations Queues" },
     { href: "/portal/admin/appointments", label: "Appointments" },
@@ -101,6 +103,7 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
 
   if (canManageTeam(role)) {
     items.splice(6, 0, { href: "/portal/admin/team", label: "Team" });
+    items.splice(7, 0, { href: "/portal/admin/phone-numbers", label: "Phone Numbers" });
   }
 
   return items;

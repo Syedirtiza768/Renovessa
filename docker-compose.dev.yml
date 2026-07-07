@@ -3,3 +3,9 @@ services:
   app:
     ports:
       - "7090:7090"
+  # Publish Postgres to the host so `npm run db:push` / `npm run dev` run from
+  # the host can reach the DB at localhost:5432 (the containerized app still uses
+  # the internal `db:5432` hostname set in docker-compose.yml).
+  db:
+    ports:
+      - "5436:5432"

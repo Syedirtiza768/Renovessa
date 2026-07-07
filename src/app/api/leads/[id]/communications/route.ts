@@ -9,7 +9,7 @@ const CHANNEL_MAP: Record<string, AuditEventType> = {
   "call_completed": "CALL_MADE",
   "voicemail": "CALL_MADE",
   "sms": "SMS_SENT",
-  "email": "SMS_SENT",
+  "email": "EMAIL_SENT",
   "note": "NOTE_ADDED",
 };
 
