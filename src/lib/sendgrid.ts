@@ -6,7 +6,7 @@ export class SendGridError extends Error {}
 
 let configured = false;
 
-function getSendGridClient() {
+export function getSendGridClient() {
   const apiKey = process.env.SENDGRID_API_KEY;
   if (!apiKey) throw new SendGridError("SendGrid is not configured (missing SENDGRID_API_KEY)");
   if (!configured) {

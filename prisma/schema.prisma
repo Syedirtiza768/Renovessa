@@ -117,6 +117,7 @@ enum AuditEventType {
   NOTE_ADDED
   CREDIT_ISSUED
   EMAIL_SENT
+  CAMPAIGN_SENT
 }
 
 enum CaseStudyStatus {
@@ -144,6 +145,7 @@ model User {
   twilioPhoneNumbers TwilioPhoneNumber[] @relation("AssignedAgentNumbers")
   callLogs           CallLog[]           @relation("AgentCalls")
   emailMessages      EmailMessage[]      @relation("AgentEmails")
+  emailCampaigns     EmailCampaign[]     @relation("CampaignOwner")
 }
 
 model ContractorProfile {
@@ -435,10 +437,67 @@ model EmailMessage {
   agentId           String?
   projectRequestId  String?
   contractorId      String?
+  campaignId        String?
+  // Delivery lifecycle timestamps, populated by the SendGrid event webhook.
+  deliveredAt       DateTime?
+  openedAt          DateTime?
+  clickedAt         DateTime?
+  bouncedAt         DateTime?
+  spamReportedAt    DateTime?
+  unsubscribedAt    DateTime?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   agent          User?              @relation("AgentEmails", fields: [agentId], references: [id])
   projectRequest ProjectRequest?    @relation(fields: [projectRequestId], references: [id])
   contractor     ContractorProfile? @relation(fields: [contractorId], references: [id])
+  campaign       EmailCampaign?     @relation(fields: [campaignId], references: [id])
+
+  @@index([campaignId])
+  @@index([sendgridMessageId])
+}
+
+/**
+ * A bulk outreach send to a resolved audience segment. Holds the template used,
+ * the resolved filter, and running counters. Each recipient gets its own
+ * EmailMessage row (campaignId back-reference) so bulk sends still appear in the
+ * per-contact communication timeline.
+ */
+model EmailCampaign {
+  id              String    @id @default(cuid())
+  name            String
+  audience        String
+  subject         String
+  bodyTemplate    String
+  templateId      String?
+  // JSON-encoded segment filter used to resolve recipients (trade, zips, status…).
+  filters         Json?
+  replyTo         String?
+  status          String    @default("draft") // draft | sending | sent | failed
+  scheduledAt     DateTime?
+  sentAt          DateTime?
+  totalRecipients Int       @default(0)
+  sentCount       Int       @default(0)
+  failedCount     Int       @default(0)
+  ownerAgentId    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  owner    User?          @relation("CampaignOwner", fields: [ownerAgentId], references: [id])
+  messages EmailMessage[]
+}
+
+/**
+ * Addresses that must never receive email — unsubscribes, hard bounces, and
+ * spam complaints. The segment resolver and bulk sender both filter against
+ * this table. Populated by the public unsubscribe route and (phase 2) the
+ * SendGrid event webhook.
+ */
+model EmailSuppression {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String // unsubscribe | bounce | complaint | manual
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }

@@ -5,7 +5,7 @@
  * composer only offers relevant ones for the contact in view.
  */
 
-export type EmailAudience = "homeowner" | "contractor";
+export type EmailAudience = "homeowner" | "contractor" | "prospect_contractor";
 
 export interface EmailContext {
   firstName?: string;
@@ -15,6 +15,7 @@ export interface EmailContext {
   trade?: string;
   scheduledAt?: string;
   agentName?: string;
+  city?: string;
 }
 
 export interface EmailTemplate {
@@ -118,6 +119,39 @@ Just following up on the {{trade}} opportunity ({{reference}}) we sent over. It'
 Let me know if you'd like to take it.
 
 Thanks,
+{{agentName}}
+Renovessa`,
+  },
+  // --- Cold outreach (bulk) ---
+  {
+    id: "prospect_contractor_intro",
+    name: "Prospecting — join our network",
+    audience: ["prospect_contractor"],
+    subject: "Pre-qualified {{trade}} jobs in your area — no lead fees to start",
+    body: `Hi {{companyName}} team,
+
+I'm {{agentName}} with Renovessa. We match homeowners with vetted local {{trade}} pros, and we're onboarding a few contractors in your service area.
+
+Unlike typical lead-gen, our homeowners are phone-verified and ready to schedule before we send them your way — and your first appointment is on us while we're getting started together.
+
+If you're taking on new work, reply here and I'll share how it works. No obligation.
+
+Best,
+{{agentName}}
+Renovessa`,
+  },
+  {
+    id: "prospect_homeowner_intro",
+    name: "Prospecting — homeowner reactivation",
+    audience: ["homeowner"],
+    subject: "Still need help with your {{trade}} project?",
+    body: `Hi {{firstName}},
+
+I'm {{agentName}} with Renovessa. A little while back you looked into getting {{trade}} work done, and I wanted to check whether you're still planning it.
+
+If so, I can match you with a vetted local pro and get an appointment set up — it only takes a few minutes. Just reply and let me know a good time to reach you.
+
+Best,
 {{agentName}}
 Renovessa`,
   },
