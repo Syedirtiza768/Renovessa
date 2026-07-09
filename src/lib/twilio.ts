@@ -17,23 +17,27 @@ function getTwilioClient() {
   return client;
 }
 
-function getAppUrl() {
-  const url = process.env.NEXT_PUBLIC_APP_URL;
-  if (!url) throw new TwilioCallError("NEXT_PUBLIC_APP_URL is not set");
+export function getTwilioWebhookBaseUrl() {
+  const url = process.env.TWILIO_WEBHOOK_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (!url) throw new TwilioCallError("TWILIO_WEBHOOK_BASE_URL / NEXT_PUBLIC_APP_URL is not set");
   return url.replace(/\/$/, "");
 }
 
 /**
  * Twilio requires E.164 (e.g. +12025550101). Existing phone fields in this app
  * (User.phone, lead/contractor phone) are free-text and often stored as bare
- * 10-digit US numbers, so normalize before calling the Twilio API.
+ * 10-digit US numbers, so normalize before calling the Twilio API / Dial TwiML.
  */
-function toE164(phone: string, fieldLabel: string): string {
-  const digits = phone.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) return digits;
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  throw new TwilioCallError(`${fieldLabel} "${phone}" isn't a valid phone number — use E.164 format, e.g. +12025550101`);
+export function toE164(phone: string, fieldLabel = "Phone number"): string {
+  const trimmed = phone.trim();
+  const digits = trimmed.replace(/[^\d+]/g, "");
+  if (digits.startsWith("+") && /^\+[1-9]\d{7,14}$/.test(digits)) return digits;
+  const onlyDigits = digits.replace(/\D/g, "");
+  if (onlyDigits.length === 10) return `+1${onlyDigits}`;
+  if (onlyDigits.length === 11 && onlyDigits.startsWith("1")) return `+${onlyDigits}`;
+  throw new TwilioCallError(
+    `${fieldLabel} "${phone}" isn't a valid phone number — use E.164 format, e.g. +12025550101`
+  );
 }
 
 /**
@@ -70,14 +74,14 @@ export async function placeCall(params: {
     throw new TwilioCallError("No Twilio number assigned to you — ask an admin to assign one in Team settings");
   }
 
-  const appUrl = getAppUrl();
+  const webhookBase = getTwilioWebhookBaseUrl();
   const twilioClient = getTwilioClient();
 
   const call = await twilioClient.calls.create({
     to: agentPhone,
     from: twilioNumber.phoneNumber,
-    url: `${appUrl}/api/calls/connect?to=${encodeURIComponent(toNumber)}&callerId=${encodeURIComponent(twilioNumber.phoneNumber)}`,
-    statusCallback: `${appUrl}/api/calls/status`,
+    url: `${webhookBase}/api/calls/connect?to=${encodeURIComponent(toNumber)}&callerId=${encodeURIComponent(twilioNumber.phoneNumber)}`,
+    statusCallback: `${webhookBase}/api/calls/status`,
     statusCallbackMethod: "POST",
     statusCallbackEvent: ["initiated", "ringing", "answered", "completed"],
   });

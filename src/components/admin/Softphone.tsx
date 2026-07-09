@@ -11,6 +11,7 @@ interface AssignedNumber {
 
 interface HistoryCall {
   id: string;
+  twilioCallSid: string;
   toNumber: string;
   fromNumber: string;
   status: string;
@@ -33,7 +34,52 @@ interface DialRequest {
   label?: string;
   projectRequestId?: string;
   contractorId?: string;
+  contactName?: string;
+  contactType?: "homeowner" | "contractor";
+  reference?: string;
 }
+
+interface ActiveContact {
+  name?: string;
+  type?: "homeowner" | "contractor";
+  reference?: string;
+}
+
+const HOMEOWNER_OUTCOMES: { value: string; label: string }[] = [
+  { value: "answered", label: "Answered" },
+  { value: "no_answer", label: "No answer" },
+  { value: "busy", label: "Busy" },
+  { value: "voicemail", label: "Left voicemail" },
+  { value: "confirmed", label: "Confirmed appointment" },
+  { value: "callback_requested", label: "Callback requested" },
+  { value: "wrong_number", label: "Wrong number" },
+];
+
+const CONTRACTOR_OUTCOMES: { value: string; label: string }[] = [
+  { value: "answered", label: "Answered" },
+  { value: "no_answer", label: "No answer" },
+  { value: "busy", label: "Busy" },
+  { value: "voicemail", label: "Left voicemail" },
+  { value: "accepted", label: "Accepted opportunity" },
+  { value: "declined", label: "Declined opportunity" },
+  { value: "callback_requested", label: "Callback requested" },
+];
+
+/** Pretty-prints a US-ish number for display without mutating the raw dial value. */
+function formatPhoneDisplay(raw: string): string {
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  if (digits.length === 11 && digits.startsWith("1"))
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  return trimmed;
+}
+
+// Sub-labels under keypad digits, phone-style.
+const KEY_LETTERS: Record<string, string> = {
+  "2": "ABC", "3": "DEF", "4": "GHI", "5": "JKL",
+  "6": "MNO", "7": "PQRS", "8": "TUV", "9": "WXYZ", "0": "+",
+};
 
 declare global {
   interface Window {
@@ -64,8 +110,11 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
   const [seconds, setSeconds] = useState(0);
   const [history, setHistory] = useState<HistoryCall[]>([]);
   const [pendingDial, setPendingDial] = useState<DialRequest | null>(null);
+  const [activeContact, setActiveContact] = useState<ActiveContact | null>(null);
 
   const [dispCallLogId, setDispCallLogId] = useState<string | null>(null);
+  const [dispContactType, setDispContactType] = useState<"homeowner" | "contractor" | null>(null);
+  const [dispContactName, setDispContactName] = useState<string | null>(null);
   const [dispOpen, setDispOpen] = useState(false);
   const [dispOutcome, setDispOutcome] = useState("");
   const [dispNote, setDispNote] = useState("");
@@ -73,6 +122,7 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
 
   const deviceRef = useRef<any>(null);
   const callRef = useRef<any>(null);
+  const activeCallSidRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const identityRef = useRef<string>("");
 
@@ -104,7 +154,14 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
   }, []);
 
   const placeCall = useCallback(
-    async (request: { toNumber: string; projectRequestId?: string; contractorId?: string }) => {
+    async (request: {
+      toNumber: string;
+      projectRequestId?: string;
+      contractorId?: string;
+      contactName?: string;
+      contactType?: "homeowner" | "contractor";
+      reference?: string;
+    }) => {
       const device = deviceRef.current;
       if (!device || !ready) {
         setError("Softphone is not ready yet");
@@ -114,13 +171,34 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
         setError("No Twilio number assigned — ask an admin to assign one in Phone Numbers");
         return;
       }
+
+      // Normalize to E.164 before handing to Twilio (keypad often sends 10 digits).
+      const digits = request.toNumber.replace(/\D/g, "");
+      let toE164 = request.toNumber.trim();
+      if (!toE164.startsWith("+")) {
+        if (digits.length === 10) toE164 = `+1${digits}`;
+        else if (digits.length === 11 && digits.startsWith("1")) toE164 = `+${digits}`;
+        else {
+          setError(`Invalid number "${request.toNumber}" — use E.164, e.g. +12408006040`);
+          return;
+        }
+      }
+
       setError("");
       setStatus("connecting");
-      setDialedNumber(request.toNumber);
+      setDialedNumber(toE164);
+      setActiveContact(
+        request.contactName || request.reference
+          ? { name: request.contactName, type: request.contactType, reference: request.reference }
+          : null
+      );
+      const callContactType = request.contactType ?? null;
+      const callContactName = request.contactName ?? null;
+      activeCallSidRef.current = null;
       try {
         const call = await device.connect({
           params: {
-            To: request.toNumber,
+            To: toE164,
             CallerId: callerId,
             AgentId: identityRef.current,
             LeadId: request.projectRequestId || "",
@@ -129,6 +207,9 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
         });
         callRef.current = call;
         call.on("accept", () => {
+          // The outbound leg's CallSid matches the CallLog created in /api/calls/connect,
+          // so capture it to disposition the exact call (not just "the latest one").
+          activeCallSidRef.current = call.parameters?.CallSid ?? null;
           setStatus("in-call");
           startTimer();
         });
@@ -137,14 +218,18 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
           setMuted(false);
           stopTimer();
           callRef.current = null;
+          const sid = activeCallSidRef.current;
           refreshHistory().then((rows) => {
-            const latest = rows[0];
-            if (latest && !latest.disposition) {
-              setDispCallLogId(latest.id);
+            const match = (sid && rows.find((r) => r.twilioCallSid === sid)) || rows[0];
+            if (match && !match.disposition) {
+              setDispCallLogId(match.id);
+              setDispContactType(callContactType);
+              setDispContactName(callContactName);
               setDispOutcome("");
               setDispNote("");
               setDispOpen(true);
             }
+            setActiveContact(null);
           });
         });
         call.on("error", (err: any) => {
@@ -152,10 +237,12 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
           setStatus("idle");
           stopTimer();
           callRef.current = null;
+          setActiveContact(null);
         });
       } catch (e: any) {
         setError(e?.message || "Failed to place call");
         setStatus("idle");
+        setActiveContact(null);
       }
     },
     [callerId, ready, refreshHistory, startTimer, stopTimer]
@@ -241,11 +328,17 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
       setOpen(true);
       setDialedNumber(detail.toNumber);
       setPendingDial(detail);
+      if (detail.contactName || detail.reference) {
+        setActiveContact({ name: detail.contactName, type: detail.contactType, reference: detail.reference });
+      }
       if (ready && callerId) {
         placeCall({
           toNumber: detail.toNumber,
           projectRequestId: detail.projectRequestId,
           contractorId: detail.contractorId,
+          contactName: detail.contactName,
+          contactType: detail.contactType,
+          reference: detail.reference,
         });
       }
     }
@@ -259,6 +352,9 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
         toNumber: pendingDial.toNumber,
         projectRequestId: pendingDial.projectRequestId,
         contractorId: pendingDial.contractorId,
+        contactName: pendingDial.contactName,
+        contactType: pendingDial.contactType,
+        reference: pendingDial.reference,
       });
       setPendingDial(null);
     }
@@ -330,8 +426,9 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
   const keypad = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"];
   const mmss = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   const keyBtn = isDock
-    ? "rounded border border-rule py-2 text-sm font-medium hover:bg-rule/30"
-    : "rounded border border-rule py-3 text-base font-medium hover:bg-rule/30";
+    ? "flex flex-col items-center justify-center rounded-lg border border-rule py-2 leading-none hover:bg-rule/30 active:bg-rule/50"
+    : "flex flex-col items-center justify-center rounded-lg border border-rule py-3 leading-none hover:bg-rule/30 active:bg-rule/50";
+  const dispOutcomes = dispContactType === "contractor" ? CONTRACTOR_OUTCOMES : HOMEOWNER_OUTCOMES;
 
   // Dock collapsed pill.
   if (isDock && !open) {
@@ -392,6 +489,19 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
           </p>
         )}
 
+        {activeContact && (activeContact.name || activeContact.reference) && (
+          <div className="rounded-lg border border-copper/40 bg-copper/5 px-3 py-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-copper">
+              {status === "in-call" ? "On call with" : "Calling"}
+              {activeContact.type ? ` · ${activeContact.type}` : ""}
+            </p>
+            <p className="truncate text-sm font-semibold">{activeContact.name || "—"}</p>
+            {activeContact.reference && (
+              <p className="truncate text-xs text-muted">{activeContact.reference}</p>
+            )}
+          </div>
+        )}
+
         {numbers.length > 1 && (
           <select
             className="input text-xs"
@@ -421,6 +531,9 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
             </button>
           )}
         </div>
+        {dialedNumber && formatPhoneDisplay(dialedNumber) !== dialedNumber.trim() && (
+          <p className="-mt-1 text-xs text-muted">{formatPhoneDisplay(dialedNumber)}</p>
+        )}
 
         {status === "idle" ? (
           <button
@@ -455,7 +568,10 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
         <div className="grid grid-cols-3 gap-2">
           {keypad.map((d) => (
             <button key={d} type="button" onClick={() => pressDigit(d)} className={keyBtn}>
-              {d}
+              <span className={isDock ? "text-base font-medium" : "text-lg font-medium"}>{d}</span>
+              {KEY_LETTERS[d] && (
+                <span className="mt-0.5 text-[9px] tracking-widest text-muted">{KEY_LETTERS[d]}</span>
+              )}
             </button>
           ))}
         </div>
@@ -492,7 +608,9 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
 
       {dispOpen && (
         <div className="border-t border-rule p-4">
-          <p className="text-xs font-semibold">Log call outcome</p>
+          <p className="text-xs font-semibold">
+            Log call outcome{dispContactName ? ` — ${dispContactName}` : ""}
+          </p>
           <p className="mb-2 text-xs text-muted">Recorded automatically on the lead audit trail.</p>
           <select
             className="input text-xs"
@@ -500,13 +618,11 @@ export function Dialer({ variant = "dock" }: { variant?: "dock" | "full" }) {
             onChange={(e) => setDispOutcome(e.target.value)}
           >
             <option value="">— Select outcome —</option>
-            <option value="answered">Answered</option>
-            <option value="no_answer">No answer</option>
-            <option value="busy">Busy</option>
-            <option value="voicemail">Left voicemail</option>
-            <option value="wrong_number">Wrong number</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="callback_requested">Callback requested</option>
+            {dispOutcomes.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
           <textarea
             className="input mt-2 text-xs"

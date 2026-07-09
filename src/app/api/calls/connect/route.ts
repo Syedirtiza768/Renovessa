@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
-import { verifyTwilioSignature } from "@/lib/twilio";
+import { getTwilioWebhookBaseUrl, toE164, verifyTwilioSignature } from "@/lib/twilio";
 
 function escapeXml(value: string) {
   return value
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   // Rebuild the exact URL we handed Twilio (based on our own configured app URL,
   // not the possibly-proxy-rewritten request URL) so signature validation is stable.
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+  const appUrl = getTwilioWebhookBaseUrl();
   const url = `${appUrl}${req.nextUrl.pathname}${req.nextUrl.search}`;
 
   const valid = verifyTwilioSignature({
@@ -45,11 +45,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Softphone sends To/CallerId in the form body; click-to-call sends them in
-  // the query string. Accept either.
-  const to = pick(body.To, req.nextUrl.searchParams.get("to"));
-  const callerId = pick(body.CallerId, req.nextUrl.searchParams.get("callerId"));
-  if (!to || !callerId) {
+  // the query string. Accept either. Normalize to E.164 — dialer keypad /
+  // lead phones are often bare 10-digit US numbers (Twilio error 13223).
+  const rawTo = pick(body.To, req.nextUrl.searchParams.get("to"));
+  const rawCallerId = pick(body.CallerId, req.nextUrl.searchParams.get("callerId"));
+  if (!rawTo || !rawCallerId) {
     return new NextResponse("Bad Request", { status: 400 });
+  }
+
+  let to: string;
+  let callerId: string;
+  try {
+    to = toE164(rawTo, "Destination number");
+    callerId = toE164(rawCallerId, "Caller ID");
+  } catch (e: any) {
+    return new NextResponse(e?.message || "Invalid phone number", { status: 400 });
   }
 
   const callSid = body.CallSid;

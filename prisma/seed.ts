@@ -25,10 +25,14 @@ async function main() {
   await prisma.invoice.deleteMany();
   await prisma.dispute.deleteMany();
   await prisma.appointment.deleteMany();
+  await prisma.callLog.deleteMany();
+  await prisma.emailMessage.deleteMany();
   await prisma.projectRequest.deleteMany();
   await prisma.contractorInquiry.deleteMany();
   await prisma.capacityCell.deleteMany();
   await prisma.contractorProfile.deleteMany();
+  // Keep Twilio numbers across re-seeds (trial setup is manual); just unassign.
+  await prisma.twilioPhoneNumber.updateMany({ data: { assignedUserId: null } });
   await prisma.user.deleteMany();
 
   // ── Users ──
@@ -220,6 +224,19 @@ async function main() {
       { userId: admin.id, title: "New Lead", message: "New project request RNV-2026-04824 from Marcus Webb.", actionUrl: "/portal/admin/leads" },
     ],
   });
+
+  // Re-attach any Twilio numbers that survived re-seed (voice numbers are
+  // provisioned outside of seed). Assign to admin by default so softphone works.
+  const unassigned = await prisma.twilioPhoneNumber.findMany({
+    where: { assignedUserId: null, isActive: true },
+  });
+  if (unassigned.length > 0) {
+    await prisma.twilioPhoneNumber.updateMany({
+      where: { id: { in: unassigned.map((n) => n.id) } },
+      data: { assignedUserId: admin.id },
+    });
+    console.log(`Re-assigned ${unassigned.length} Twilio number(s) to admin.`);
+  }
 
   console.log("Seed complete.");
   console.log("");

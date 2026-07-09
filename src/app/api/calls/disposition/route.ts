@@ -15,6 +15,8 @@ const dispositionSchema = z.object({
     "wrong_number",
     "confirmed",
     "callback_requested",
+    "accepted",
+    "declined",
   ]),
   note: z.string().optional(),
 });

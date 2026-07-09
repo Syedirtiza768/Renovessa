@@ -1,4 +1,11 @@
 
+## 2026-07-08 — Softphone dialer unblock
+
+- Diagnosed dialer failure: no assigned Twilio number in DB, empty TwiML App voice URL, localhost unreachability for webhooks, missing E.164 normalize on softphone path
+- Fixed: export `toE164` + `getTwilioWebhookBaseUrl`, normalize on connect webhook + Softphone dial, `TWILIO_WEBHOOK_BASE_URL` support, seed preserves/reassigns Twilio numbers
+- Provisioned Twilio number `+12405708350` to admin; TwiML App + cloudflared tunnel wired
+- **Remaining blocker:** Twilio Trial error 21219 — cannot dial unverified `+12408006040` until account upgrade
+
 ## 2026-06-19 — Portal UX gap fixes
 
 - Homeowner portal: settings, in-portal submit, project detail pages

@@ -2,8 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, use } from "react";
-import { CallButton } from "@/components/admin/CallButton";
-import { EmailComposer } from "@/components/admin/EmailComposer";
+import { ContactCommunications } from "@/components/admin/ContactCommunications";
 
 interface ContractorProfile {
   id: string;
@@ -94,14 +93,20 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
     <div>
       <h1 className="text-2xl font-bold">{form.companyName || "Contractor"}</h1>
 
-      <div className="mt-6 card p-4 max-w-2xl">
-        <h2 className="font-semibold">Contact</h2>
-        <div className="mt-4 space-y-3">
-          {form.user?.phone && (
-            <CallButton toNumber={form.user.phone} label="Call" contractorId={id} />
-          )}
-          {form.user?.email && <EmailComposer toEmail={form.user.email} contractorId={id} />}
-        </div>
+      <div className="mt-6 max-w-2xl">
+        <ContactCommunications
+          title="Contact"
+          contactName={form.companyName || "Contractor"}
+          contactType="contractor"
+          phone={form.user?.phone}
+          email={form.user?.email}
+          callLabel="Call"
+          contractorId={id}
+          emailContext={{
+            companyName: form.companyName,
+            trade: form.trade,
+          }}
+        />
       </div>
 
       <div className="mt-6 card p-4 max-w-2xl">

@@ -15,6 +15,7 @@ export async function GET() {
       take: 25,
       select: {
         id: true,
+        twilioCallSid: true,
         toNumber: true,
         fromNumber: true,
         status: true,

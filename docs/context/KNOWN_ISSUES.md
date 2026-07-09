@@ -92,3 +92,31 @@ No linting, testing, or CI pipeline exists. Expected for Phase 0 only.
 
 ### Status
 Deferred
+
+---
+
+## Twilio Trial Blocks Outbound Dialer Destinations
+
+### Type
+Operational Blocker
+
+### Severity
+High
+
+### Description
+Twilio blocks **all outbound +1 (US/Canada) calls** with error **21216** until the account has an approved **Business** Primary Customer Profile in Trust Hub. The current profile (`Primary customer profile for individual`, status `twilio-approved`) is not sufficient for +1 calling on accounts created outside the US/Canada after Oct 2025.
+
+Softphone infrastructure is otherwise configured: assigned `+12405708350`, TwiML App voice URL, `TWILIO_WEBHOOK_BASE_URL` tunnel, E.164 normalization.
+
+### Affected Areas
+- `/portal/admin/dialer` softphone
+- `POST /api/calls` click-to-call
+- Twilio Voice webhooks via `TWILIO_WEBHOOK_BASE_URL`
+
+### Suggested Fix or Mitigation
+1. Twilio Console → **Trust Hub** → create and submit a **Business** Primary Customer Profile (not Individual)
+2. Wait for `Twilio Approved` status, then retry dialing `+12408006040`
+3. Keep `TWILIO_WEBHOOK_BASE_URL` pointed at a running cloudflared tunnel while developing locally
+
+### Status
+Open

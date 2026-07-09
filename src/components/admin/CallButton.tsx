@@ -15,11 +15,17 @@ export function CallButton({
   label = "Call",
   projectRequestId,
   contractorId,
+  contactName,
+  contactType,
+  reference,
 }: {
   toNumber: string;
   label?: string;
   projectRequestId?: string;
   contractorId?: string;
+  contactName?: string;
+  contactType?: "homeowner" | "contractor";
+  reference?: string;
 }) {
   const [softphoneReady, setSoftphoneReady] = useState(false);
   const [numbers, setNumbers] = useState<AgentNumber[] | null>(null);
@@ -55,7 +61,7 @@ export function CallButton({
     if (softphoneReady) {
       window.dispatchEvent(
         new CustomEvent(DIAL_EVENT, {
-          detail: { toNumber, projectRequestId, contractorId },
+          detail: { toNumber, projectRequestId, contractorId, contactName, contactType, reference },
         })
       );
       setStatus("Dialing from softphone…");

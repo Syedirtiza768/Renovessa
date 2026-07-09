@@ -7,8 +7,7 @@ import { LeadActions } from "@/components/LeadActions";
 import { AssignAgentPanel } from "@/components/admin/AssignAgentPanel";
 import { QualificationPanel } from "@/components/admin/QualificationPanel";
 import { CommunicationLogForm } from "@/components/admin/CommunicationLogForm";
-import { CallButton } from "@/components/admin/CallButton";
-import { EmailComposer } from "@/components/admin/EmailComposer";
+import { ContactCommunications } from "@/components/admin/ContactCommunications";
 import { OpportunityPanel } from "@/components/admin/OpportunityPanel";
 import { ReassignContractorPanel } from "@/components/admin/ReassignContractorPanel";
 import { ScheduleAppointmentForm } from "@/components/admin/ScheduleAppointmentForm";
@@ -114,14 +113,29 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {appt.opportunitySentAt && <div><dt className="text-muted">Opportunity Sent</dt><dd>{formatDate(appt.opportunitySentAt)}</dd></div>}
               {appt.declineReason && <div><dt className="text-muted">Decline Reason</dt><dd>{appt.declineReason}</dd></div>}
             </dl>
-
-            <div className="mt-4 space-y-3 border-t border-rule/50 pt-4">
-              {appt.contractor.user.phone && (
-                <CallButton toNumber={appt.contractor.user.phone} label="Call Contractor" contractorId={appt.contractorId} projectRequestId={lead.id} />
-              )}
-              <EmailComposer toEmail={appt.contractor.user.email} contractorId={appt.contractorId} projectRequestId={lead.id} />
-            </div>
           </div>
+        )}
+
+        {appt && (
+          <ContactCommunications
+            title="Contact Contractor"
+            contactName={appt.contractor.companyName}
+            contactType="contractor"
+            reference={lead.referenceNumber}
+            phone={appt.contractor.user.phone}
+            email={appt.contractor.user.email}
+            callLabel="Call Contractor"
+            projectRequestId={lead.id}
+            contractorId={appt.contractorId}
+            emailContext={{
+              companyName: appt.contractor.companyName,
+              firstName: lead.firstName,
+              lastName: lead.lastName,
+              reference: lead.referenceNumber,
+              trade: lead.trade,
+              scheduledAt: appt.scheduledAt ? formatDate(appt.scheduledAt) : undefined,
+            }}
+          />
         )}
 
         <AssignAgentPanel
@@ -142,13 +156,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           invalidReason={lead.invalidReason}
         />
 
-        <div className="card p-4">
-          <h2 className="font-semibold">Contact Homeowner</h2>
-          <div className="mt-4 space-y-3">
-            <CallButton toNumber={lead.phone} label="Call" projectRequestId={lead.id} />
-            <EmailComposer toEmail={lead.email} projectRequestId={lead.id} />
-          </div>
-        </div>
+        <ContactCommunications
+          title="Contact Homeowner"
+          contactName={`${lead.firstName} ${lead.lastName}`}
+          contactType="homeowner"
+          reference={lead.referenceNumber}
+          phone={lead.phone}
+          email={lead.email}
+          callLabel="Call"
+          projectRequestId={lead.id}
+          emailContext={{
+            firstName: lead.firstName,
+            lastName: lead.lastName,
+            reference: lead.referenceNumber,
+            trade: lead.trade,
+            scheduledAt: appt?.scheduledAt ? formatDate(appt.scheduledAt) : undefined,
+            companyName: appt?.contractor.companyName,
+          }}
+        />
 
         <CommunicationLogForm leadId={lead.id} />
 

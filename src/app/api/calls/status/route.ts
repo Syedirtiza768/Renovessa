@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyTwilioSignature } from "@/lib/twilio";
+import { getTwilioWebhookBaseUrl, verifyTwilioSignature } from "@/lib/twilio";
 import { logAuditEvent } from "@/lib/audit";
 
 const FINAL_STATUSES = ["completed", "busy", "failed", "no-answer", "canceled"];
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const body = Object.fromEntries(new URLSearchParams(rawBody));
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+  const appUrl = getTwilioWebhookBaseUrl();
   const url = `${appUrl}${req.nextUrl.pathname}${req.nextUrl.search}`;
 
   const valid = verifyTwilioSignature({
