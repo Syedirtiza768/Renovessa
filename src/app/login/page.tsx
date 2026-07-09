@@ -55,15 +55,6 @@ export default function LoginPage() {
               {loading ? "Signing in..." : "Sign In"}
             </button>
           </form>
-          <div className="mt-6 rounded-md bg-blueprint p-4 text-xs text-muted">
-            <p className="font-semibold text-slate">Demo accounts (password: demo1234)</p>
-            <ul className="mt-2 space-y-1">
-              <li>admin@renovessa.com — Admin</li>
-              <li>agent@renovessa.com — Ops Agent</li>
-              <li>sarah.mitchell@demo.renovessa.com — Homeowner</li>
-              <li>hvac@demo.renovessa.com — Contractor</li>
-            </ul>
-          </div>
           <Link href="/" className="mt-4 block text-center text-sm text-copper hover:underline">← Back to website</Link>
         </div>
       </main>
