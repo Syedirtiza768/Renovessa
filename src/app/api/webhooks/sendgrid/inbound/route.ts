@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
         userId,
         title: `New reply from ${who}`,
         message: snippet || "(empty reply)",
-        actionUrl: "/admin/communications",
+        actionUrl: "/portal/admin/replies",
       })),
     });
   }
