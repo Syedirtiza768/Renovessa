@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/unsubscribe";
 import { logAuditEvent } from "@/lib/audit";
+import { getSendGridClient } from "@/lib/sendgrid";
 
 export const runtime = "nodejs";
 
@@ -142,6 +143,29 @@ export async function POST(req: NextRequest) {
     actorId: original?.agentId ?? undefined,
     metadata: { from: email, subject, campaignId: original?.campaignId ?? null },
   });
+
+  // Best-effort: forward a copy to a human mailbox (e.g. Ray's) so replies also
+  // land in normal email, with reply-to set to the prospect so a reply from that
+  // mailbox reaches them directly. Never fail capture if forwarding errors.
+  const forwardTo = process.env.REPLIES_FORWARD_TO;
+  const forwardFrom = process.env.SENDGRID_FROM_EMAIL;
+  if (forwardTo && forwardFrom) {
+    try {
+      const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").replace(/\/$/, "");
+      await getSendGridClient().send({
+        to: forwardTo,
+        from: { email: forwardFrom, name: "Renovessa Replies" },
+        replyTo: email,
+        subject: `Reply from ${who}: ${subject}`,
+        text:
+          `${who} <${email}> replied to "${subject}":\n\n${body || "(empty reply)"}\n\n` +
+          `— Reply directly to this email to respond to them.` +
+          (appUrl ? `\nView in app: ${appUrl}/portal/admin/replies` : ""),
+      });
+    } catch {
+      /* forwarding is best-effort */
+    }
+  }
 
   return NextResponse.json({ received: true, matched: Boolean(original), prospect: Boolean(prospect) });
 }
