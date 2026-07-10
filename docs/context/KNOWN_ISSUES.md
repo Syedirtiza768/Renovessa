@@ -120,3 +120,30 @@ Softphone infrastructure is otherwise configured: assigned `+12405708350`, TwiML
 
 ### Status
 Open
+
+---
+
+## SendGrid Domain Authentication Misconfigured
+
+### Type
+Deliverability Risk
+
+### Severity
+Medium
+
+### Description
+SendGrid domain authentication (whitelabel) for `renovessa.com` was created with the domain string `https://renovessa.com/` (malformed — includes the protocol and a trailing slash). All DNS records (mail CNAME, dkim1, dkim2) show `valid:false`, so custom DKIM/SPF is not active. Email sending already works because `ray@renovessa.com` is a **verified single-sender identity** (key valid; paid account; reputation 100; test send returned HTTP 202 on 2026-07-09). Without valid domain authentication, outbound mail from `ray@renovessa.com` is not DKIM/SPF-aligned to `renovessa.com` and is more likely to be spam-filtered or rejected by strict receivers.
+
+### Affected Areas
+- Agent 1:1 email (`src/lib/sendgrid.ts`)
+- Bulk campaign email (`src/lib/bulkEmail.ts`)
+- `SENDGRID_FROM_EMAIL` deliverability
+
+### Suggested Fix or Mitigation
+1. SendGrid → **Settings → Sender Authentication → Authenticate Your Domain**
+2. Re-add the domain as the bare `renovessa.com` (not `https://renovessa.com/`)
+3. Add the 3 DNS CNAME records SendGrid provides (mail CNAME + `s1._domainkey` + `s2._domainkey`) at the `renovessa.com` DNS provider
+4. Wait for SendGrid to verify `valid:true` (usually minutes after DNS propagation)
+
+### Status
+Open

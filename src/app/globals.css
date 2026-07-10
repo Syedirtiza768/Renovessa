@@ -175,4 +175,20 @@
   .font-serif-landing {
     font-family: var(--font-serif), Georgia, serif;
   }
+
+  .advisor-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-ink-40;
+    animation: advisor-blink 1s infinite ease-in-out;
+  }
+}
+
+@keyframes advisor-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
 }

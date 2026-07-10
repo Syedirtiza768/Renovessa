@@ -6,6 +6,11 @@
 
 services:
   db:
+    # Publish Postgres on the host so an external client (pgAdmin/DBeaver) can
+    # connect directly on 5436 WITHOUT an SSH tunnel. Access is gated by the EC2
+    # security group, which only allows port 5436 from a specific source IP.
+    ports:
+      - "5436:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-renovessa}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}

@@ -45,7 +45,7 @@ function mapContact(w: string): string {
 }
 
 export function LandingProjectForm() {
-  const { selected, toggle, isSelected, labels, setSelected } = useCategories();
+  const { selected, toggle, isSelected, labels, setSelected, prefill } = useCategories();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -82,6 +82,22 @@ export function LandingProjectForm() {
       return next;
     });
   }, [selected]);
+
+  // Pre-fill from the hero AI advisor. Categories are applied via setSelected in
+  // the advisor widget; here we merge the free-text + choice fields it inferred.
+  useEffect(() => {
+    if (!prefill) return;
+    setForm((prev) => ({
+      ...prev,
+      description: prefill.description ?? prev.description,
+      urgency:
+        prefill.urgency && URGENCY_OPTIONS_LANDING.includes(prefill.urgency)
+          ? prefill.urgency
+          : prev.urgency,
+      budget:
+        prefill.budget && BUDGET_OPTIONS.includes(prefill.budget) ? prefill.budget : prev.budget,
+    }));
+  }, [prefill]);
 
   function validateStep1(): boolean {
     const next: FormErrors = {};

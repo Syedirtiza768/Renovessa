@@ -16,13 +16,13 @@ import { LandingProjectForm } from "./LandingProjectForm";
 import { LandingFooter } from "./LandingFooter";
 import { MobileCTABar } from "./MobileCTABar";
 
-export function LandingPage() {
+export function LandingPage({ aiAdvisorEnabled = false }: { aiAdvisorEnabled?: boolean }) {
   return (
     <CategoryProvider>
       <div className="landing-page min-h-screen pb-20 md:pb-0">
         <LandingHeader />
         <main>
-          <LandingHero />
+          <LandingHero aiAdvisorEnabled={aiAdvisorEnabled} />
           <HouseSelector />
           <HowItWorksSection />
           <StatsStrip />

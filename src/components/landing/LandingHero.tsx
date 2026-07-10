@@ -1,7 +1,8 @@
 import { APPOINTMENT_LOG, HERO_SERVICE_TAGS } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, LANDING_HEADLINE } from "@/lib/first-job-config";
+import { AIAdvisor } from "./AIAdvisor";
 
-export function LandingHero() {
+export function LandingHero({ aiAdvisorEnabled = false }: { aiAdvisorEnabled?: boolean }) {
   const headline = FIRST_JOB_MODE && LANDING_HEADLINE
     ? LANDING_HEADLINE
     : "Tell Renovessa what \u003cem className=\"font-serif-landing italic\"\u003eneeds\u003c/em\u003e doing around the house.";
@@ -73,7 +74,11 @@ export function LandingHero() {
           </div>
         </div>
 
-        {!FIRST_JOB_MODE && (
+        {aiAdvisorEnabled ? (
+          <aside className="lg:block" aria-label="Ask Renovessa's AI advisor">
+            <AIAdvisor />
+          </aside>
+        ) : !FIRST_JOB_MODE ? (
           <aside className="hidden lg:block" aria-label="Recent confirmed appointments">
             <div className="landing-card shadow-[0_8px_24px_rgba(26,26,26,0.06)]">
               <div className="flex items-center justify-between border-b border-ink-15 px-4 py-3">
@@ -109,7 +114,7 @@ export function LandingHero() {
               </p>
             </div>
           </aside>
-        )}
+        ) : null}
       </div>
     </section>
   );

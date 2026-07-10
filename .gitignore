@@ -4,3 +4,6 @@ node_modules
 .env.local
 .env*.local
 docs/blueprint_extracted.txt
+# Local outreach scraper — contains scraped third-party contact data (PII).
+# Do NOT commit to this public repo.
+scraper/
