@@ -3,7 +3,7 @@ import { getSendGridClient, SendGridError } from "./sendgrid";
 import { logAuditEvent } from "./audit";
 import { resolveSegment, type SegmentFilters } from "./emailSegments";
 import { interpolate, type EmailAudience, type EmailContext } from "./emailTemplates";
-import { complianceFooter, normalizeEmail } from "./unsubscribe";
+import { complianceFooter, complianceFooterHtml, normalizeEmail } from "./unsubscribe";
 
 /**
  * Bulk campaign sender. Re-resolves the campaign's segment at send time (so the
@@ -28,16 +28,37 @@ export interface SendCampaignResult {
   failed: number;
 }
 
-/** Renders subject/body for one recipient and appends the compliance footer. */
+/** Turns a plain-text body into simple, email-safe HTML (paragraphs + <br>). */
+function bodyToHtml(text: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const paragraphs = text
+    .trim()
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin:0 0 16px">${esc(p).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+  return (
+    `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;` +
+    `font-size:15px;line-height:1.55;color:#1a1a1a">${paragraphs}`
+  );
+}
+
+/**
+ * Renders one recipient's email. Returns a plain-text body (the DB/timeline copy
+ * and the multipart text fallback, footer as a raw URL) and an HTML body (what
+ * inboxes render, footer as a labelled "Unsubscribe" hyperlink).
+ */
 function render(
   subjectTemplate: string,
   bodyTemplate: string,
   context: EmailContext,
   email: string
-): { subject: string; body: string } {
+): { subject: string; text: string; html: string } {
+  const rendered = interpolate(bodyTemplate, context);
   return {
     subject: interpolate(subjectTemplate, context).trim(),
-    body: interpolate(bodyTemplate, context) + complianceFooter(email),
+    text: rendered + complianceFooter(email),
+    html: `${bodyToHtml(rendered)}${complianceFooterHtml(email)}</div>`,
   };
 }
 
@@ -78,7 +99,7 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
     const chunk = recipients.slice(i, i + CHUNK_SIZE);
     const results = await Promise.allSettled(
       chunk.map(async (r) => {
-        const { subject, body } = render(
+        const { subject, text, html } = render(
           campaign.subject,
           campaign.bodyTemplate,
           { ...r.context, agentName: r.context.agentName || agentName },
@@ -93,7 +114,8 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
             from: { email: fromEmail, name: fromName },
             replyTo,
             subject,
-            text: body,
+            text,
+            html,
           });
           sendgridMessageId = (response.headers["x-message-id"] as string | undefined) ?? null;
         } catch (e) {
@@ -106,7 +128,7 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
             fromEmail,
             toEmail: normalizeEmail(r.email),
             subject,
-            body,
+            body: text,
             status,
             agentId: campaign.ownerAgentId,
             campaignId: campaign.id,

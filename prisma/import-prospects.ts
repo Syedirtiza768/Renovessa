@@ -177,21 +177,23 @@ async function main() {
   }
   console.log(`Prospects: ${created} created, ${updated} updated (of ${records.length} rows)`);
 
-  // ── 3. Monitoring seed (Abdullah / Acme) — status "monitor" so it is targeted
-  //       only by the monitoring test campaign and excluded from the pilot. ──
-  const monRes = await upsertProspect({
-    companyName: "Acme Inc.",
-    contactName: "Abdullah Cheema",
-    email: "abdullahcheema2223@gmail.com",
-    trade: "contractor",
-    city: "Arlington",
-    state: "VA",
-    rating: "5.0",
-    website: "",
-    status: "monitor",
-    source: "monitoring",
-  });
-  console.log(`Monitoring contact (Abdullah / Acme Inc.): ${monRes}`);
+  // ── 3. Monitoring seeds — status "monitor" so they are targeted only by the
+  //       monitoring campaign and excluded from the pilot (status "new"). ──
+  const monitors = [
+    { companyName: "Acme Inc.", contactName: "Abdullah Cheema", email: "abdullahcheema2223@gmail.com", city: "Arlington", state: "VA" },
+    { companyName: "GBC", contactName: "Irtiza Hassan", email: "irtiza.hassan@gmail.com", city: "Arlington", state: "VA" },
+  ];
+  for (const m of monitors) {
+    const res = await upsertProspect({
+      ...m,
+      trade: "contractor",
+      rating: "5.0",
+      website: "",
+      status: "monitor",
+      source: "monitoring",
+    });
+    console.log(`Monitoring contact (${m.contactName} / ${m.companyName}): ${res}`);
+  }
 
   // ── 4. Draft campaigns (idempotent) ──
   console.log("Pilot:      " + await ensureCampaign({
