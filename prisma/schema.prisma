@@ -117,6 +117,7 @@ enum AuditEventType {
   NOTE_ADDED
   CREDIT_ISSUED
   EMAIL_SENT
+  EMAIL_REPLIED
   CAMPAIGN_SENT
 }
 
@@ -371,9 +372,20 @@ model ContractorInquiry {
   usesLeadGen     Boolean  @default(false)
   avgJobSize      String?
   referralSource  String?
+  // Cold-outreach prospect fields (populated by the DMV scraper import). These
+  // carry through to the email merge context so bulk sends can personalize with
+  // the prospect's city and review rating.
+  city            String?
+  state           String?
+  rating          String?
+  website         String?
+  source          String?
   status          String   @default("new")
   isDemo          Boolean  @default(false)
   createdAt       DateTime @default(now())
+
+  @@index([status])
+  @@index([email])
 }
 
 model Notification {
@@ -434,6 +446,13 @@ model EmailMessage {
   subject           String
   body              String
   status            String   @default("sent")
+  // "outbound" for sends; "inbound" for replies captured via the SendGrid
+  // Inbound Parse webhook. Inbound rows reuse this table so a prospect's replies
+  // sit alongside our sends in the same communication timeline.
+  direction         String   @default("outbound")
+  // For an inbound reply, the id of the outbound EmailMessage it is replying to
+  // (matched by sender address at parse time). Null for outbound and unmatched.
+  replyToMessageId  String?
   agentId           String?
   projectRequestId  String?
   contractorId      String?

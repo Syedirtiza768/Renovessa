@@ -95,6 +95,36 @@ async function resolveContractors(f: SegmentFilters): Promise<Recipient[]> {
     }));
 }
 
+/** Maps a raw scraped trade/category to a human-readable label for email copy. */
+const TRADE_LABELS: Record<string, string> = {
+  contractor: "contracting",
+  remodel: "remodeling",
+  construction: "construction",
+  handyman: "handyman",
+  builder: "building",
+  "home improvement": "home improvement",
+  kitchen: "kitchen remodeling",
+  masonry: "masonry",
+};
+
+function tradeLabel(trade: string): string {
+  return TRADE_LABELS[trade?.toLowerCase().trim()] || trade || "home improvement";
+}
+
+/** The one line that adapts to whether we scraped a review rating for the row. */
+function ratingLine(rating: string | null | undefined): string {
+  const r = rating?.trim();
+  return r
+    ? `Your ${r}-star rating is exactly why I'm emailing you and not the guy down the road.`
+    : `Your reviews are exactly why I'm emailing you and not the guy down the road.`;
+}
+
+/** First name for the greeting, or "there" when we only have the company. */
+function greetingName(contactName: string | null | undefined): string {
+  const first = contactName?.trim().split(/\s+/)[0];
+  return first || "there";
+}
+
 async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[]> {
   const rows = await prisma.contractorInquiry.findMany({
     where: {
@@ -109,6 +139,8 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
       contactName: true,
       trade: true,
       email: true,
+      city: true,
+      rating: true,
     },
   });
   return rows
@@ -118,7 +150,13 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
       context: {
         companyName: r.companyName,
         firstName: r.contactName || undefined,
+        greetingName: greetingName(r.contactName),
         trade: r.trade,
+        tradeLabel: tradeLabel(r.trade),
+        // "Washington" reads better as "DC" in the outreach line.
+        city: r.city === "Washington" ? "DC" : r.city || undefined,
+        rating: r.rating || undefined,
+        ratingLine: ratingLine(r.rating),
       },
     }));
 }

@@ -53,6 +53,13 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
   const replyTo =
     campaign.replyTo || process.env.SENDGRID_REPLY_TO || fromEmail;
 
+  // The sender's name fills {{agentName}} in every rendered email. Prefer the
+  // campaign owner's name, then the configured From name.
+  const owner = campaign.ownerAgentId
+    ? await prisma.user.findUnique({ where: { id: campaign.ownerAgentId }, select: { name: true } })
+    : null;
+  const agentName = owner?.name || fromName;
+
   const recipients = await resolveSegment(
     campaign.audience as EmailAudience,
     (campaign.filters as SegmentFilters) || {}
@@ -74,7 +81,7 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
         const { subject, body } = render(
           campaign.subject,
           campaign.bodyTemplate,
-          { ...r.context, agentName: r.context.agentName },
+          { ...r.context, agentName: r.context.agentName || agentName },
           r.email
         );
 

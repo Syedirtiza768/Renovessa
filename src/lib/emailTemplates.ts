@@ -16,6 +16,14 @@ export interface EmailContext {
   scheduledAt?: string;
   agentName?: string;
   city?: string;
+  // Cold-outreach merge fields, precomputed by the prospect segment resolver so
+  // templates stay logic-free: greetingName falls back to "there" when we have
+  // no contact name; tradeLabel is the human-readable trade; ratingLine is a
+  // full sentence that adapts to whether we have a review rating for the row.
+  greetingName?: string;
+  tradeLabel?: string;
+  rating?: string;
+  ratingLine?: string;
 }
 
 export interface EmailTemplate {
@@ -125,18 +133,43 @@ Renovessa`,
   // --- Cold outreach (bulk) ---
   {
     id: "prospect_contractor_intro",
-    name: "Prospecting — join our network",
+    name: "Prospecting — icebreaker (astrology)",
     audience: ["prospect_contractor"],
-    subject: "Pre-qualified {{trade}} jobs in your area — no lead fees to start",
-    body: `Hi {{companyName}} team,
+    subject: "The homeowner who ghosted you says hi",
+    body: `Hi {{greetingName}},
 
-I'm {{agentName}} with Renovessa. We match homeowners with vetted local {{trade}} pros, and we're onboarding a few contractors in your service area.
+You don't know me, so instead of introducing myself, let me guess a few things about you:
 
-Unlike typical lead-gen, our homeowners are phone-verified and ready to schedule before we send them your way — and your first appointment is on us while we're getting started together.
+Somewhere in your phone right now is a homeowner you quoted three weeks ago who vanished into thin air. You've rebuilt at least one "I saw it on Pinterest" idea this year. And the jobs you're best at are NOT the ones that walk in the door most often.
 
-If you're taking on new work, reply here and I'll share how it works. No obligation.
+If I got two out of three right, keep reading. (I usually get all three.)
 
-Best,
+I'm {{agentName}} with Renovessa. We put {{tradeLabel}} pros in {{city}} in front of homeowners who are actually ready to start — not tire-kickers collecting five quotes for sport. {{ratingLine}}
+
+Here's the part you'll like: there's nothing to sign, no demo to sit through, no "book a call" link. My only goal is to bring {{companyName}} more of the right jobs.
+
+Just hit reply. One word works — even "how?" — and I'll take it from there.
+
+Quick favor: if you're the one reading the inbox but not the one who decides where new work comes from, forward this to the owner. They'll thank you when the calendar fills up.
+
+{{agentName}}
+Renovessa
+
+P.S. Buried in the busy season? Reply "later" and I'll circle back when the dust settles.`,
+  },
+  {
+    id: "prospect_contractor_followup",
+    name: "Prospecting — follow-up (no reply)",
+    audience: ["prospect_contractor"],
+    subject: "re: the homeowner who ghosted you",
+    body: `Hi {{greetingName}},
+
+No pitch — just floating my last note back to the top of your inbox.
+
+The offer stands: homeowners in {{city}} who are ready to start {{tradeLabel}} work, sent straight to {{companyName}}, with the only goal being to bring you more of the right jobs.
+
+A one-word reply still works. Even "maybe."
+
 {{agentName}}
 Renovessa`,
   },
