@@ -23,7 +23,9 @@ export interface EmailContext {
   greetingName?: string;
   tradeLabel?: string;
   rating?: string;
+  reviewCount?: string;
   ratingLine?: string;
+  ratingMath?: string;
 }
 
 export interface EmailTemplate {
@@ -146,7 +148,20 @@ If I got two out of three right, keep reading. (I usually get all three.)
 
 I'm {{agentName}} with Renovessa. We put {{tradeLabel}} pros in {{city}} in front of homeowners who are actually ready to start — not tire-kickers collecting five quotes for sport. {{ratingLine}}
 
-Here's the part you'll like: there's nothing to sign, no demo to sit through, no "book a call" link. My only goal is to bring {{companyName}} more of the right jobs.
+{{ratingMath}}
+
+Here's how we fix that:
+
+1. We personally reach out to your past customers, ask them for feedback and reviews — we handle the awkward follow-ups so you don't have to.
+2. Technical audit and optimization of your Google Business Profile — most contractors leave money on the table with incomplete profiles.
+3. Systematic policy enforcement — we flag and request takedowns of reviews that violate Google's policies.
+4. Review automation — we set up a system that consistently generates new reviews from every completed job.
+
+The target: bringing {{companyName}} to a 4.9 within 3 to 6 months.
+
+And here's the best part — we run renovessa.com, where homeowners submit real project inquiries. We can land you actual customers while we work on your reputation.
+
+Do you keep track of — or have phone numbers of — your past customers? We'd need to reach out to them.
 
 Just hit reply. One word works — even "how?" — and I'll take it from there.
 
@@ -155,7 +170,7 @@ Quick favor: if you're the one reading the inbox but not the one who decides whe
 {{agentName}}
 Renovessa
 
-P.S. Buried in the busy season? Reply "later" and I'll circle back when the dust settles.`,
+P.S. Buried in the busy season? Reply "later" and I'll circle back when the dust settles. Ignoring me is also an option — but where's the fun in that?`,
   },
   {
     id: "prospect_contractor_followup",

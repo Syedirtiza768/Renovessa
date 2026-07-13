@@ -119,6 +119,34 @@ function ratingLine(rating: string | null | undefined): string {
     : `Your reviews are exactly why I'm emailing you and not the guy down the road.`;
 }
 
+/**
+ * Computes the "harsh reality" math line: how many consecutive 5-star reviews
+ * a contractor needs to reach 4.9, given their current rating and review count.
+ *
+ * Formula: n = ceil((4.9 * (R + n) - S) / (5 - 4.9))
+ *   where R = current review count, S = sum of all ratings = rating * R
+ *   Simplifies to: n = ceil((4.9*R - S) / 0.1) = ceil((4.9 - rating) * R / 0.1)
+ */
+function ratingMath(
+  rating: string | null | undefined,
+  reviewCount: number | null | undefined
+): string {
+  const r = parseFloat(rating || "");
+  const rc = reviewCount ?? 0;
+  if (!r || r <= 0 || r >= 4.9 || rc <= 0) {
+    // No useful data — return empty so the template slot collapses.
+    return "";
+  }
+  // n = (4.9 - r) * rc / (5.0 - 4.9) = (4.9 - r) * rc / 0.1
+  const n = Math.ceil(((4.9 - r) * rc) / 0.1);
+  if (n <= 0 || n > 100000) return "";
+  return (
+    `Right now, with a ${r} average across ${rc} reviews, you'd need ${n} consecutive ` +
+    `5-star reviews — without a single negative interruption — to pull your average up to a 4.9. ` +
+    `That's not going to happen by itself.`
+  );
+}
+
 /** First name for the greeting, or "there" when we only have the company. */
 function greetingName(contactName: string | null | undefined): string {
   const first = contactName?.trim().split(/\s+/)[0];
@@ -141,6 +169,7 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
       email: true,
       city: true,
       rating: true,
+      reviewCount: true,
     },
   });
   return rows
@@ -156,7 +185,9 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
         // "Washington" reads better as "DC" in the outreach line.
         city: r.city === "Washington" ? "DC" : r.city || undefined,
         rating: r.rating || undefined,
+        reviewCount: r.reviewCount ? String(r.reviewCount) : undefined,
         ratingLine: ratingLine(r.rating),
+        ratingMath: ratingMath(r.rating, r.reviewCount),
       },
     }));
 }

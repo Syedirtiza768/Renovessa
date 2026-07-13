@@ -378,6 +378,7 @@ model ContractorInquiry {
   city            String?
   state           String?
   rating          String?
+  reviewCount     Int?
   website         String?
   source          String?
   status          String   @default("new")
