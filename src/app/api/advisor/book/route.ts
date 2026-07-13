@@ -55,9 +55,11 @@ function getNextBusinessDate(preferredTime: string): Date {
 }
 
 async function findMatchingContractor(trade: string, zipCode: string) {
+  // Case-insensitive trade match — the LLM emits lowercase ids (e.g. "hvac")
+  // but contractor profiles may store uppercase ("HVAC").
   const contractors = await prisma.contractorProfile.findMany({
     where: {
-      trade,
+      trade: { equals: trade, mode: "insensitive" },
       tier: { notIn: ["SUSPENDED", "BANNED"] },
       status: "active",
       serviceZips: { has: zipCode },
