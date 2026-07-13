@@ -46,7 +46,7 @@ No framework, database, or hosting choices are locked. Phase 1 cannot start impl
 - Log decision in `DECISION_LOG.md`
 
 ### Status
-Open
+Resolved (Next.js, PostgreSQL, Prisma, Docker stack implemented)
 
 ---
 

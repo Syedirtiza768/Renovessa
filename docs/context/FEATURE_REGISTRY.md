@@ -1,13 +1,13 @@
 # Feature Registry
 
-> Features below are **Planned** unless status says otherwise. No features are implemented yet.
+> Features below are **Planned** unless status says otherwise. (Several core features implemented in First-Job MVP).
 
 ---
 
 ## User Authentication
 
 ### Status
-Planned
+Implemented
 
 ### Purpose
 Allow users to create accounts, log in, and access their projects securely.
@@ -24,16 +24,13 @@ Allow users to create accounts, log in, and access their projects securely.
 - Database: `users` table
 
 ### Important Files
-- Planned — none exist
+- `src/lib/auth.ts`
 
 ### API Endpoints
-- `POST /api/auth/register` — Planned
-- `POST /api/auth/login` — Planned
-- `POST /api/auth/logout` — Planned
-- `GET /api/auth/me` — Planned
+- Handled via Next.js server actions/API routes for login/session.
 
 ### Database Tables / Models
-- `users` — Planned
+- `User` (9 roles)
 
 ### Permissions / Roles
 - Public: register, login
@@ -54,10 +51,10 @@ Allow users to create accounts, log in, and access their projects securely.
 
 ---
 
-## Renovation Project Management
+## Renovation Project Management (First-Job MVP)
 
 ### Status
-Planned
+Implemented (as ProjectRequests and Appointments)
 
 ### Purpose
 Core entity: a renovation job with title, description, status, and timeline.
@@ -73,18 +70,19 @@ Core entity: a renovation job with title, description, status, and timeline.
 - Database: `projects`, `project_members` (if collaboration)
 
 ### Important Files
-- Planned — none exist
+- `src/app/api/project-requests/route.ts`
+- `src/app/api/leads/[id]/route.ts`
+- `src/lib/lead-state-machine.ts`
 
 ### API Endpoints
-- `GET /api/projects` — Planned
-- `POST /api/projects` — Planned
-- `GET /api/projects/:id` — Planned
-- `PATCH /api/projects/:id` — Planned
-- `DELETE /api/projects/:id` — Planned
+- `POST /api/project-requests` — Implemented
+- `GET /api/project-requests` — Implemented
+- `PATCH /api/leads/[id]` — Implemented
 
 ### Database Tables / Models
-- `projects` — Planned
-- `project_members` — Planned
+- `ProjectRequest`
+- `Appointment`
+- `AuditEvent`
 
 ### Permissions / Roles
 - Owner: full CRUD

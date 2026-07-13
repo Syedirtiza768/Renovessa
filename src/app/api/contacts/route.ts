@@ -84,3 +84,62 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: e?.message || "Failed to load contacts" }, { status: e?.status || 500 });
   }
 }
+
+/**
+ * Create a single contact (ContractorInquiry).
+ */
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  try {
+    await assertAdminAccess(session);
+
+    const body = await req.json();
+    const {
+      companyName, contactName, email, phone, trade, serviceZips,
+      city, state, website, status, yearsInBusiness, employeeCount,
+      licensedInsured, usesLeadGen, avgJobSize, referralSource, source,
+    } = body;
+
+    if (!email || !companyName) {
+      return NextResponse.json({ error: "Company name and email are required" }, { status: 400 });
+    }
+
+    const existing = await prisma.contractorInquiry.findFirst({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "A contact with this email already exists", existingId: existing.id },
+        { status: 409 }
+      );
+    }
+
+    const contact = await prisma.contractorInquiry.create({
+      data: {
+        companyName: companyName || "",
+        contactName: contactName || "",
+        email: email.toLowerCase(),
+        phone: phone || "",
+        trade: trade || "contractor",
+        serviceZips: serviceZips || "",
+        city: city || null,
+        state: state || null,
+        website: website || null,
+        status: status || "new",
+        yearsInBusiness: yearsInBusiness ? parseInt(yearsInBusiness, 10) : null,
+        employeeCount: employeeCount ? parseInt(employeeCount, 10) : null,
+        licensedInsured: !!licensedInsured,
+        usesLeadGen: !!usesLeadGen,
+        avgJobSize: avgJobSize || null,
+        referralSource: referralSource || null,
+        source: source || "manual",
+        isDemo: false,
+      },
+    });
+
+    return NextResponse.json(contact, { status: 201 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e?.message || "Failed to create contact" }, { status: e?.status || 500 });
+  }
+}

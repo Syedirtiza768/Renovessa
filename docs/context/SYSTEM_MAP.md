@@ -1,120 +1,100 @@
 # System Map
 
-> **Project status:** New — structure below is **planned/intended** unless marked **Implemented**.
+> **Project status:** First-Job MVP — structure below is **Implemented** unless marked otherwise.
 
-## High-Level Architecture (Planned)
+## High-Level Architecture (Implemented)
 
 ```mermaid
 flowchart TB
-    subgraph client [Client - Planned]
-        Web[Web App]
+    subgraph client [Client]
+        Web[Next.js App Router Frontend]
     end
-    subgraph api [API Layer - Planned]
-        API[REST or GraphQL API]
+    subgraph api [API Layer]
+        API[Next.js Route Handlers]
     end
-    subgraph data [Data - Planned]
-        DB[(Primary Database)]
-        Storage[(File Storage)]
+    subgraph data [Data]
+        DB[(PostgreSQL)]
+    end
+    subgraph external [External]
+        Twilio[Twilio Voice SDK]
+        SendGrid[SendGrid Email]
     end
     Web --> API
     API --> DB
-    API --> Storage
+    API --> Twilio
+    API --> SendGrid
 ```
 
 ## Frontend Structure
 
-**Status: Planned**
+**Status: Implemented**
 
 ```txt
-/                    # Root — no src/ yet
-/docs/frontend/      # UI documentation only
-```
-
-Intended (after Phase 1 — **Needs Decision**):
-
-```txt
-src/ or app/         # Framework-specific app root
-  components/
-  pages/ or routes/
-  lib/               # API client, utilities
-  styles/
+src/
+  app/               # Next.js App Router pages and layouts
+  components/        # React components (admin, homeowner, contractor)
+  lib/               # Utilities, state machines, API wrappers
 ```
 
 ## Backend Structure
 
-**Status: Planned**
-
-No `server/`, `api/`, or backend package exists yet.
-
-Intended (after Phase 1 — **Needs Decision**):
+**Status: Implemented**
 
 ```txt
 src/
-  modules/           # Feature modules
-  auth/
-  projects/
-  tasks/
-  uploads/
+  app/api/           # Next.js Route Handlers (REST API)
+  lib/               # Business logic, auth, config
+prisma/              # Database schema and seed data
 ```
 
 ## Database Structure
 
-**Status: Planned**
+**Status: Implemented**
 
-See `docs/architecture/DATABASE_SCHEMA.md`. No migrations or ORM models exist.
+PostgreSQL schema via Prisma. Contains 13 models (User, ContractorProfile, CapacityCell, ProjectRequest, Appointment, AuditEvent, Invoice, Feedback, CaseStudy, Dispute, ContractorInquiry, Notification, CallLog).
+See `docs/architecture/DATABASE_SCHEMA.md` and `prisma/schema.prisma`.
 
 ## Authentication Flow
 
-**Status: Planned**
+**Status: Implemented**
 
-1. User registers or logs in
-2. Server issues session or token (method TBD)
-3. Protected routes require valid auth
-4. Role checks on sensitive actions
-
-See `docs/architecture/AUTH_RBAC.md`.
+1. User logs in with email/password.
+2. Server issues JWT session cookie via `jose`.
+3. Middleware and route handlers protect routes via `src/lib/auth.ts`.
+4. Role checks (9 roles) on sensitive actions.
 
 ## Authorization / RBAC Flow
 
-**Status: Planned**
+**Status: Implemented**
 
-- Role assigned per user (global) and/or per project (membership)
-- API middleware/guards enforce permissions
-- UI hides actions user cannot perform
+- Role assigned per user (e.g., SUPER_ADMIN, OPS_AGENT, HOMEOWNER, CONTRACTOR).
+- API middleware/guards (`src/lib/authorization.ts`) enforce permissions.
+- UI hides actions user cannot perform.
 
 ## External Integrations
 
-**Status: Planned — none selected**
+**Status: Implemented**
 
 | Integration | Purpose | Status |
 |-------------|---------|--------|
-| Email (SMTP/SES) | Invites, notifications | Planned |
-| Object storage (S3/R2) | File uploads | Planned |
-| Payment (Stripe) | Invoicing | Later |
-| Maps | Job site location | Later |
+| Email (SendGrid) | Notifications | Implemented |
+| Voice (Twilio) | Softphone dialer | Implemented |
+| Object storage | File uploads | Planned |
+| Payment | Invoicing | Planned |
 
 ## Background Jobs
 
 **Status: Planned**
 
-Possible future jobs:
-
-- Email notifications
-- Thumbnail generation for uploads
-- Scheduled reminders
-
-No queue infrastructure exists.
+No queue infrastructure exists yet. Actions are processed synchronously in Route Handlers.
 
 ## Deployment Flow
 
-**Status: Planned**
+**Status: Implemented (Docker)**
 
-1. CI runs lint and tests
-2. Build frontend and backend artifacts
-3. Deploy to hosting (TBD)
-4. Run database migrations
-
-See `docs/architecture/DEPLOYMENT.md` and `docs/operations/DEPLOYMENT.md`.
+1. Docker Compose builds frontend/backend into a single container.
+2. PostgreSQL runs in a separate container.
+3. Accessible on port 7090.
 
 ## Important Directories
 
@@ -122,25 +102,26 @@ See `docs/architecture/DEPLOYMENT.md` and `docs/operations/DEPLOYMENT.md`.
 |------|--------|---------|
 | `/docs` | Implemented | Project documentation |
 | `/docs/context` | Implemented | Living project state |
-| `AGENTS.md` | Implemented | Agent instructions |
+| `src/` | Implemented | Application source code |
+| `prisma/` | Implemented | Database schema and seed |
 
 ## Important Configuration Files
 
 | File | Status |
 |------|--------|
-| `package.json` | Not created |
-| `.env.example` | Not created |
-| `docker-compose.yml` | Not created |
-| CI config | Not created |
+| `package.json` | Implemented |
+| `.env.example` | Implemented |
+| `docker-compose.yml` | Implemented |
+| CI config | Planned |
 
 ## Current Implementation Status
 
 | Layer | Status |
 |-------|--------|
 | Documentation | In Progress |
-| Frontend app | Not started |
-| Backend API | Not started |
-| Database | Not started |
-| Auth | Not started |
-| File storage | Not started |
-| CI/CD | Not started |
+| Frontend app | Implemented (Next.js) |
+| Backend API | Implemented (Route Handlers) |
+| Database | Implemented (PostgreSQL/Prisma) |
+| Auth | Implemented (JWT) |
+| File storage | Planned |
+| CI/CD | Planned |

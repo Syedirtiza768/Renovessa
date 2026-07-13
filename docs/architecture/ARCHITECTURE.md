@@ -1,111 +1,74 @@
 # Architecture
 
-> **Status:** Proposed — not implemented. Stack choices are **Needs Decision**.
+> **Status:** Implemented (First-Job MVP)
 
 ## Overall Architecture
 
-**Planned pattern:** Modular monolith or small full-stack app with separate frontend and API layers.
+**Pattern:** Modular monolith full-stack app (Next.js) with separate frontend and API route layers.
 
 ```mermaid
 flowchart LR
-    Browser[Browser] --> FE[Frontend App]
-    FE --> API[Backend API]
+    Browser[Browser] --> FE[Frontend App (Next.js)]
+    FE --> API[Backend API (Route Handlers)]
     API --> PG[(PostgreSQL)]
-    API --> S3[Object Storage]
-    API --> Email[Email Provider]
+    API --> Twilio[Twilio Voice]
+    API --> SendGrid[Email Provider]
 ```
-
-Suitable for MVP scale. Split into microservices only if proven necessary later.
 
 ## Frontend Framework
 
-**Needs Decision.** Common options:
-
-| Option | Pros | Cons |
-|--------|------|------|
-| Next.js (App Router) | Full-stack, SSR, large ecosystem | Opinionated structure |
-| React + Vite SPA | Simple SPA | Separate API hosting |
-| Nuxt / Vue | If team prefers Vue | Smaller default ecosystem |
-
-**Recommendation (provisional):** Next.js or React + Vite if team is React-comfortable — **not accepted yet**.
+**Accepted:** Next.js 15 (App Router) with React and Tailwind CSS.
+Provides full-stack capabilities, server-side rendering, and a robust ecosystem suitable for our MVP.
 
 ## Backend Framework
 
-**Needs Decision.** Options:
-
-| Option | Notes |
-|--------|-------|
-| Next.js API routes | Co-located with frontend |
-| NestJS | Structured modules, good for growth |
-| Express / Fastify | Minimal, flexible |
-| tRPC | End-to-end types with TypeScript frontend |
-
-If Next.js full-stack is chosen, API routes or Route Handlers may replace separate backend service for MVP.
+**Accepted:** Next.js Route Handlers (`src/app/api/`).
+Co-located with the frontend for rapid MVP development. 
 
 ## Database
 
-**Proposed:** PostgreSQL — relational data fits projects, tasks, memberships.
+**Accepted:** PostgreSQL 16
+Relational data fits projects, tasks, and complex state machines perfectly.
 
-**ORM (Needs Decision):** Prisma, Drizzle, or TypeORM.
-
-**Status:** Planned
+**ORM (Accepted):** Prisma 6.
 
 ## Authentication Method
 
-**Needs Decision.** Options:
-
-- JWT in HTTP-only cookies (recommended for web)
-- Session store (Redis) with cookie session ID
-- OAuth only (unlikely for MVP)
-
+**Accepted:** JWT in HTTP-only cookies using `jose`.
+Ensures secure session handling without the overhead of a dedicated session store (like Redis) for the MVP.
 See `AUTH_RBAC.md`.
 
 ## Authorization / RBAC
 
-Per-project membership with roles (owner, editor, viewer). Enforced in API layer and reflected in UI.
+Role assigned per user globally (e.g. SUPER_ADMIN, OPS_AGENT, HOMEOWNER, CONTRACTOR). Enforced in API layer middleware and reflected in UI.
 
-**Status:** Planned
+**Status:** Implemented
 
 ## API Communication
 
-**Proposed:** REST JSON for MVP simplicity.
-
-GraphQL or tRPC optional if team prefers type safety end-to-end.
-
-**Status:** Planned — see `API_CONTRACTS.md`
+**Accepted:** REST JSON via Next.js Route Handlers.
+Selected for MVP simplicity.
 
 ## File Storage
 
 **Proposed:** S3-compatible object storage (AWS S3, Cloudflare R2, etc.)
-
-- Private buckets
-- Signed URLs for upload/download
-- Metadata in PostgreSQL
-
-**Status:** Planned
+*Currently deferred for MVP. Photo URLs are pasted into qualification forms instead of direct uploads.*
 
 ## Queues / Background Jobs
 
-**Deferred for MVP.** Add queue (BullMQ, Inngest, etc.) when email/notifications require async processing.
+**Deferred for MVP.** Actions (like sending emails or state machine transitions) are processed synchronously in Next.js Route Handlers.
 
 ## Deployment Structure
 
-**Needs Decision.** Options:
-
-| Target | Notes |
-|--------|-------|
-| Vercel + managed Postgres | Fast for Next.js |
-| Railway / Render | Full-stack friendly |
-| Docker on VPS | More ops overhead |
-
-See `DEPLOYMENT.md`.
+**Accepted:** Docker Compose
+Runs Next.js app and PostgreSQL database on port 7090.
+See `DEPLOYMENT.md` and `docs/operations/DEPLOYMENT.md`.
 
 ## Major Constraints
 
-- Documentation-first until requirements confirmed
-- No microservices for MVP
-- Security: auth and file upload must be reviewed before production
+- No microservices for MVP.
+- Security: auth must be robustly tested (currently enforced via `src/lib/auth.ts` and `src/lib/authorization.ts`).
 
 ## Reasoning
 
-Start simple: one deployable app, one database, clear module boundaries in code so extraction later is possible without premature distributed complexity.
+Started simple: one deployable app, one database, clear module boundaries in code so extraction later is possible without premature distributed complexity.

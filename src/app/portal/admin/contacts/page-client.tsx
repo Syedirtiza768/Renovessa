@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AddContactForm } from "@/components/admin/AddContactForm";
+import { BulkImport } from "@/components/admin/BulkImportContacts";
 
 interface Tag {
   id: string;
@@ -115,6 +117,8 @@ export function ContactsPageClient({
               }}
             />
           )}
+          <AddContactForm onCreated={fetchContacts} />
+          <BulkImport onImported={fetchContacts} />
         </div>
       </div>
 
