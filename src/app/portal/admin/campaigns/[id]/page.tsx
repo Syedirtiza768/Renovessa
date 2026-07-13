@@ -35,8 +35,36 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   ]);
   const hasEngagement = delivered + opened + clicked + bounced + complained > 0;
 
+  // Fetch all sent messages for this campaign with prospect details.
+  const messages = await prisma.emailMessage.findMany({
+    where: { campaignId: id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      toEmail: true,
+      subject: true,
+      body: true,
+      status: true,
+      sendgridMessageId: true,
+      direction: true,
+      createdAt: true,
+      deliveredAt: true,
+      openedAt: true,
+    },
+  });
+
+  // Resolve prospect company names for each recipient.
+  const recipientEmails = [...new Set(messages.map((m) => m.toEmail.toLowerCase()))];
+  const prospects = recipientEmails.length
+    ? await prisma.contractorInquiry.findMany({
+        where: { email: { in: recipientEmails } },
+        select: { email: true, companyName: true, contactName: true, rating: true, reviewCount: true, city: true, status: true },
+      })
+    : [];
+  const prospectMap = new Map(prospects.map((p) => [p.email.toLowerCase(), p]));
+
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <Link href="/portal/admin/campaigns" className="text-sm text-copper hover:underline">
         ← Back to Campaigns
       </Link>
@@ -87,6 +115,41 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         <p className="font-semibold">{campaign.subject}</p>
         <pre className="mt-3 whitespace-pre-wrap font-sans text-sm text-foreground">{campaign.bodyTemplate}</pre>
         <p className="mt-3 text-xs text-muted">An unsubscribe link and mailing address are appended to every send.</p>
+      </div>
+
+      {/* Recipient list */}
+      <div className="mt-8">
+        <h2 className="text-lg font-bold">Recipients ({messages.length})</h2>
+        <p className="text-sm text-muted">Every contact who received this campaign, with the message sent.</p>
+        <div className="mt-4 space-y-3">
+          {messages.map((m) => {
+            const prospect = prospectMap.get(m.toEmail.toLowerCase());
+            const who = prospect?.companyName || m.toEmail;
+            return (
+              <details key={m.id} className="card">
+                <summary className="flex cursor-pointer flex-wrap items-center justify-between gap-2 p-4">
+                  <div className="min-w-0">
+                    <span className="font-semibold">{who}</span>
+                    {prospect?.contactName && <span className="ml-2 text-sm text-muted">({prospect.contactName})</span>}
+                    <span className="ml-2 text-sm text-muted">{m.toEmail}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted">
+                    {prospect?.rating && <span>{prospect.rating}★ {prospect.reviewCount ? `(${prospect.reviewCount})` : ""}</span>}
+                    {prospect?.city && <span>{prospect.city}</span>}
+                    <span className={`rounded px-1.5 py-0.5 font-medium ${m.status === "sent" ? "badge-green" : m.status === "received" ? "badge-green" : "bg-red-100 text-red-700"}`}>
+                      {m.status}
+                    </span>
+                  </div>
+                </summary>
+                <div className="border-t border-rule p-4">
+                  <p className="text-xs text-muted">To: {m.toEmail} · SendGrid ID: {m.sendgridMessageId || "—"}</p>
+                  <p className="mt-2 text-sm font-medium">{m.subject}</p>
+                  <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-muted">{m.body}</pre>
+                </div>
+              </details>
+            );
+          })}
+        </div>
       </div>
 
       <CampaignActions
