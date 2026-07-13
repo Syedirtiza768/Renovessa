@@ -158,7 +158,10 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
     where: {
       isDemo: false,
       trade: f.trade || undefined,
-      status: f.status || undefined,
+      // Default: exclude prospects we've already contacted or who replied.
+      // Pass status="all" to override, or status="contacted" to target only
+      // previously-contacted prospects (e.g. for a follow-up campaign).
+      status: f.status === "all" ? undefined : (f.status || "new"),
       // serviceZips is a comma-separated string on inquiries.
       serviceZips: f.zip ? { contains: f.zip } : undefined,
     },
