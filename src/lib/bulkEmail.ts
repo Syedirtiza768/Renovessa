@@ -47,16 +47,33 @@ function bodyToHtml(text: string): string {
  * Renders one recipient's email. Returns a plain-text body (the DB/timeline copy
  * and the multipart text fallback, footer as a raw URL) and an HTML body (what
  * inboxes render, footer as a labelled "Unsubscribe" hyperlink).
+ *
+ * When `isHtml` is true, `bodyTemplate` is already HTML (from TipTap) and is
+ * used directly for the HTML part; plain text is extracted by stripping tags.
  */
 function render(
   subjectTemplate: string,
   bodyTemplate: string,
   context: EmailContext,
-  email: string
+  email: string,
+  isHtml = false,
 ): { subject: string; text: string; html: string } {
+  const subject = interpolate(subjectTemplate, context).trim();
   const rendered = interpolate(bodyTemplate, context);
+
+  if (isHtml) {
+    // bodyTemplate is HTML from TipTap. Use it directly for the HTML part,
+    // and strip tags for the plain-text fallback.
+    const textBody = rendered.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+    return {
+      subject,
+      text: textBody + complianceFooter(email),
+      html: `${rendered}${complianceFooterHtml(email)}`,
+    };
+  }
+
   return {
-    subject: interpolate(subjectTemplate, context).trim(),
+    subject,
     text: rendered + complianceFooter(email),
     html: `${bodyToHtml(rendered)}${complianceFooterHtml(email)}</div>`,
   };
@@ -86,6 +103,10 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
     (campaign.filters as SegmentFilters) || {}
   );
 
+  // Determine the HTML body template: prefer bodyHtml from the TipTap editor,
+  // fall back to converting the plain-text bodyTemplate.
+  const htmlTemplate = campaign.bodyHtml || null;
+
   await prisma.emailCampaign.update({
     where: { id: campaign.id },
     data: { status: "sending", totalRecipients: recipients.length },
@@ -101,9 +122,10 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
       chunk.map(async (r) => {
         const { subject, text, html } = render(
           campaign.subject,
-          campaign.bodyTemplate,
+          htmlTemplate || campaign.bodyTemplate,
           { ...r.context, agentName: r.context.agentName || agentName },
-          r.email
+          r.email,
+          Boolean(htmlTemplate)
         );
 
         let status = "sent";

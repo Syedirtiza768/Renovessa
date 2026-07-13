@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     await assertAdminAccess(session);
     const body = await req.json();
-    const { name, audience, subject, bodyTemplate, templateId, filters, replyTo } = body;
+    const { name, audience, subject, bodyTemplate, bodyHtml, templateId, filters, replyTo } = body;
 
     if (!name || !audience || !subject || !bodyTemplate) {
       return NextResponse.json(
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
         audience,
         subject,
         bodyTemplate,
+        bodyHtml: bodyHtml || null,
         templateId: templateId || null,
         filters: filters ?? undefined,
         replyTo: replyTo || null,

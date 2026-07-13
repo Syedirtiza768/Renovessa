@@ -96,6 +96,7 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
     { href: "/portal/admin/operations", label: "Operations Queues" },
     { href: "/portal/admin/appointments", label: "Appointments" },
     { href: "/portal/admin/contractors", label: "Contractors" },
+    { href: "/portal/admin/contacts", label: "Contacts" },
     { href: "/portal/admin/campaigns", label: "Campaigns" },
     { href: "/portal/admin/replies", label: "Replies" },
     { href: "/portal/admin/capacity", label: "Capacity Map" },

@@ -385,6 +385,8 @@ model ContractorInquiry {
   isDemo          Boolean  @default(false)
   createdAt       DateTime @default(now())
 
+  tags ContactTagInquiry[]
+
   @@index([status])
   @@index([email])
 }
@@ -489,7 +491,9 @@ model EmailCampaign {
   audience        String
   subject         String
   bodyTemplate    String
+  bodyHtml        String?   // HTML version from TipTap editor
   templateId      String?
+  emailTemplateId String?
   // JSON-encoded segment filter used to resolve recipients (trade, zips, status…).
   filters         Json?
   replyTo         String?
@@ -500,11 +504,15 @@ model EmailCampaign {
   sentCount       Int       @default(0)
   failedCount     Int       @default(0)
   ownerAgentId    String?
+  clonedFromId    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  owner    User?          @relation("CampaignOwner", fields: [ownerAgentId], references: [id])
-  messages EmailMessage[]
+  owner          User?           @relation("CampaignOwner", fields: [ownerAgentId], references: [id])
+  messages       EmailMessage[]
+  emailTemplate  EmailTemplate?  @relation(fields: [emailTemplateId], references: [id])
+  clonedFrom     EmailCampaign?  @relation("CampaignClones", fields: [clonedFromId], references: [id])
+  clonedCampaigns EmailCampaign[] @relation("CampaignClones")
 }
 
 /**
@@ -520,4 +528,42 @@ model EmailSuppression {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model ContactTag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String   @default("#b5541e")
+  createdAt   DateTime @default(now())
+
+  assignments ContactTagInquiry[]
+}
+
+model ContactTagInquiry {
+  id         String   @id @default(cuid())
+  tagId      String
+  inquiryId  String
+  assignedAt DateTime @default(now())
+
+  tag     ContactTag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  inquiry ContractorInquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@unique([tagId, inquiryId])
+  @@index([inquiryId])
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  audience  String   // "homeowner" | "contractor" | "prospect_contractor"
+  subject   String
+  bodyHtml  String   @db.Text
+  bodyText  String   @db.Text
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns EmailCampaign[]
+
+  @@index([audience])
 }

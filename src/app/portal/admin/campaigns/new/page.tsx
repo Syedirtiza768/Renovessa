@@ -7,6 +7,9 @@ import {
   EmailAudience,
   templatesForAudience,
 } from "@/lib/emailTemplates";
+import { RichTextEditor } from "@/components/editor/RichTextEditor";
+import { EmailPreview } from "@/components/editor/EmailPreview";
+import { htmlToText } from "@/components/editor/htmlToText";
 
 const AUDIENCES: { value: EmailAudience; label: string; hint: string }[] = [
   { value: "prospect_contractor", label: "Prospective contractors", hint: "From contractor inquiries — cold outreach." },
@@ -27,7 +30,9 @@ export default function NewCampaignPage() {
   const [templateId, setTemplateId] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [bodyHtml, setBodyHtml] = useState("");
   const [filters, setFilters] = useState({ trade: "", zip: "", status: "", tier: "" });
+  const [showPreview, setShowPreview] = useState(false);
 
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -48,6 +53,12 @@ export default function NewCampaignPage() {
     if (t) {
       setSubject(t.subject);
       setBody(t.body);
+      // Convert template to simple HTML for the editor
+      const html = t.body
+        .split("\n\n")
+        .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+        .join("");
+      setBodyHtml(html);
     }
   }
 
@@ -81,13 +92,15 @@ export default function NewCampaignPage() {
   }
 
   async function saveDraft() {
-    if (!name || !subject || !body) {
+    if (!name || !subject || (!body && !bodyHtml)) {
       setError("Name, subject, and message are required.");
       return;
     }
     setSaving(true);
     setError("");
     try {
+      // Always generate a plain-text fallback from the HTML body
+      const plainText = body || htmlToText(bodyHtml);
       const res = await fetch("/api/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -95,7 +108,8 @@ export default function NewCampaignPage() {
           name,
           audience,
           subject,
-          bodyTemplate: body,
+          bodyTemplate: plainText,
+          bodyHtml: bodyHtml || undefined,
           templateId: templateId || undefined,
           filters: cleanFilters(),
         }),
@@ -110,13 +124,13 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <Link href="/portal/admin/campaigns" className="text-sm text-copper hover:underline">
         ← Back to Campaigns
       </Link>
       <h1 className="mt-4 text-2xl font-bold">New Campaign</h1>
       <p className="text-sm text-muted">
-        Draft a bulk send. You&apos;ll review the resolved recipient list and send from the next screen.
+        Draft a bulk send. Use the rich editor to compose HTML emails with merge fields.
       </p>
 
       <div className="mt-6 space-y-5">
@@ -174,7 +188,7 @@ export default function NewCampaignPage() {
               </div>
             )}
           </div>
-          <p className="text-xs text-muted">Leave a filter blank to include everyone in the audience. Demo and unsubscribed contacts are always excluded.</p>
+          <p className="text-xs text-muted">Leave a filter blank to include everyone. Demo and unsubscribed contacts are always excluded.</p>
         </div>
 
         <div className="card space-y-4 p-4">
@@ -193,11 +207,17 @@ export default function NewCampaignPage() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted">Message *</label>
-            <textarea className="input mt-1" rows={10} value={body} onChange={(e) => setBody(e.target.value)} />
-            <p className="mt-1 text-xs text-muted">
-              Tokens like <code>{"{{firstName}}"}</code>, <code>{"{{companyName}}"}</code>, <code>{"{{trade}}"}</code> fill per recipient.
-              An unsubscribe link + mailing address are appended automatically.
+            <p className="mb-2 text-xs text-muted">
+              Use the toolbar to format text. Insert merge fields like company name, city, and rating from the dropdown.
             </p>
+            <RichTextEditor
+              initialHtml={bodyHtml}
+              onChange={(html) => {
+                setBodyHtml(html);
+                setBody(htmlToText(html));
+              }}
+              placeholder="Write your email…"
+            />
           </div>
         </div>
 
@@ -207,10 +227,15 @@ export default function NewCampaignPage() {
           <button type="button" className="btn-secondary text-sm" onClick={runPreview} disabled={previewing}>
             {previewing ? "Resolving…" : "Preview recipients"}
           </button>
+          <button type="button" className="btn-secondary text-sm" onClick={() => setShowPreview(!showPreview)}>
+            {showPreview ? "Hide preview" : "Preview email"}
+          </button>
           <button type="button" className="btn-primary text-sm" onClick={saveDraft} disabled={saving}>
             {saving ? "Saving…" : "Save draft & review"}
           </button>
         </div>
+
+        {showPreview && bodyHtml && <EmailPreview html={bodyHtml} />}
 
         {preview && (
           <div className="card space-y-3 p-4">
