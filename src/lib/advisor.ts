@@ -10,21 +10,39 @@ import { FIRST_JOB_MODE, PILOT_TRADE } from "@/lib/first-job-config";
  * Homepage AI advisor — shared contract between the streaming API route
  * (src/app/api/advisor/route.ts) and the hero widget (AIAdvisor.tsx).
  *
- * The model gives conversational advice, then — once it has inferred the
- * trade — appends a single machine-readable block on the last line so the
- * client can pre-fill the existing project intake form:
+ * Two-phase output protocol:
  *
- *   [[SUGGEST]]{"categoryIds":["hvac"],"urgency":"As soon as possible",...}[[/SUGGEST]]
+ * 1. [[SUGGEST]] — emitted as soon as the trade is identified.
+ *    The homeowner cannot see it. Pre-fills the intake form.
+ *
+ * 2. [[BOOK]] — replaces [[SUGGEST]] once the LLM has collected all required
+ *    contact details from the homeowner. Triggers the direct booking flow.
  */
 
 export const SUGGEST_OPEN = "[[SUGGEST]]";
 export const SUGGEST_CLOSE = "[[/SUGGEST]]";
+
+export const BOOK_OPEN = "[[BOOK]]";
+export const BOOK_CLOSE = "[[/BOOK]]";
 
 export type AdvisorSuggestion = {
   categoryIds: LandingCategoryId[];
   urgency: string;
   budget: string;
   description: string;
+};
+
+export type AdvisorBooking = {
+  categoryIds: LandingCategoryId[];
+  urgency: string;
+  budget: string;
+  description: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  zipCode: string;
+  preferredTime: string; // "morning" | "afternoon" | "evening" | "any"
 };
 
 const VALID_CATEGORY_IDS = new Set(LANDING_CATEGORIES.map((c) => c.id));
@@ -40,9 +58,8 @@ function canonicalBudget(value: unknown): string {
 }
 
 /**
- * Strips the machine block from streamed text and returns the clean, display-safe
- * advice plus a validated suggestion (or null). Tolerant of partial / trailing
- * markers that appear mid-stream.
+ * Strips the SUGGEST machine block from streamed text and returns the clean,
+ * display-safe advice plus a validated suggestion (or null).
  */
 export function parseAdvisorMessage(raw: string): {
   text: string;
@@ -50,7 +67,6 @@ export function parseAdvisorMessage(raw: string): {
 } {
   const openIdx = raw.indexOf(SUGGEST_OPEN);
 
-  // No block yet — also trim any partial "[[..." that is still streaming in.
   if (openIdx === -1) {
     return { text: raw.replace(/\[\[[^\]]*$/, "").trimEnd(), suggestion: null };
   }
@@ -80,6 +96,52 @@ export function parseAdvisorMessage(raw: string): {
   return { text, suggestion };
 }
 
+/**
+ * Parses a [[BOOK]] block from the advisor output. Returns the display-safe
+ * text (without the block) and the validated booking data (or null).
+ */
+export function parseAdvisorBooking(raw: string): {
+  text: string;
+  booking: AdvisorBooking | null;
+} {
+  const openIdx = raw.indexOf(BOOK_OPEN);
+
+  if (openIdx === -1) {
+    return { text: raw.replace(/\[\[[^\]]*$/, "").trimEnd(), booking: null };
+  }
+
+  const text = raw.slice(0, openIdx).trimEnd();
+  const afterOpen = raw.slice(openIdx + BOOK_OPEN.length);
+  const closeIdx = afterOpen.indexOf(BOOK_CLOSE);
+  const jsonStr = (closeIdx === -1 ? afterOpen : afterOpen.slice(0, closeIdx)).trim();
+
+  let booking: AdvisorBooking | null = null;
+  try {
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+    const categoryIds = (Array.isArray(parsed.categoryIds) ? parsed.categoryIds : [])
+      .filter((id): id is LandingCategoryId => VALID_CATEGORY_IDS.has(id as LandingCategoryId));
+
+    if (categoryIds.length > 0 && typeof parsed.email === "string" && parsed.email.includes("@")) {
+      booking = {
+        categoryIds,
+        urgency: typeof parsed.urgency === "string" ? parsed.urgency : "",
+        budget: canonicalBudget(parsed.budget),
+        description: typeof parsed.description === "string" ? parsed.description.slice(0, 600) : "",
+        firstName: typeof parsed.firstName === "string" ? parsed.firstName.trim() : "",
+        lastName: typeof parsed.lastName === "string" ? parsed.lastName.trim() : "",
+        email: parsed.email.toLowerCase().trim(),
+        phone: typeof parsed.phone === "string" ? parsed.phone.replace(/\D/g, "").trim() : "",
+        zipCode: typeof parsed.zipCode === "string" ? parsed.zipCode.trim() : "",
+        preferredTime: typeof parsed.preferredTime === "string" ? parsed.preferredTime : "any",
+      };
+    }
+  } catch {
+    // Block not fully streamed / malformed — treat as no booking yet.
+  }
+
+  return { text, booking };
+}
+
 export function buildAdvisorSystemPrompt(): string {
   const trades = LANDING_CATEGORIES.map((c) => `- ${c.id} — ${c.label}: ${c.description}`).join("\n");
   const budgets = BUDGET_OPTIONS.map((b) => `"${b}"`).join(", ");
@@ -98,7 +160,10 @@ How you talk:
 - Ask at most ONE sharp follow-up question to pin down the diagnosis.
 
 Your goal:
-- Give advice so useful the homeowner *wants* to move forward. Once you understand the type of work and rough urgency, warmly invite them to let Renovessa line up a confirmed appointment with ONE vetted local contractor — not a flood of sales calls.
+- Give advice so useful the homeowner *wants* to move forward.
+- Once you understand the type of work, warmly invite them to book a confirmed appointment with ONE vetted local contractor — not a flood of sales calls.
+- After the homeowner agrees, collect their contact details naturally: first name, last name, email, phone, ZIP code, and preferred appointment time (morning, afternoon, evening, or any time). Ask for these one or two at a time in a conversational way — never dump a list of questions.
+- Confirm all details back to the homeowner before emitting the booking block.
 
 Hard rules:
 - Renovessa serves ONLY the DMV. If they're clearly elsewhere, say so kindly and don't push a booking.
@@ -112,11 +177,33 @@ ${trades}
 Budget bands (choose one exactly, or leave empty): ${budgets}
 Urgency options (choose one exactly, or leave empty): ${urgencies}
 
-CRITICAL OUTPUT FORMAT (mandatory):
-The MOMENT you can tell which trade this is, you MUST end your reply with the single machine block below, on its own final line, AFTER any question you ask. The homeowner cannot see it. Never skip it once you know the trade, never mention or explain it, and write nothing after it.
+OUTPUT FORMAT — TWO BLOCK TYPES (the homeowner cannot see either block):
+
+1. SUGGEST block — emit as soon as you know the trade:
 ${SUGGEST_OPEN}{"categoryIds":["<trade id>"],"urgency":"<one urgency option or empty>","budget":"<one budget band or empty>","description":"<one plain-language sentence summarizing their project>"}${SUGGEST_CLOSE}
-Example of a complete reply:
-Sounds like a failed igniter or a bad flame sensor — a diagnostic visit runs about $150–$400 in the DMV, more if parts are needed. Want me to line up a licensed HVAC pro to take a look?
+
+2. BOOK block — replace SUGGEST with this once you have ALL required fields (trade, first name, last name, email, phone, ZIP code):
+${BOOK_OPEN}{"categoryIds":["<trade id>"],"urgency":"<urgency or empty>","budget":"<budget or empty>","description":"<project summary>","firstName":"<first name>","lastName":"<last name>","email":"<email>","phone":"<digits only>","zipCode":"<5-digit ZIP>","preferredTime":"<morning|afternoon|evening|any>"}${BOOK_CLOSE}
+
+Rules for blocks:
+- Emit SUGGEST on its own line as soon as you identify the trade. Never skip it.
+- After collecting contact info and the homeowner confirms they want to book, replace SUGGEST with BOOK in your next reply.
+- Never emit both SUGGEST and BOOK in the same reply. BOOK replaces SUGGEST.
+- If you genuinely cannot tell the trade yet, ask one question and omit both blocks.
+- Never mention, explain, or reference these blocks to the homeowner.
+
+Example conversation flow:
+Turn 1 (trade identified):
+Sounds like a failed igniter — a diagnostic runs about $150–$400 in the DMV. Want me to line up a licensed HVAC pro?
 ${SUGGEST_OPEN}{"categoryIds":["hvac"],"urgency":"As soon as possible","budget":"","description":"Gas furnace not heating in Fairfax"}${SUGGEST_CLOSE}
-If you genuinely cannot tell the trade yet, ask one question and omit the block that one turn.`;
+
+Turn 2 (homeowner says yes):
+Great — I can get that set up for you. What's your name and best email?
+
+Turn 3 (collecting more):
+Thanks Jane! And what's the best phone number and your ZIP code?
+
+Turn 4 (confirming):
+Perfect. I've got: HVAC repair, Jane Smith, jane@example.com, 703-555-1234, ZIP 22030, morning preference. Sound right? I'll book this now.
+${BOOK_OPEN}{"categoryIds":["hvac"],"urgency":"As soon as possible","budget":"","description":"Gas furnace not heating","firstName":"Jane","lastName":"Smith","email":"jane@example.com","phone":"7035551234","zipCode":"22030","preferredTime":"morning"}${BOOK_CLOSE}`;
 }

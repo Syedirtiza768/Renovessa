@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getVisibleCategories, type LandingCategoryId } from "@/lib/landing-data";
-import { parseAdvisorMessage, type AdvisorSuggestion } from "@/lib/advisor";
+import { parseAdvisorMessage, parseAdvisorBooking, type AdvisorSuggestion, type AdvisorBooking } from "@/lib/advisor";
 import { useCategories } from "./CategoryContext";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -17,11 +17,28 @@ const STARTERS = [
 const GREETING =
   "Hi — tell me what's going on around the house and I'll give you a straight answer: likely cause, what the fix usually involves, and a ballpark for the DMV. What are you dealing with?";
 
+interface BookingResult {
+  success: boolean;
+  referenceNumber: string;
+  email: string;
+  tempPassword: string;
+  isExistingAccount: boolean;
+  appointment: {
+    id: string;
+    scheduledAt: string;
+    contractorName: string;
+  } | null;
+  contractorMatched: boolean;
+}
+
 export function AIAdvisor() {
   const { setSelected, setPrefill } = useCategories();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState("");
   const [suggestion, setSuggestion] = useState<AdvisorSuggestion | null>(null);
+  const [booking, setBooking] = useState<AdvisorBooking | null>(null);
+  const [bookingInProgress, setBookingInProgress] = useState(false);
+  const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +46,7 @@ export function AIAdvisor() {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, streaming]);
+  }, [messages, streaming, bookingResult]);
 
   const send = useCallback(
     async (text: string) => {
@@ -41,6 +58,7 @@ export function AIAdvisor() {
       setInput("");
       setError("");
       setSuggestion(null);
+      setBooking(null);
       setStreaming("");
       setBusy(true);
 
@@ -67,9 +85,12 @@ export function AIAdvisor() {
         }
 
         const { text, suggestion: parsed } = parseAdvisorMessage(raw);
+        const { booking: parsedBooking } = parseAdvisorBooking(raw);
+
         setMessages([...nextMessages, { role: "assistant", content: text }]);
         setStreaming("");
-        if (parsed) setSuggestion(parsed);
+        if (parsedBooking) setBooking(parsedBooking);
+        else if (parsed) setSuggestion(parsed);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
         setStreaming("");
@@ -92,6 +113,36 @@ export function AIAdvisor() {
     });
     document.getElementById("request")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [suggestion, setSelected, setPrefill]);
+
+  const confirmBooking = useCallback(async () => {
+    if (!booking) return;
+    setBookingInProgress(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/advisor/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(booking),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Booking failed");
+
+      setBookingResult(data);
+      setBooking(null);
+
+      const confirmMsg = data.appointment
+        ? `All set! Your ${booking.categoryIds[0]} appointment is confirmed for ${new Date(data.appointment.scheduledAt).toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })} with ${data.appointment.contractorName}.\n\nYour login details have been emailed to ${data.email}. You can also use:\n\nEmail: ${data.email}\nPassword: ${data.tempPassword}\n\nLog in at any time to manage your project.`
+        : `Got it! Your ${booking.categoryIds[0]} request has been submitted (ref: ${data.referenceNumber}). We're matching you with a contractor and will confirm your appointment shortly.\n\nYour login details have been emailed to ${data.email}.\n\nEmail: ${data.email}\nPassword: ${data.tempPassword}`;
+
+      setMessages((prev) => [...prev, { role: "assistant", content: confirmMsg }]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Booking failed. Please try again.");
+    } finally {
+      setBookingInProgress(false);
+    }
+  }, [booking]);
 
   const started = messages.length > 0 || streaming.length > 0;
 
@@ -135,7 +186,8 @@ export function AIAdvisor() {
           </p>
         )}
 
-        {suggestion && !busy && (
+        {/* Old flow: pre-fill intake form */}
+        {suggestion && !booking && !busy && !bookingResult && (
           <div className="rounded-lg border border-accent/40 bg-bone-1 p-3">
             <p className="text-sm font-semibold text-ink-100">
               Ready to line up a real appointment?
@@ -146,6 +198,50 @@ export function AIAdvisor() {
             <button type="button" className="landing-btn-primary mt-3 w-full" onClick={applySuggestion}>
               Book with these details →
             </button>
+          </div>
+        )}
+
+        {/* New flow: direct booking confirmation */}
+        {booking && !busy && !bookingResult && (
+          <div className="rounded-lg border border-accent/40 bg-bone-1 p-3">
+            <p className="text-sm font-semibold text-ink-100">
+              Ready to book your appointment?
+            </p>
+            <div className="mt-2 space-y-1 text-xs text-ink-70">
+              <p><span className="font-medium">Project:</span> {booking.description || booking.categoryIds.join(", ")}</p>
+              <p><span className="font-medium">Name:</span> {booking.firstName} {booking.lastName}</p>
+              <p><span className="font-medium">Email:</span> {booking.email}</p>
+              <p><span className="font-medium">Phone:</span> {booking.phone}</p>
+              <p><span className="font-medium">ZIP:</span> {booking.zipCode}</p>
+              {booking.preferredTime !== "any" && (
+                <p><span className="font-medium">Preferred time:</span> {booking.preferredTime}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="landing-btn-primary mt-3 w-full"
+              onClick={confirmBooking}
+              disabled={bookingInProgress}
+            >
+              {bookingInProgress ? "Booking…" : "Confirm & Book Appointment"}
+            </button>
+          </div>
+        )}
+
+        {/* Booking success banner */}
+        {bookingResult && (
+          <div className="rounded-lg border border-green-300 bg-green-50 p-3">
+            <p className="text-sm font-semibold text-green-800">
+              {bookingResult.appointment ? "Appointment confirmed!" : "Request submitted!"}
+            </p>
+            {bookingResult.appointment && (
+              <p className="mt-1 text-xs text-green-700">
+                {bookingResult.appointment.contractorName} · {new Date(bookingResult.appointment.scheduledAt).toLocaleDateString()}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-green-700">
+              Ref: {bookingResult.referenceNumber} · Login details emailed to {bookingResult.email}
+            </p>
           </div>
         )}
       </div>
@@ -186,12 +282,12 @@ export function AIAdvisor() {
               send(input);
             }
           }}
-          disabled={busy}
+          disabled={busy || !!booking}
         />
         <button
           type="submit"
           className="landing-btn-primary shrink-0 px-4 py-2.5"
-          disabled={busy || !input.trim()}
+          disabled={busy || !input.trim() || !!booking}
         >
           Ask
         </button>

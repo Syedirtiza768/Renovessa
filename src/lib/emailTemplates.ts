@@ -189,6 +189,53 @@ A one-word reply still works. Even "maybe."
 Renovessa`,
   },
   {
+    id: "homeowner_booking_confirmation",
+    name: "Booking confirmation (auto-booked)",
+    audience: ["homeowner"],
+    subject: "Your Renovessa appointment is confirmed — {{reference}}",
+    body: `Hi {{firstName}},
+
+Your {{trade}} appointment is booked! Here are the details:
+
+Appointment: {{scheduledAt}}
+Contractor: {{contractorName}}
+
+Your Renovessa portal login:
+  URL: {{loginUrl}}
+  Email: {{email}}
+  Password: {{tempPassword}}
+
+Log in anytime to view your project status, appointment details, and communication history.
+
+If you need to reschedule or have questions, just reply to this email.
+
+Welcome to Renovessa!
+Ray Cooper
+Renovessa`,
+  },
+  {
+    id: "homeowner_booking_pending",
+    name: "Booking — contractor matching in progress",
+    audience: ["homeowner"],
+    subject: "Your Renovessa project request — {{reference}}",
+    body: `Hi {{firstName}},
+
+Thanks for your {{trade}} request with Renovessa! We've received your details and are matching you with a vetted contractor in your area.
+
+Your Renovessa portal login:
+  URL: {{loginUrl}}
+  Email: {{email}}
+  Password: {{tempPassword}}
+
+We'll reach out shortly with your appointment details.
+
+If you have questions, just reply to this email.
+
+Welcome to Renovessa!
+Ray Cooper
+Renovessa`,
+  },
+  {
     id: "prospect_homeowner_intro",
     name: "Prospecting — homeowner reactivation",
     audience: ["homeowner"],
