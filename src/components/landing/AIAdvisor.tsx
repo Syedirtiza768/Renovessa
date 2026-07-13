@@ -272,7 +272,7 @@ export function AIAdvisor() {
         <textarea
           className="landing-input min-h-[44px] flex-1 resize-none py-2.5 text-sm"
           rows={1}
-          maxLength={2000}
+          maxLength={4000}
           placeholder="Describe your project or problem…"
           value={input}
           onChange={(e) => setInput(e.target.value)}

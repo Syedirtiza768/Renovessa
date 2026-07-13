@@ -7,11 +7,11 @@ const bodySchema = z.object({
     .array(
       z.object({
         role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(2000),
+        content: z.string().min(1).max(4000),
       })
     )
     .min(1)
-    .max(24),
+    .max(40),
 });
 
 // Lightweight in-memory rate limit. Sufficient for the single-container
