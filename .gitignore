@@ -7,3 +7,12 @@ docs/blueprint_extracted.txt
 # Local outreach scraper — contains scraped third-party contact data (PII).
 # Do NOT commit to this public repo.
 scraper/
+
+# Enrichment run artifacts (keep prospects.json + csv for the app)
+scripts/__pycache__/
+scripts/model_bakeoff_results.json
+scripts/model_bakeoff_round2.json
+data/contractor_enrichment/progress.jsonl
+data/contractor_enrichment/failed.jsonl
+data/contractor_enrichment/enriched.json
+tsconfig.tsbuildinfo

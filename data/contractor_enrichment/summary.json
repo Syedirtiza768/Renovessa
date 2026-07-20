@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-07-20T11:10:07.474834+00:00",
+  "model": "google/gemini-3.1-flash-lite",
+  "web_plugin": {
+    "id": "web",
+    "engine": "exa",
+    "max_results": 8
+  },
+  "total_unique": 1096,
+  "ok": 1096,
+  "failed": 0,
+  "matched": 825,
+  "with_phone": 768,
+  "with_website": 732,
+  "reported_cost_sum_usd": 7.7612,
+  "estimated_cost_usd": 7.7612,
+  "outputs": {
+    "progress": "F:\\apps\\renovessa\\data\\contractor_enrichment\\progress.jsonl",
+    "json": "F:\\apps\\renovessa\\data\\contractor_enrichment\\enriched.json",
+    "csv": "F:\\apps\\renovessa\\data\\contractor_enrichment\\enriched.csv"
+  }
+}

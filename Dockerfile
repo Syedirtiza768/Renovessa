@@ -26,6 +26,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/data/contractor_enrichment/prospects.json ./data/contractor_enrichment/prospects.json
 COPY package.json package-lock.json ./
 COPY docker-entrypoint.sh ./
 
@@ -33,7 +34,7 @@ COPY docker-entrypoint.sh ./
 RUN npm install --omit=dev --no-save prisma bcryptjs && \
     npm install --no-save --include=dev tsx && \
     sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh && \
-    chown -R nextjs:nodejs /app/node_modules /app/prisma docker-entrypoint.sh
+    chown -R nextjs:nodejs /app/node_modules /app/prisma /app/data docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 7090
