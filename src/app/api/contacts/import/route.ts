@@ -40,7 +40,9 @@ const HEADER_MAP: Record<string, string> = {
   lead_gen: "usesLeadGen",
   avg_job_size: "avgJobSize",
   referral_source: "referralSource",
-  source: "source",
+  rating: "rating",
+  review_count: "reviewCount",
+  reviews: "reviewCount",
   status: "status",
 };
 
@@ -118,6 +120,8 @@ interface ContactData {
   employeeCount: number | null;
   avgJobSize: string | null;
   referralSource: string | null;
+  rating: string | null;
+  reviewCount: number | null;
 }
 
 function mapRow(raw: Record<string, string>): ContactData | null {
@@ -149,6 +153,8 @@ function mapRow(raw: Record<string, string>): ContactData | null {
     employeeCount: vals.employeeCount ? parseInt(vals.employeeCount, 10) || null : null,
     avgJobSize: vals.avgJobSize || null,
     referralSource: vals.referralSource || null,
+    rating: vals.rating || null,
+    reviewCount: vals.reviewCount ? parseInt(vals.reviewCount, 10) || null : null,
   };
 }
 
