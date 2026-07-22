@@ -201,7 +201,7 @@ Appointment: {{scheduledAt}}
 Contractor: {{contractorName}}
 
 Your Renovessa portal login:
-  URL: {{loginUrl}}
+  [Portal]({{loginUrl}})
   Email: {{email}}
   Password: {{tempPassword}}
 
@@ -223,7 +223,7 @@ Renovessa`,
 Thanks for your {{trade}} request with Renovessa! We've received your details and are matching you with a vetted contractor in your area.
 
 Your Renovessa portal login:
-  URL: {{loginUrl}}
+  [Portal]({{loginUrl}})
   Email: {{email}}
   Password: {{tempPassword}}
 

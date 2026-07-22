@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { HOUSE_ZONES, LANDING_CATEGORIES } from "@/lib/landing-data";
 import type { LandingCategoryId } from "@/lib/landing-data";
-import { useCategories, scrollToEstimateWizard } from "./CategoryContext";
+import { useCategories } from "./CategoryContext";
 
 const ZONE_TO_CATEGORY: Record<string, LandingCategoryId> = {
   roofing: "roofing",
@@ -246,7 +246,7 @@ function HitArea({
 }
 
 export function HouseSelector() {
-  const { selected, isSelected, startWizardWithTrade } = useCategories();
+  const { selected, isSelected, startWizardWithTrade, openEstimate } = useCategories();
 
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
 
@@ -255,7 +255,6 @@ export function HouseSelector() {
       const catId = ZONE_TO_CATEGORY[zoneId];
       if (!catId) return;
       startWizardWithTrade(catId);
-      scrollToEstimateWizard();
     },
     [startWizardWithTrade],
   );
@@ -414,9 +413,13 @@ export function HouseSelector() {
 
         <p className="mt-6 text-sm text-ink-70">
           Prefer a list?{" "}
-          <a href="#estimate" className="font-medium text-accent underline-offset-2 hover:underline">
+          <button
+            type="button"
+            onClick={openEstimate}
+            className="font-medium text-accent underline-offset-2 hover:underline"
+          >
             Skip to the estimate wizard
-          </a>
+          </button>
           {" · "}
           <a href="#services" className="font-medium text-accent underline-offset-2 hover:underline">
             Browse all trades ↓
@@ -425,9 +428,9 @@ export function HouseSelector() {
 
         {selected.length > 0 && (
           <div className="mt-6 flex flex-wrap items-center gap-4">
-            <a href="#estimate" className="landing-btn-primary">
+            <button type="button" onClick={openEstimate} className="landing-btn-primary min-h-[44px]">
               Continue estimate →
-            </a>
+            </button>
             <p className="text-sm text-ink-70">
               {LANDING_CATEGORIES.find((c) => c.id === selected[0])?.label ?? "Trade"} selected —
               answer a few scope questions next.

@@ -1,7 +1,12 @@
+"use client";
+
 import { APPOINTMENT_LOG, HERO_SERVICE_TAGS } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, LANDING_HEADLINE } from "@/lib/first-job-config";
+import { useCategories } from "./CategoryContext";
 
 export function LandingHero() {
+  const { openEstimate } = useCategories();
+
   return (
     <section className="bg-bone-0 px-4 py-12 sm:px-6 sm:py-16 lg:py-20">
       <div className="mx-auto grid max-w-[1440px] gap-10 lg:grid-cols-[minmax(0,1.85fr)_minmax(0,1fr)] lg:gap-12">
@@ -46,9 +51,9 @@ export function LandingHero() {
           )}
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href="#estimate" className="landing-btn-primary-lg">
+            <button type="button" onClick={openEstimate} className="landing-btn-primary-lg">
               Get my free estimate →
-            </a>
+            </button>
             <a href="#house" className="landing-btn-ghost">
               Pick a spot on the house
             </a>
@@ -119,9 +124,9 @@ export function LandingHero() {
                 Trade-specific questions take a few minutes and produce a real planning range for
                 the DMV — then an RFQ Renovessa can shop to contractors for you.
               </p>
-              <a href="#estimate" className="landing-btn-primary mt-5 inline-flex">
+              <button type="button" onClick={openEstimate} className="landing-btn-primary mt-5 inline-flex">
                 Start estimate →
-              </a>
+              </button>
             </div>
           </aside>
         )}

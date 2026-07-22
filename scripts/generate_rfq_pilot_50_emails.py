@@ -355,7 +355,7 @@ def rfq_pitch(p: dict) -> str:
 
 def cta(p: dict) -> str:
     return f"""Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: {PORTAL_URL}"""
+Or apply in 2 min: [Apply]({PORTAL_URL})"""
 
 
 def build_subject(p: dict) -> str:
@@ -372,8 +372,7 @@ def build_body(p: dict) -> str:
 {cta(p)}
 
 {AGENT_NAME}
-Renovessa
-{APP_URL}
+[Renovessa]({APP_URL})
 
 P.S. For {p['company']} only (MD license {p['licenseRegNumber'] or 'on file'}). Wrong inbox? Forward to the owner."""
     return re.sub(r"\n{3,}", "\n\n", body).strip() + "\n"
@@ -386,10 +385,10 @@ Quick bump — still want to put {p['company']} on the RFQ list for {p['tradeLab
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: {PORTAL_URL}
+Reply "yes" or apply: [Apply]({PORTAL_URL})
 
 {AGENT_NAME}
-Renovessa
+[Renovessa]({APP_URL})
 """
 
 

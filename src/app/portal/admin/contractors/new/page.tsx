@@ -1,12 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function NewContractorPage() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [created, setCreated] = useState<{
+    email: string;
+    tempPassword: string;
+    confirmationEmailSent: boolean;
+    companyName: string;
+  } | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -49,18 +54,57 @@ export default function NewContractorPage() {
         responseTimeHours: form.responseTimeHours ? parseInt(form.responseTimeHours) : null,
       }),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Failed to create contractor");
-    } else {
-      router.push("/portal/admin/contractors");
-    }
+    const data = await res.json();
     setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error || "Failed to create contractor");
+      return;
+    }
+
+    setCreated({
+      email: data.email,
+      tempPassword: data.tempPassword,
+      confirmationEmailSent: data.confirmationEmailSent !== false,
+      companyName: data.contractorProfile?.companyName || form.companyName,
+    });
+  }
+
+  if (created) {
+    return (
+      <div>
+        <h1 className="text-2xl font-bold">Contractor Created</h1>
+        <div className="mt-6 card p-6 max-w-lg space-y-4">
+          <p className="text-sm text-muted">
+            {created.confirmationEmailSent
+              ? `A confirmation email with portal login details was sent to ${created.email}.`
+              : `Account created for ${created.companyName}, but the confirmation email may have failed — share the credentials below.`}
+          </p>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between gap-4 rounded bg-blueprint px-3 py-2">
+              <dt className="text-muted">Email</dt>
+              <dd className="font-medium break-all">{created.email}</dd>
+            </div>
+            <div className="flex justify-between gap-4 rounded bg-blueprint px-3 py-2">
+              <dt className="text-muted">Password</dt>
+              <dd className="font-mono font-medium tracking-widest">{created.tempPassword}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-muted">Password is only shown once here.</p>
+          <Link href="/portal/admin/contractors" className="btn-primary inline-flex">
+            Back to Contractors
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Add Contractor</h1>
+      <Link href="/portal/admin/contractors" className="text-sm text-copper hover:underline">
+        ← Back to Contractors
+      </Link>
+      <h1 className="mt-4 text-2xl font-bold">Add Contractor</h1>
       <div className="mt-6 card p-4 max-w-2xl">
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">

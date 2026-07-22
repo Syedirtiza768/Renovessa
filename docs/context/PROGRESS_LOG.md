@@ -1,4 +1,17 @@
 
+## 2026-07-23 — Mobile fullscreen RFQ wizard
+
+- Estimate wizard opens as fullscreen immersive sheet on viewports &lt;768px (sticky progress/footer, safe-area, scroll/focus on step change)
+- Mobile scope/context use one-question sub-steps + single-choice auto-advance; sessionStorage draft resume
+- Landing `openEstimate` wires hero/header/CTA/house/categories; hides MobileCTABar + header while sheet open
+- Desktop in-page card behavior preserved
+
+## 2026-07-22 — Contractor signup confirmation emails
+
+- Welcome/confirmation email with portal credentials on admin contractor create (`sendContractorWelcomeEmail`)
+- Admin Add Contractor UI shows credentials + email delivery status
+- Contractor application form surfaces confirmation email sent/failed accurately
+
 ## 2026-07-22 — RFQ-only path + confirmation emails
 
 - Homeowner RFQ confirmation email on `POST /api/project-requests` (`confirmationEmails.ts`)

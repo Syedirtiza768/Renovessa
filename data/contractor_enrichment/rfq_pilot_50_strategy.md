@@ -1,6 +1,6 @@
 # RFQ Pilot 50 — Outreach strategy + feature alignment
 
-Generated: 2026-07-22T11:10:00.966493+00:00
+Generated: 2026-07-22T18:11:48.916593+00:00
 
 ## What renovessa.com does now (Estimates + RFQ)
 

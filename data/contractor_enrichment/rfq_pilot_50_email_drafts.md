@@ -1,6 +1,6 @@
 # Renovessa RFQ pilot — 50 customized onboarding emails
 
-Generated: 2026-07-22T11:10:00.966858+00:00
+Generated: 2026-07-22T18:11:48.916966+00:00
 Total: **50**
 
 Pitch: homeowners submit scoped RFQs via the estimate wizard; onboarded contractors receive those RFQs to bid.
@@ -22,11 +22,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard House to Home Solutions, LLC and we send you design-build and remodeling RFQs in Rockville (20855) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For House to Home Solutions, LLC only (MD license 91361). Wrong inbox? Forward to the owner.
 ```
@@ -40,10 +39,10 @@ Quick bump — still want to put House to Home Solutions, LLC on the RFQ list fo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -64,11 +63,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Tabor Design/Build INC and we send you design-build and remodeling RFQs in Rockville (20855) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Tabor Design/Build INC only (MD license 48169). Wrong inbox? Forward to the owner.
 ```
@@ -82,10 +80,10 @@ Quick bump — still want to put Tabor Design/Build INC on the RFQ list for desi
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -106,11 +104,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Goldsborough Design | Build and we send you design-build and remodeling RFQs in Gaithersburg (20879) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Goldsborough Design | Build only (MD license 33913). Wrong inbox? Forward to the owner.
 ```
@@ -124,10 +121,10 @@ Quick bump — still want to put Goldsborough Design | Build on the RFQ list for
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -148,11 +145,10 @@ On renovessa.com, homeowners run a free estimate wizard, get a DMV ballpark, the
 Onboard SkyLight Renovations LLC and we send you electrical RFQs (panels, wiring, EV chargers) in Rockville (20851) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For SkyLight Renovations LLC only (MD license 151202). Wrong inbox? Forward to the owner.
 ```
@@ -166,10 +162,10 @@ Quick bump — still want to put SkyLight Renovations LLC on the RFQ list for el
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -190,11 +186,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard C & T Contracting LLC and we send you electrical RFQs (panels, wiring, EV chargers) in Rockville (20853) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For C & T Contracting LLC only (MD license 93851). Wrong inbox? Forward to the owner.
 ```
@@ -208,10 +203,10 @@ Quick bump — still want to put C & T Contracting LLC on the RFQ list for elect
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -232,11 +227,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Gonzalez Contracting LLC and we send you electrical RFQs (panels, wiring, EV chargers) in Gaithersburg (20878) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Gonzalez Contracting LLC only (MD license 153161). Wrong inbox? Forward to the owner.
 ```
@@ -250,10 +244,10 @@ Quick bump — still want to put Gonzalez Contracting LLC on the RFQ list for el
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -274,11 +268,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Mdz Electrical Services and we send you electrical RFQs (panels, wiring, EV chargers) in Gaithersburg (20886) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Mdz Electrical Services only (MD license 162168). Wrong inbox? Forward to the owner.
 ```
@@ -292,10 +285,10 @@ Quick bump — still want to put Mdz Electrical Services on the RFQ list for ele
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -316,11 +309,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Floor Concepts & Design INC and we send you flooring RFQs (hardwood, tile, LVP, refinishing) in Rockville (20852) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Floor Concepts & Design INC only (MD license 107117). Wrong inbox? Forward to the owner.
 ```
@@ -334,10 +326,10 @@ Quick bump — still want to put Floor Concepts & Design INC on the RFQ list for
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -358,11 +350,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Dimensional Marble & Tile, INC. and we send you flooring RFQs (hardwood, tile, LVP, refinishing) in Rockville (20855) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Dimensional Marble & Tile, INC. only (MD license 46344). Wrong inbox? Forward to the owner.
 ```
@@ -376,10 +367,10 @@ Quick bump — still want to put Dimensional Marble & Tile, INC. on the RFQ list
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -400,11 +391,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard US Flooring LLC and we send you flooring RFQs (hardwood, tile, LVP, refinishing) in Gaithersburg (20877) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For US Flooring LLC only (MD license 110071). Wrong inbox? Forward to the owner.
 ```
@@ -418,10 +408,10 @@ Quick bump — still want to put US Flooring LLC on the RFQ list for flooring jo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -442,11 +432,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Floor Tile & Carpet, INC. and we send you flooring RFQs (hardwood, tile, LVP, refinishing) in Gaithersburg (20886) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Floor Tile & Carpet, INC. only (MD license 70101). Wrong inbox? Forward to the owner.
 ```
@@ -460,10 +449,10 @@ Quick bump — still want to put Floor Tile & Carpet, INC. on the RFQ list for f
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -484,11 +473,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Rivers Edge Builders, LLC and we send you general contracting / full-project RFQs in Rockville (20850) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Rivers Edge Builders, LLC only (MD license 103571). Wrong inbox? Forward to the owner.
 ```
@@ -502,10 +490,10 @@ Quick bump — still want to put Rivers Edge Builders, LLC on the RFQ list for g
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -526,11 +514,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Incadeck, INC. and we send you general contracting / full-project RFQs in Rockville (20851) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Incadeck, INC. only (MD license 87838). Wrong inbox? Forward to the owner.
 ```
@@ -544,10 +531,10 @@ Quick bump — still want to put Incadeck, INC. on the RFQ list for general cont
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -568,11 +555,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Paramount Construction, INC. and we send you general contracting / full-project RFQs in Rockville (20855) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Paramount Construction, INC. only (MD license 16833). Wrong inbox? Forward to the owner.
 ```
@@ -586,10 +572,10 @@ Quick bump — still want to put Paramount Construction, INC. on the RFQ list fo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -610,11 +596,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Sheltech Home Builders and we send you general contracting / full-project RFQs in Gaithersburg (20878) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Sheltech Home Builders only (MD license 154662). Wrong inbox? Forward to the owner.
 ```
@@ -628,10 +613,10 @@ Quick bump — still want to put Sheltech Home Builders on the RFQ list for gene
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -652,11 +637,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Quality Air Services LLC and we send you HVAC RFQs (furnace, AC, heat pumps, ductwork) in Rockville (20850) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Quality Air Services LLC only (MD license 103353). Wrong inbox? Forward to the owner.
 ```
@@ -670,10 +654,10 @@ Quick bump — still want to put Quality Air Services LLC on the RFQ list for HV
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -694,11 +678,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard La Union Mhic INC and we send you HVAC RFQs (furnace, AC, heat pumps, ductwork) in Rockville (20851) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For La Union Mhic INC only (MD license 146138). Wrong inbox? Forward to the owner.
 ```
@@ -712,10 +695,10 @@ Quick bump — still want to put La Union Mhic INC on the RFQ list for HVAC jobs
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -736,11 +719,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Alihan LLC and we send you HVAC RFQs (furnace, AC, heat pumps, ductwork) in Gaithersburg (20879) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Alihan LLC only (MD license 161548). Wrong inbox? Forward to the owner.
 ```
@@ -754,10 +736,10 @@ Quick bump — still want to put Alihan LLC on the RFQ list for HVAC jobs in Gai
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -778,11 +760,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Harvey W. Hottel, INC. and we send you HVAC RFQs (furnace, AC, heat pumps, ductwork) in Gaithersburg (20879) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Harvey W. Hottel, INC. only (MD license 70018). Wrong inbox? Forward to the owner.
 ```
@@ -796,10 +777,10 @@ Quick bump — still want to put Harvey W. Hottel, INC. on the RFQ list for HVAC
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -821,11 +802,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Potomac Fences, INC. and we send you exterior / landscaping project RFQs in Rockville (20852) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Potomac Fences, INC. only (MD license 13772). Wrong inbox? Forward to the owner.
 ```
@@ -839,10 +819,10 @@ Quick bump — still want to put Potomac Fences, INC. on the RFQ list for landsc
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -864,11 +844,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Beautiful Country Landscape LLC and we send you exterior / landscaping project RFQs in Gaithersburg (20882) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Beautiful Country Landscape LLC only (MD license 107960). Wrong inbox? Forward to the owner.
 ```
@@ -882,10 +861,10 @@ Quick bump — still want to put Beautiful Country Landscape LLC on the RFQ list
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -906,11 +885,10 @@ On renovessa.com, homeowners run a free estimate wizard, get a DMV ballpark, the
 Onboard Euro Construction and we send you masonry and concrete RFQs in Rockville (20853) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Euro Construction only (MD license 112130). Wrong inbox? Forward to the owner.
 ```
@@ -924,10 +902,10 @@ Quick bump — still want to put Euro Construction on the RFQ list for masonry a
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -948,11 +926,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard E&J Flores Construction and we send you masonry and concrete RFQs in Gaithersburg (20886) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For E&J Flores Construction only (MD license 148020). Wrong inbox? Forward to the owner.
 ```
@@ -966,10 +943,10 @@ Quick bump — still want to put E&J Flores Construction on the RFQ list for mas
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -990,11 +967,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Klappenberger & Son of Montgomery County and we send you painting RFQs (interior, exterior, cabinets) in Rockville (20850) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Klappenberger & Son of Montgomery County only (MD license 112323). Wrong inbox? Forward to the owner.
 ```
@@ -1008,10 +984,10 @@ Quick bump — still want to put Klappenberger & Son of Montgomery County on the
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1032,11 +1008,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Stellar Painting Services LLC and we send you painting RFQs (interior, exterior, cabinets) in Gaithersburg (20882) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Stellar Painting Services LLC only (MD license 145011). Wrong inbox? Forward to the owner.
 ```
@@ -1050,10 +1025,10 @@ Quick bump — still want to put Stellar Painting Services LLC on the RFQ list f
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1074,11 +1049,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Murcia & Sons, INC. and we send you painting RFQs (interior, exterior, cabinets) in Gaithersburg (20882) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Murcia & Sons, INC. only (MD license 148116). Wrong inbox? Forward to the owner.
 ```
@@ -1092,10 +1066,10 @@ Quick bump — still want to put Murcia & Sons, INC. on the RFQ list for paintin
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1117,11 +1091,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Earn Contractors, INC. and we send you painting RFQs (interior, exterior, cabinets) in Gaithersburg (20887) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Earn Contractors, INC. only (MD license 93130). Wrong inbox? Forward to the owner.
 ```
@@ -1135,10 +1108,10 @@ Quick bump — still want to put Earn Contractors, INC. on the RFQ list for pain
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1159,11 +1132,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard West Park Maintenance LLC and we send you plumbing RFQs (leaks, water heaters, fixtures) in Rockville (20852) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For West Park Maintenance LLC only (MD license 8854). Wrong inbox? Forward to the owner.
 ```
@@ -1177,10 +1149,10 @@ Quick bump — still want to put West Park Maintenance LLC on the RFQ list for p
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1201,11 +1173,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Transformation Contractor, LLC and we send you plumbing RFQs (leaks, water heaters, fixtures) in Rockville (20853) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Transformation Contractor, LLC only (MD license 108975). Wrong inbox? Forward to the owner.
 ```
@@ -1219,10 +1190,10 @@ Quick bump — still want to put Transformation Contractor, LLC on the RFQ list 
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1244,11 +1215,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Mell Construction LLC and we send you plumbing RFQs (leaks, water heaters, fixtures) in Gaithersburg (20877) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Mell Construction LLC only (MD license 112803). Wrong inbox? Forward to the owner.
 ```
@@ -1262,10 +1232,10 @@ Quick bump — still want to put Mell Construction LLC on the RFQ list for plumb
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1286,11 +1256,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard G & D Contractors, INC. and we send you plumbing RFQs (leaks, water heaters, fixtures) in Gaithersburg (20882) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For G & D Contractors, INC. only (MD license 106975). Wrong inbox? Forward to the owner.
 ```
@@ -1304,10 +1273,10 @@ Quick bump — still want to put G & D Contractors, INC. on the RFQ list for plu
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1328,11 +1297,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Dixel LLC and we send you kitchen and bathroom remodeling RFQs in Rockville (20851) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Dixel LLC only (MD license 159672). Wrong inbox? Forward to the owner.
 ```
@@ -1346,10 +1314,10 @@ Quick bump — still want to put Dixel LLC on the RFQ list for remodeling jobs i
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1370,11 +1338,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Atlantica INC and we send you kitchen and bathroom remodeling RFQs in Gaithersburg (20866) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Atlantica INC only (MD license 107452). Wrong inbox? Forward to the owner.
 ```
@@ -1388,10 +1355,10 @@ Quick bump — still want to put Atlantica INC on the RFQ list for remodeling jo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1413,11 +1380,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Axenia Construction and we send you kitchen and bathroom remodeling RFQs in Rockville (20874) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Axenia Construction only (MD license 142883). Wrong inbox? Forward to the owner.
 ```
@@ -1431,10 +1397,10 @@ Quick bump — still want to put Axenia Construction on the RFQ list for remodel
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1455,11 +1421,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Natelli Homes and we send you kitchen and bathroom remodeling RFQs in Gaithersburg (20878) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Natelli Homes only (MD license 39933). Wrong inbox? Forward to the owner.
 ```
@@ -1473,10 +1438,10 @@ Quick bump — still want to put Natelli Homes on the RFQ list for remodeling jo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1498,11 +1463,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Pegasus General Contractors LLC and we send you kitchen and bathroom remodeling RFQs in Gaithersburg (20878) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Pegasus General Contractors LLC only (MD license 118963). Wrong inbox? Forward to the owner.
 ```
@@ -1516,10 +1480,10 @@ Quick bump — still want to put Pegasus General Contractors LLC on the RFQ list
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1540,11 +1504,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Go Pro Construction, LLC and we send you kitchen and bathroom remodeling RFQs in Gaithersburg (20879) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Go Pro Construction, LLC only (MD license 105365). Wrong inbox? Forward to the owner.
 ```
@@ -1558,10 +1521,10 @@ Quick bump — still want to put Go Pro Construction, LLC on the RFQ list for re
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1582,11 +1545,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Golban Home Improvement LLC and we send you kitchen and bathroom remodeling RFQs in Gaithersburg (20882) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Golban Home Improvement LLC only (MD license 139045). Wrong inbox? Forward to the owner.
 ```
@@ -1600,10 +1562,10 @@ Quick bump — still want to put Golban Home Improvement LLC on the RFQ list for
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1624,11 +1586,10 @@ On renovessa.com, homeowners run a free estimate wizard, get a DMV ballpark, the
 Onboard Mb Design & Remodel and we send you kitchen and bathroom remodeling RFQs in Rockville (21713) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Mb Design & Remodel only (MD license 105162). Wrong inbox? Forward to the owner.
 ```
@@ -1642,10 +1603,10 @@ Quick bump — still want to put Mb Design & Remodel on the RFQ list for remodel
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1666,11 +1627,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Dmv Fire and Flood LLC and we send you restoration and repair RFQs in Gaithersburg (20876) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Dmv Fire and Flood LLC only (MD license 111275). Wrong inbox? Forward to the owner.
 ```
@@ -1684,10 +1644,10 @@ Quick bump — still want to put Dmv Fire and Flood LLC on the RFQ list for rest
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1708,11 +1668,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard ServicePros Cleaning & Restoration and we send you restoration and repair RFQs in Gaithersburg (20877) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For ServicePros Cleaning & Restoration only (MD license 138932). Wrong inbox? Forward to the owner.
 ```
@@ -1726,10 +1685,10 @@ Quick bump — still want to put ServicePros Cleaning & Restoration on the RFQ l
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1750,11 +1709,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Augustine Roofing and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Rockville (20850) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Augustine Roofing only (MD license 113982). Wrong inbox? Forward to the owner.
 ```
@@ -1768,10 +1726,10 @@ Quick bump — still want to put Augustine Roofing on the RFQ list for roofing j
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1792,11 +1750,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Central Exteriors and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Rockville (20852) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Central Exteriors only (MD license 111067). Wrong inbox? Forward to the owner.
 ```
@@ -1810,10 +1767,10 @@ Quick bump — still want to put Central Exteriors on the RFQ list for roofing j
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1834,11 +1791,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Martinez Home Solutions, INC and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Rockville (20853) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Martinez Home Solutions, INC only (MD license 140851). Wrong inbox? Forward to the owner.
 ```
@@ -1852,10 +1808,10 @@ Quick bump — still want to put Martinez Home Solutions, INC on the RFQ list fo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1876,11 +1832,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard American Custom Contractors INC and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Rockville (20855) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For American Custom Contractors INC only (MD license 101804). Wrong inbox? Forward to the owner.
 ```
@@ -1894,10 +1849,10 @@ Quick bump — still want to put American Custom Contractors INC on the RFQ list
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1919,11 +1874,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Rockville Window & Door CO. and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Gaithersburg (20877) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Rockville Window & Door CO. only (MD license 23036). Wrong inbox? Forward to the owner.
 ```
@@ -1937,10 +1891,10 @@ Quick bump — still want to put Rockville Window & Door CO. on the RFQ list for
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -1961,11 +1915,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Brax Roofing INC and we send you roofing RFQs (repairs, replacements, leaks, gutters) in Gaithersburg (20879) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Brax Roofing INC only (MD license 109580). Wrong inbox? Forward to the owner.
 ```
@@ -1979,10 +1932,10 @@ Quick bump — still want to put Brax Roofing INC on the RFQ list for roofing jo
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -2003,11 +1956,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard All Dwelling Solutions and we send you windows and doors RFQs in Rockville (20852) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For All Dwelling Solutions only (MD license 156631). Wrong inbox? Forward to the owner.
 ```
@@ -2021,10 +1973,10 @@ Quick bump — still want to put All Dwelling Solutions on the RFQ list for wind
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -2045,11 +1997,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Arq Contracting & Development and we send you windows and doors RFQs in Rockville (20854) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Arq Contracting & Development only (MD license 115004). Wrong inbox? Forward to the owner.
 ```
@@ -2063,10 +2014,10 @@ Quick bump — still want to put Arq Contracting & Development on the RFQ list f
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---
@@ -2087,11 +2038,10 @@ You're on the license as decision-maker, so I'm writing you directly. On renoves
 Onboard Perfect Fit Custom Shutters and we send you windows and doors RFQs in Gaithersburg (20877) and nearby. Not shared lead lists — real scoped jobs to bid.
 
 Reply one word: "yes" (onboarding steps), "info" (see a sample RFQ), or "later".
-Or apply in 2 min: https://renovessa.com/for-contractors
+Or apply in 2 min: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
-https://renovessa.com
+[Renovessa](https://renovessa.com)
 
 P.S. For Perfect Fit Custom Shutters only (MD license 99009). Wrong inbox? Forward to the owner.
 ```
@@ -2105,10 +2055,10 @@ Quick bump — still want to put Perfect Fit Custom Shutters on the RFQ list for
 
 Homeowners submit scoped RFQs on Renovessa; onboarded contractors get those requests to bid.
 
-Reply "yes" or apply: https://renovessa.com/for-contractors
+Reply "yes" or apply: [Apply](https://renovessa.com/for-contractors)
 
 Ray Cooper
-Renovessa
+[Renovessa](https://renovessa.com)
 ```
 
 ---

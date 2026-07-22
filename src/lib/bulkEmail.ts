@@ -4,6 +4,7 @@ import { logAuditEvent } from "./audit";
 import { resolveSegment, type SegmentFilters } from "./emailSegments";
 import { interpolate, type EmailAudience, type EmailContext } from "./emailTemplates";
 import { complianceFooter, complianceFooterHtml, normalizeEmail } from "./unsubscribe";
+import { bodyToEmailHtml, linksToPlainText } from "./emailLinks";
 
 /**
  * Bulk campaign sender. Re-resolves the campaign's segment at send time (so the
@@ -28,25 +29,10 @@ export interface SendCampaignResult {
   failed: number;
 }
 
-/** Turns a plain-text body into simple, email-safe HTML (paragraphs + <br>). */
-function bodyToHtml(text: string): string {
-  const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const paragraphs = text
-    .trim()
-    .split(/\n{2,}/)
-    .map((p) => `<p style="margin:0 0 16px">${esc(p).replace(/\n/g, "<br>")}</p>`)
-    .join("");
-  return (
-    `<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;` +
-    `font-size:15px;line-height:1.55;color:#1a1a1a">${paragraphs}`
-  );
-}
-
 /**
  * Renders one recipient's email. Returns a plain-text body (the DB/timeline copy
- * and the multipart text fallback, footer as a raw URL) and an HTML body (what
- * inboxes render, footer as a labelled "Unsubscribe" hyperlink).
+ * and the multipart text fallback; [Label](url) → Label; footer as a raw URL) and
+ * an HTML body (what inboxes render; one-word links + labelled Unsubscribe).
  *
  * When `isHtml` is true, `bodyTemplate` is already HTML (from TipTap) and is
  * used directly for the HTML part; plain text is extracted by stripping tags.
@@ -72,10 +58,11 @@ function render(
     };
   }
 
+  // Plain templates may use [Label](url) one-word markdown links.
   return {
     subject,
-    text: rendered + complianceFooter(email),
-    html: `${bodyToHtml(rendered)}${complianceFooterHtml(email)}</div>`,
+    text: linksToPlainText(rendered) + complianceFooter(email),
+    html: `${bodyToEmailHtml(rendered).replace(/<\/div>$/, "")}${complianceFooterHtml(email)}</div>`,
   };
 }
 

@@ -6,6 +6,7 @@ import { generateReferenceNumber } from "@/lib/utils";
 import { logAuditEvent } from "@/lib/audit";
 import { getSendGridClient } from "@/lib/sendgrid";
 import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
+import { bodyToEmailHtml, linksToPlainText } from "@/lib/emailLinks";
 
 /**
  * POST /api/advisor/book — Direct booking from the AI advisor.
@@ -248,7 +249,7 @@ Appointment: ${scheduledStr}
 Contractor: ${appointment.contractor.companyName}
 
 Your Renovessa portal login:
-  URL: ${loginUrl}
+  [Portal](${loginUrl})
   Email: ${data.email}
   Password: ${tempPassword}
 
@@ -258,13 +259,13 @@ If you need to reschedule or have questions, just reply to this email.
 
 Welcome to Renovessa!
 Ray Cooper
-Renovessa`
+[Renovessa](${appUrl})`
       : `Hi ${data.firstName},
 
 Thanks for your ${trade} request with Renovessa! We've received your details and are matching you with a vetted contractor in your area.
 
 Your Renovessa portal login:
-  URL: ${loginUrl}
+  [Portal](${loginUrl})
   Email: ${data.email}
   Password: ${tempPassword}
 
@@ -274,19 +275,22 @@ If you have questions, just reply to this email.
 
 Welcome to Renovessa!
 Ray Cooper
-Renovessa`;
+[Renovessa](${appUrl})`;
 
     try {
       const sg = getSendGridClient();
       const fromEmail = process.env.SENDGRID_FROM_EMAIL || "ops@renovessa.com";
       const fromName = process.env.SENDGRID_FROM_NAME || "Renovessa";
+      const text = linksToPlainText(emailBody);
+      const html = bodyToEmailHtml(emailBody);
 
       await sg.send({
         to: data.email,
         from: { email: fromEmail, name: fromName },
         replyTo: "ray@renovessa.com",
         subject: emailSubject,
-        text: emailBody,
+        text,
+        html,
       });
 
       await prisma.emailMessage.create({
@@ -294,7 +298,7 @@ Renovessa`;
           fromEmail,
           toEmail: data.email,
           subject: emailSubject,
-          body: emailBody,
+          body: text,
           status: "sent",
           projectRequestId: project.id,
         },

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { getSession, canAccessAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
+import { sendContractorWelcomeEmail } from "@/lib/confirmationEmails";
 
 function generateTempPassword(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -90,6 +91,18 @@ export async function POST(req: NextRequest) {
     metadata: { contractorId: user.id, companyName, trade },
   });
 
-  // Return tempPassword so admin can share it with the contractor.
-  return NextResponse.json({ ...user, tempPassword }, { status: 201 });
+  const confirmationEmailSent = await sendContractorWelcomeEmail({
+    to: email,
+    name,
+    companyName,
+    trade,
+    tempPassword,
+    contractorId: user.contractorProfile?.id,
+  });
+
+  // Return tempPassword so admin can share it if email delivery fails.
+  return NextResponse.json(
+    { ...user, tempPassword, confirmationEmailSent },
+    { status: 201 }
+  );
 }

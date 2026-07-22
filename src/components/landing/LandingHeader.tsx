@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Wordmark } from "./Wordmark";
 import { OPS_PHONE } from "@/lib/first-job-config";
+import { useOptionalCategories } from "./CategoryContext";
 
 const NAV = [
   { href: "#how", label: "How it works" },
@@ -15,6 +16,8 @@ const NAV = [
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const categoryCtx = useOptionalCategories();
+  const wizardOpen = categoryCtx?.wizardSheetOpen ?? false;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 28);
@@ -25,6 +28,16 @@ export function LandingHeader() {
 
   const phoneDisplay = OPS_PHONE || "(571) 460-0006";
   const phoneHref = `tel:${phoneDisplay.replace(/\D/g, "")}`;
+
+  if (wizardOpen) {
+    return (
+      <header
+        id="top"
+        className="pointer-events-none sticky top-0 z-50 h-0 overflow-hidden opacity-0"
+        aria-hidden
+      />
+    );
+  }
 
   return (
     <header
@@ -41,7 +54,6 @@ export function LandingHeader() {
           <Wordmark />
         </Link>
 
-        {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
           {NAV.map((item) => (
             <a
@@ -62,10 +74,13 @@ export function LandingHeader() {
             <span className="landing-pulse" aria-hidden />
             <span className="font-mono-landing text-xs">{phoneDisplay}</span>
           </a>
-          <a href="#estimate" className="landing-btn-primary whitespace-nowrap text-sm">
+          <button
+            type="button"
+            onClick={() => categoryCtx?.openEstimate()}
+            className="landing-btn-primary whitespace-nowrap text-sm"
+          >
             Get Estimate →
-          </a>
-          {/* Hamburger — mobile only */}
+          </button>
           <button
             type="button"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -82,7 +97,6 @@ export function LandingHeader() {
         </div>
       </div>
 
-      {/* Mobile nav drawer */}
       {menuOpen && (
         <div className="border-t border-ink-15 bg-bone-0 px-4 pb-4 md:hidden">
           <nav className="flex flex-col gap-1 pt-2">

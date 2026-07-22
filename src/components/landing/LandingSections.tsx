@@ -11,7 +11,7 @@ import {
   getVisibleCategories,
 } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, LANDING_HEADLINE } from "@/lib/first-job-config";
-import { useCategories, scrollToEstimateWizard } from "./CategoryContext";
+import { useCategories } from "./CategoryContext";
 
 function CategoryIcon({ id }: { id: string }) {
   return (
@@ -90,7 +90,6 @@ export function CategoriesSection() {
 
   function pickCategory(id: (typeof categories)[number]["id"]) {
     startWizardWithTrade(id);
-    scrollToEstimateWizard();
   }
 
   return (
@@ -224,6 +223,8 @@ export function FAQSection() {
 }
 
 export function FinalCTASection() {
+  const { openEstimate } = useCategories();
+
   return (
     <section className="bg-ink-100 px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-3xl text-center">
@@ -235,9 +236,9 @@ export function FinalCTASection() {
           contractor bids and gets back to you.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <a href="#estimate" className="landing-btn-primary-lg">
+          <button type="button" onClick={openEstimate} className="landing-btn-primary-lg">
             Get my free estimate →
-          </a>
+          </button>
           <a
             href="#how"
             className="inline-flex items-center justify-center rounded-lg border border-bone-2 px-6 py-3.5 text-base font-semibold text-bone-0 transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"

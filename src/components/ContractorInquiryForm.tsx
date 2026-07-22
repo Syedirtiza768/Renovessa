@@ -6,6 +6,7 @@ import { SERVICE_CATEGORIES } from "@/lib/constants";
 export function ContractorInquiryForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     companyName: "",
@@ -37,6 +38,7 @@ export function ContractorInquiryForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
+      setEmailSent(data.confirmationEmailSent !== false);
       setSuccess(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -49,7 +51,12 @@ export function ContractorInquiryForm() {
     return (
       <div className="card-accent p-8 text-center">
         <h3 className="text-xl font-semibold text-slate">Inquiry Received</h3>
-        <p className="mt-2 text-muted">Our contractor success team will review your application within 1–2 business days. A confirmation email is on its way.</p>
+        <p className="mt-2 text-muted">
+          Our contractor success team will review your application within 1–2 business days.
+          {emailSent
+            ? ` A confirmation was sent to ${form.email}.`
+            : " We saved your application, but the confirmation email may be delayed — keep an eye on your inbox."}
+        </p>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-07-22
+> Last updated: 2026-07-23
 
 ## Phase
 
@@ -17,6 +17,7 @@
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
 - **Estimate wizard** — sole homeowner request path: trade scoping → DMV ballpark → RFQ preview → submit → contractor bids
+- **Mobile:** fullscreen immersive RFQ wizard (&lt;768px) with sticky progress/footer, one-question sub-steps, session draft resume
 - RFQ submit sends **homeowner confirmation email** (SendGrid); contractor apply sends **application confirmation email**
 - Ops phone: **(571) 460-0006**
 - For Contractors page with application form

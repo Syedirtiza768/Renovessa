@@ -238,7 +238,7 @@ def cta_block(p: dict) -> str:
 - "info" - I'll share how the first jobs work
 - "later" - I'll follow up after your busy stretch
 
-Or apply directly here: {PORTAL_URL}
+Or apply directly here: [Apply]({PORTAL_URL})
 
 Either way takes under two minutes. Looking forward to working with you."""
 
@@ -273,8 +273,7 @@ def build_body(p: dict) -> str:
 {cta_block(p)}
 
 {AGENT_NAME}
-Renovessa
-{APP_URL}
+[Renovessa]({APP_URL})
 
 P.S. This note is for {p['company']} specifically (MD license {p['licenseRegNumber'] or 'on file'}). If this landed in the wrong inbox, a quick forward to the owner helps both of us."""
 
@@ -284,10 +283,11 @@ def build_followup(p: dict) -> str:
 
 Floating my last note back up - still happy to onboard {p['company']} for {trade_jobs_phrase(p['tradeLabel'])} in {p['city']}.
 
-Reply "yes" and I'll send the steps, or apply at {PORTAL_URL}.
+Reply "yes" and I'll send the steps, or apply at [Apply]({PORTAL_URL}).
 
 {AGENT_NAME}
-Renovessa"""
+[Renovessa]({APP_URL})
+"""
 
 
 def wave_for(p: dict) -> str:
