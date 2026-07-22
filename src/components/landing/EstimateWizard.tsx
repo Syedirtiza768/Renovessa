@@ -243,7 +243,7 @@ export function EstimateWizard({
   const tradeConfig = trade ? getTradeWizard(trade) : null;
   const tradeLabel =
     LANDING_CATEGORIES.find((c) => c.id === trade)?.label ?? "Home improvement";
-  const scopeQuestions = tradeConfig?.questions ?? [];
+  const scopeQuestions = useMemo(() => tradeConfig?.questions ?? [], [tradeConfig]);
   const contextTotalSteps = 1 + SHARED_CONTEXT_QUESTIONS.length;
   const useSubSteps = isMobile && sheetOpen;
 
@@ -395,48 +395,60 @@ export function EstimateWizard({
     setPhase("review");
   }, [contact]);
 
-  const advanceScope = useCallback(() => {
-    const q = scopeQuestions[scopeStep];
-    if (!q) return;
-    const next = validateQuestions([q], answers);
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
-    if (scopeStep < scopeQuestions.length - 1) {
-      setScopeStep((s) => s + 1);
-      return;
-    }
-    setContextStep(0);
-    setPhase("context");
-  }, [scopeQuestions, scopeStep, answers]);
+  const advanceScope = useCallback(
+    (answersOverride?: EstimateAnswers) => {
+      const effective = answersOverride ?? answers;
+      const q = scopeQuestions[scopeStep];
+      if (!q) return;
+      const next = validateQuestions([q], effective);
+      setErrors(next);
+      if (Object.keys(next).length > 0) return;
+      if (scopeStep < scopeQuestions.length - 1) {
+        setScopeStep((s) => s + 1);
+        return;
+      }
+      setContextStep(0);
+      setPhase("context");
+    },
+    [scopeQuestions, scopeStep, answers],
+  );
 
   const backScope = useCallback(() => {
     if (scopeStep > 0) setScopeStep((s) => s - 1);
     else setPhase("trade");
   }, [scopeStep]);
 
-  const advanceContext = useCallback(() => {
-    if (contextStep === 0) {
-      const next: Record<string, string> = {};
-      if (!/^\d{5}$/.test(zip)) next.zip = "Enter a 5-digit ZIP code.";
-      else if (FIRST_JOB_MODE && PILOT_ZIP_CLUSTERS.length > 0 && !PILOT_ZIP_CLUSTERS.includes(zip)) {
-        next.zip = "Your ZIP is not currently in our service area.";
+  const advanceContext = useCallback(
+    (answersOverride?: EstimateAnswers) => {
+      if (contextStep === 0) {
+        const next: Record<string, string> = {};
+        if (!/^\d{5}$/.test(zip)) next.zip = "Enter a 5-digit ZIP code.";
+        else if (
+          FIRST_JOB_MODE &&
+          PILOT_ZIP_CLUSTERS.length > 0 &&
+          !PILOT_ZIP_CLUSTERS.includes(zip)
+        ) {
+          next.zip = "Your ZIP is not currently in our service area.";
+        }
+        setErrors(next);
+        if (Object.keys(next).length > 0) return;
+        setContextStep(1);
+        return;
       }
+      const effective = answersOverride ?? answers;
+      const q = SHARED_CONTEXT_QUESTIONS[contextStep - 1];
+      if (!q) return;
+      const next = validateQuestions([q], effective);
       setErrors(next);
       if (Object.keys(next).length > 0) return;
-      setContextStep(1);
-      return;
-    }
-    const q = SHARED_CONTEXT_QUESTIONS[contextStep - 1];
-    if (!q) return;
-    const next = validateQuestions([q], answers);
-    setErrors(next);
-    if (Object.keys(next).length > 0) return;
-    if (contextStep < contextTotalSteps - 1) {
-      setContextStep((s) => s + 1);
-      return;
-    }
-    setPhase("notes");
-  }, [contextStep, zip, answers, contextTotalSteps]);
+      if (contextStep < contextTotalSteps - 1) {
+        setContextStep((s) => s + 1);
+        return;
+      }
+      setPhase("notes");
+    },
+    [contextStep, zip, answers, contextTotalSteps],
+  );
 
   const backContext = useCallback(() => {
     if (contextStep > 0) {
@@ -449,8 +461,27 @@ export function EstimateWizard({
 
   const scheduleAdvance = useCallback((fn: () => void) => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
-    autoAdvanceTimer.current = setTimeout(fn, 280);
+    autoAdvanceTimer.current = setTimeout(fn, 220);
   }, []);
+
+  /** Select + auto-advance with the new answers immediately (avoids stale closure / double-tap). */
+  const selectAndAdvance = useCallback(
+    (q: WizardQuestion, value: string, which: "scope" | "context") => {
+      const nextAnswers = { ...answers, [q.id]: value };
+      setAnswers(nextAnswers);
+      setErrors((e) => {
+        const cleared = { ...e };
+        delete cleared[q.id];
+        return cleared;
+      });
+      if (!useSubSteps || q.type !== "single") return;
+      scheduleAdvance(() => {
+        if (which === "scope") advanceScope(nextAnswers);
+        else advanceContext(nextAnswers);
+      });
+    },
+    [answers, useSubSteps, scheduleAdvance, advanceScope, advanceContext],
+  );
 
   const submitRfq = useCallback(async () => {
     if (!trade || !estimate) return;
@@ -567,7 +598,7 @@ export function EstimateWizard({
           },
           primary: {
             label: "Continue →",
-            onClick: useSubSteps ? advanceScope : goContext,
+            onClick: useSubSteps ? () => advanceScope() : goContext,
           },
         };
       case "context":
@@ -578,7 +609,7 @@ export function EstimateWizard({
           },
           primary: {
             label: "Continue →",
-            onClick: useSubSteps ? advanceContext : goNotes,
+            onClick: useSubSteps ? () => advanceContext() : goNotes,
           },
         };
       case "notes":
@@ -670,6 +701,12 @@ export function EstimateWizard({
         setTrade(id);
         setAnswers({});
         setErrors({});
+        if (useSubSteps) {
+          scheduleAdvance(() => {
+            setScopeStep(0);
+            setPhase("scope");
+          });
+        }
       }}
       errors={errors}
       tradeConfig={tradeConfig}
@@ -679,12 +716,7 @@ export function EstimateWizard({
       useSubSteps={useSubSteps}
       scopeStep={scopeStep}
       scopeQuestions={scopeQuestions}
-      onSingleSelect={(q, value, advance) => {
-        setAnswer(q.id, value);
-        if (useSubSteps && q.type === "single" && advance) scheduleAdvance(advance);
-      }}
-      advanceScope={advanceScope}
-      advanceContext={advanceContext}
+      selectAndAdvance={selectAndAdvance}
       zip={zip}
       setZip={setZip}
       contextStep={contextStep}
@@ -980,9 +1012,7 @@ function PhaseContent(props: {
   useSubSteps: boolean;
   scopeStep: number;
   scopeQuestions: WizardQuestion[];
-  onSingleSelect: (q: WizardQuestion, value: string, advance?: () => void) => void;
-  advanceScope: () => void;
-  advanceContext: () => void;
+  selectAndAdvance: (q: WizardQuestion, value: string, which: "scope" | "context") => void;
   zip: string;
   setZip: (z: string) => void;
   contextStep: number;
@@ -1017,9 +1047,7 @@ function PhaseContent(props: {
     useSubSteps,
     scopeStep,
     scopeQuestions,
-    onSingleSelect,
-    advanceScope,
-    advanceContext,
+    selectAndAdvance,
     zip,
     setZip,
     contextStep,
@@ -1107,7 +1135,7 @@ function PhaseContent(props: {
             value={answers[q.id] || ""}
             error={errors[q.id]}
             onChange={(v) => {
-              if (q.type === "single") onSingleSelect(q, v, useSubSteps ? advanceScope : undefined);
+              if (q.type === "single") selectAndAdvance(q, v, "scope");
               else setAnswer(q.id, v);
             }}
           />
@@ -1167,8 +1195,7 @@ function PhaseContent(props: {
             value={answers[q.id] || ""}
             error={errors[q.id]}
             onChange={(v) => {
-              if (q.type === "single")
-                onSingleSelect(q, v, useSubSteps ? advanceContext : undefined);
+              if (q.type === "single") selectAndAdvance(q, v, "context");
               else setAnswer(q.id, v);
             }}
           />
