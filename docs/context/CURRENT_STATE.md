@@ -35,6 +35,7 @@
 - Shared unique metadata/canonical framework, XML sitemap, robots policy, public/private noindex controls, Organization/WebSite/Service/Breadcrumb structured data, and custom 404 are implemented
 - Unsupported public metrics and fixed turnaround promises were removed; phone and estimate -> RFQ -> available contractor-options copy are consistent
 - Communication consent is affirmative (not pre-checked) and links to a dedicated calls/text disclosure
+- Production deployment verified on 2026-07-23: app/database healthy; public HTTPS routes, canonical host, sitemap, robots, positioning, and noindex controls passed
 
 ### Portals
 - **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only

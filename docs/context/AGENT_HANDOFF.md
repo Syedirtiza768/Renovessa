@@ -9,13 +9,13 @@
 - Foundational service, location, resource, methodology, company, trust, legal, and compliance routes were added
 - Metadata/canonical utilities, sitemap, robots, noindex rules, structured data, and custom 404 were added
 - Type checking and the full Next.js production build pass; 94 routes are generated
+- Application release `12f0a74` is deployed; app and database containers are healthy and key public HTTPS/metadata checks pass
 
 ## Immediate Follow-up
 
-1. Verify the production revision and URLs after deployment
-2. Add Search Console verification and submit `/sitemap.xml`
-3. Instrument organic estimate-start, estimate-complete, RFQ-submit, qualified-RFQ, and contractor-response events
-4. Publish the first evidence-rich HVAC/Fairfax cost guide and permit guide; keep thin case-study placeholders noindexed
+1. Add Search Console verification and submit `/sitemap.xml`
+2. Instrument organic estimate-start, estimate-complete, RFQ-submit, qualified-RFQ, and contractor-response events
+3. Publish the first evidence-rich HVAC/Fairfax cost guide and permit guide; keep thin case-study placeholders noindexed
 
 ---
 

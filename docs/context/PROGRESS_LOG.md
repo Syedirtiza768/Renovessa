@@ -7,6 +7,8 @@
 - Added public navigation/footer architecture, unique metadata and canonicals, Organization/WebSite/Service/Breadcrumb JSON-LD, XML sitemap, robots policy, noindex controls for login/portal/confirmation/case-study placeholders, and a custom 404
 - Changed call/text consent from pre-checked to affirmative opt-in with a dedicated disclosure
 - Verified with `npx tsc --noEmit`, a successful Next.js production build (94 routes), and local production HTTP/metadata checks
+- Published application release commit `12f0a74` to `main`, rebuilt/recreated the production app container, and verified healthy internal and external HTTPS responses
+- Confirmed 22 sitemap URLs, production canonical `https://renovessa.com`, updated homepage positioning, and noindex directives for login and case-study placeholder routes
 
 ## 2026-07-23 - DMV organic search and content strategy
 

@@ -29,7 +29,7 @@ Conflicting product promises and unsupported claims can harm homeowners, convers
 6. Complete the P0 trust and technical work in `docs/marketing/SEO_STRATEGY_DMV.md` before scaling content
 
 ### Status
-Resolved in repository on 2026-07-23; production verification required after deployment. Public copy now uses the estimate -> RFQ -> available contractor-options model, actual phone, qualified credential language, and variable availability/response expectations.
+Resolved and verified in production on 2026-07-23. Public copy now uses the estimate -> RFQ -> available contractor-options model, actual phone, qualified credential language, and variable availability/response expectations.
 
 ---
 
