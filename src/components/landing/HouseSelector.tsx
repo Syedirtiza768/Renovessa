@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { HOUSE_ZONES } from "@/lib/landing-data";
+import { HOUSE_ZONES, LANDING_CATEGORIES } from "@/lib/landing-data";
 import type { LandingCategoryId } from "@/lib/landing-data";
-import { useCategories } from "./CategoryContext";
+import { useCategories, scrollToEstimateWizard } from "./CategoryContext";
 
 const ZONE_TO_CATEGORY: Record<string, LandingCategoryId> = {
   roofing: "roofing",
@@ -246,25 +246,28 @@ function HitArea({
 }
 
 export function HouseSelector() {
-  const { selected, toggle, isSelected } = useCategories();
+  const { selected, isSelected, startWizardWithTrade } = useCategories();
 
   const [hoveredZone, setHoveredZone] = useState<string | null>(null);
 
   const onZoneActivate = useCallback(
     (zoneId: string) => {
       const catId = ZONE_TO_CATEGORY[zoneId];
-      if (catId) toggle(catId);
+      if (!catId) return;
+      startWizardWithTrade(catId);
+      scrollToEstimateWizard();
     },
-    [toggle],
+    [startWizardWithTrade],
   );
 
   return (
-    <section className="bg-bone-1 px-4 py-14 sm:px-6 sm:py-16">
+    <section id="house" className="scroll-mt-20 bg-bone-1 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        <p className="landing-eyebrow">I. Select your project type</p>
-        <h2 className="landing-h2 mt-3">Pick a spot on the house — or skip ahead.</h2>
+        <p className="landing-eyebrow">I. Start from your home</p>
+        <h2 className="landing-h2 mt-3">Pick a spot on the house — we&apos;ll open the estimate.</h2>
         <p className="mt-3 max-w-xl text-sm text-ink-70">
-          We use this to find the right specialty — pick at least one to start.
+          Tap a zone (or a label below). We preselect that trade in the estimate wizard so you can
+          get a DMV ballpark and submit an RFQ.
         </p>
 
         <div className="mt-8 overflow-x-auto">
@@ -384,31 +387,50 @@ export function HouseSelector() {
         </div>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {HOUSE_ZONES.map((z) => (
-            <div key={z.id} className="flex gap-2 text-sm">
-              <span className="font-mono-landing text-xs text-ink-40">{z.marker}</span>
-              <div>
-                <p className="font-medium text-ink-100">{z.label}</p>
-                <p className="text-xs text-ink-70">{z.example}</p>
-              </div>
-            </div>
-          ))}
+          {HOUSE_ZONES.map((z) => {
+            const catId = ZONE_TO_CATEGORY[z.id] ?? null;
+            const active = catId ? isSelected(catId) : false;
+            return (
+              <button
+                key={z.id}
+                type="button"
+                onClick={() => onZoneActivate(z.id)}
+                className={`flex gap-2 rounded-lg border p-2.5 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  active
+                    ? "border-accent bg-accent-100"
+                    : "border-ink-15 bg-white hover:border-ink-40"
+                }`}
+                aria-pressed={active}
+              >
+                <span className="font-mono-landing text-xs text-ink-40">{z.marker}</span>
+                <div>
+                  <p className="font-medium text-ink-100">{z.label}</p>
+                  <p className="text-xs text-ink-70">{z.example}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        <p className="mt-6">
-          <a href="#services" className="text-sm font-medium text-accent underline-offset-2 hover:underline">
-            Add by category ↓
+        <p className="mt-6 text-sm text-ink-70">
+          Prefer a list?{" "}
+          <a href="#estimate" className="font-medium text-accent underline-offset-2 hover:underline">
+            Skip to the estimate wizard
+          </a>
+          {" · "}
+          <a href="#services" className="font-medium text-accent underline-offset-2 hover:underline">
+            Browse all trades ↓
           </a>
         </p>
 
         {selected.length > 0 && (
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <a href="#estimate" className="landing-btn-primary">
-              Continue to estimate →
+              Continue estimate →
             </a>
             <p className="text-sm text-ink-70">
-              {selected.length} categor{selected.length === 1 ? "y" : "ies"} selected · Step 1 of 2 ·
-              No commitment
+              {LANDING_CATEGORIES.find((c) => c.id === selected[0])?.label ?? "Trade"} selected —
+              answer a few scope questions next.
             </p>
           </div>
         )}

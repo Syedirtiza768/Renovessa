@@ -49,8 +49,8 @@ export function LandingHero() {
             <a href="#estimate" className="landing-btn-primary-lg">
               Get my free estimate →
             </a>
-            <a href="#how" className="landing-btn-ghost">
-              How it works
+            <a href="#house" className="landing-btn-ghost">
+              Pick a spot on the house
             </a>
           </div>
 

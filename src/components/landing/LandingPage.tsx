@@ -23,8 +23,8 @@ export function LandingPage() {
         <LandingHeader />
         <main>
           <LandingHero />
-          <EstimateWizard />
           <HouseSelector />
+          <EstimateWizard />
           <HowItWorksSection />
           <StatsStrip />
           <CategoriesSection />

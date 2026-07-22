@@ -11,7 +11,7 @@ import {
   getVisibleCategories,
 } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, LANDING_HEADLINE } from "@/lib/first-job-config";
-import { useCategories } from "./CategoryContext";
+import { useCategories, scrollToEstimateWizard } from "./CategoryContext";
 
 function CategoryIcon({ id }: { id: string }) {
   return (
@@ -26,7 +26,7 @@ export function HowItWorksSection() {
   return (
     <section id="how" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        <p className="landing-eyebrow">II. How it works</p>
+        <p className="landing-eyebrow">III. How it works</p>
         <h2 className="landing-h2 mt-3 max-w-2xl">
           From a scoped estimate to real contractor bids.
         </h2>
@@ -85,20 +85,25 @@ export function StatsStrip() {
 }
 
 export function CategoriesSection() {
-  const { toggle, isSelected } = useCategories();
+  const { isSelected, startWizardWithTrade } = useCategories();
   const categories = getVisibleCategories();
+
+  function pickCategory(id: (typeof categories)[number]["id"]) {
+    startWizardWithTrade(id);
+    scrollToEstimateWizard();
+  }
 
   return (
     <section id="services" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        <p className="landing-eyebrow">III. What we schedule appointments for</p>
+        <p className="landing-eyebrow">IV. Trades we cover</p>
         {FIRST_JOB_MODE ? (
           <h2 className="landing-h2 mt-3 max-w-3xl">
-            {LANDING_HEADLINE || `Currently scheduling ${categories.length > 0 ? categories[0].label : "home improvement"} appointments.`}
+            {LANDING_HEADLINE || `Currently taking RFQs for ${categories.length > 0 ? categories[0].label : "home improvement"}.`}
           </h2>
         ) : (
           <h2 className="landing-h2 mt-3 max-w-3xl">
-            Twelve categories of home improvement — from a single repair to a full remodel.
+            Twelve categories — tap one to start an estimate and RFQ.
           </h2>
         )}
 
@@ -109,7 +114,7 @@ export function CategoriesSection() {
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => toggle(cat.id)}
+                onClick={() => pickCategory(cat.id)}
                 className={`relative rounded-lg border p-5 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                   active
                     ? "border-2 border-accent bg-accent-100"
@@ -131,6 +136,7 @@ export function CategoriesSection() {
                 </div>
                 <h3 className="mt-3 text-base font-semibold text-ink-100">{cat.label}</h3>
                 <p className="mt-1.5 text-sm text-ink-70">{cat.description}</p>
+                <p className="mt-3 text-xs font-medium text-accent">Start estimate →</p>
               </button>
             );
           })}
@@ -149,7 +155,7 @@ export function WhySection() {
   return (
     <section id="why" className="bg-bone-1 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        <p className="landing-eyebrow">IV. Why homeowners use Renovessa</p>
+        <p className="landing-eyebrow">V. Why homeowners use Renovessa</p>
         <h2 className="landing-h2 mt-3">Less chaos. One vetted contractor. A confirmed appointment.</h2>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
@@ -182,7 +188,7 @@ export function FAQSection() {
   return (
     <section id="faq" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-3xl">
-        <p className="landing-eyebrow">V. Frequently asked</p>
+        <p className="landing-eyebrow">VI. Frequently asked</p>
         <h2 className="landing-h2 mt-3">Things homeowners ask before submitting.</h2>
 
         <div className="mt-8 divide-y divide-ink-15 border border-ink-15 rounded-lg bg-white">

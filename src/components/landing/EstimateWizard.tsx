@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { LandingCategoryId } from "@/lib/landing-data";
 import { LANDING_CATEGORIES } from "@/lib/landing-data";
 import {
@@ -20,6 +20,7 @@ import {
 } from "@/lib/estimate-pricing";
 import { CONTACT_WINDOW_OPTIONS } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, PILOT_ZIP_CLUSTERS } from "@/lib/first-job-config";
+import { useOptionalCategories } from "./CategoryContext";
 
 type Phase =
   | "trade"
@@ -100,11 +101,33 @@ export function EstimateWizard({
   const [isExistingAccount, setIsExistingAccount] = useState(false);
   const [emailSent, setEmailSent] = useState(true);
   const embedded = variant === "embedded";
-
+  const categoryCtx = useOptionalCategories();
+  const wizardEntryToken = categoryCtx?.wizardEntry?.token;
+  const wizardEntryTrade = categoryCtx?.wizardEntry?.trade;
+  const clearWizardEntry = categoryCtx?.clearWizardEntry;
 
   const tradeConfig = trade ? getTradeWizard(trade) : null;
   const tradeLabel =
     LANDING_CATEGORIES.find((c) => c.id === trade)?.label ?? "Home improvement";
+
+  // House diagram / category chips → open wizard on that trade's scope step
+  useEffect(() => {
+    if (wizardEntryToken == null || !wizardEntryTrade || !clearWizardEntry) return;
+    const allowed = getWizardCategories().some((c) => c.id === wizardEntryTrade);
+    if (!allowed) {
+      clearWizardEntry();
+      return;
+    }
+    setTrade(wizardEntryTrade);
+    setAnswers({});
+    setNotes("");
+    setErrors({});
+    setPhase("scope");
+    setReceiptId("");
+    setProjectId("");
+    setPortalPassword("");
+    clearWizardEntry();
+  }, [wizardEntryToken, wizardEntryTrade, clearWizardEntry]);
 
   const estimate = useMemo(() => {
     if (!trade) return null;
@@ -288,7 +311,7 @@ export function EstimateWizard({
       <div className={innerClass}>
         {!embedded && (
           <>
-            <p className="landing-eyebrow">I. Free project estimate</p>
+            <p className="landing-eyebrow">II. Free project estimate</p>
             <h2 className="landing-h2 mt-3 max-w-2xl">
               Home improvement estimate wizard
             </h2>

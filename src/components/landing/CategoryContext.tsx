@@ -17,6 +17,12 @@ export type AdvisorPrefill = {
   budget?: string;
 };
 
+export type WizardEntry = {
+  trade: LandingCategoryId;
+  /** Bumps on every click so the wizard re-applies even for the same trade. */
+  token: number;
+};
+
 type CategoryContextValue = {
   selected: LandingCategoryId[];
   toggle: (id: LandingCategoryId) => void;
@@ -25,6 +31,10 @@ type CategoryContextValue = {
   labels: string[];
   prefill: AdvisorPrefill | null;
   setPrefill: (p: AdvisorPrefill | null) => void;
+  wizardEntry: WizardEntry | null;
+  /** Highlight trade and signal EstimateWizard to open on that trade's scope step. */
+  startWizardWithTrade: (id: LandingCategoryId) => void;
+  clearWizardEntry: () => void;
 };
 
 const CategoryContext = createContext<CategoryContextValue | null>(null);
@@ -32,6 +42,7 @@ const CategoryContext = createContext<CategoryContextValue | null>(null);
 export function CategoryProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState<LandingCategoryId[]>([]);
   const [prefill, setPrefill] = useState<AdvisorPrefill | null>(null);
+  const [wizardEntry, setWizardEntry] = useState<WizardEntry | null>(null);
 
   const toggle = useCallback((id: LandingCategoryId) => {
     setSelected((prev) =>
@@ -40,6 +51,15 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isSelected = useCallback((id: LandingCategoryId) => selected.includes(id), [selected]);
+
+  const startWizardWithTrade = useCallback((id: LandingCategoryId) => {
+    setSelected([id]);
+    setWizardEntry((prev) => ({ trade: id, token: (prev?.token ?? 0) + 1 }));
+  }, []);
+
+  const clearWizardEntry = useCallback(() => {
+    setWizardEntry(null);
+  }, []);
 
   const labels = useMemo(
     () =>
@@ -50,8 +70,28 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ selected, toggle, setSelected, isSelected, labels, prefill, setPrefill }),
-    [selected, toggle, isSelected, labels, prefill],
+    () => ({
+      selected,
+      toggle,
+      setSelected,
+      isSelected,
+      labels,
+      prefill,
+      setPrefill,
+      wizardEntry,
+      startWizardWithTrade,
+      clearWizardEntry,
+    }),
+    [
+      selected,
+      toggle,
+      isSelected,
+      labels,
+      prefill,
+      wizardEntry,
+      startWizardWithTrade,
+      clearWizardEntry,
+    ],
   );
 
   return <CategoryContext.Provider value={value}>{children}</CategoryContext.Provider>;
@@ -61,4 +101,14 @@ export function useCategories() {
   const ctx = useContext(CategoryContext);
   if (!ctx) throw new Error("useCategories must be used within CategoryProvider");
   return ctx;
+}
+
+/** Safe for EstimateWizard when used outside CategoryProvider (portal / for-homeowners). */
+export function useOptionalCategories() {
+  return useContext(CategoryContext);
+}
+
+export function scrollToEstimateWizard() {
+  if (typeof document === "undefined") return;
+  document.getElementById("estimate")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
