@@ -13,7 +13,7 @@ export const PILOT_ZIP_CLUSTERS = (process.env.PILOT_ZIP_CLUSTERS || "")
   .filter(Boolean);
 export const PILOT_MIN_BUDGET = parseInt(process.env.PILOT_MIN_BUDGET || "1000", 10);
 export const PILOT_CONTRACTOR_ID = process.env.PILOT_CONTRACTOR_ID || "";
-export const OPS_PHONE = process.env.NEXT_PUBLIC_OPS_PHONE || "";
+export const OPS_PHONE = process.env.NEXT_PUBLIC_OPS_PHONE || "(571) 460-0006";
 export const LANDING_HEADLINE = process.env.NEXT_PUBLIC_LANDING_HEADLINE || "";
 
 /**

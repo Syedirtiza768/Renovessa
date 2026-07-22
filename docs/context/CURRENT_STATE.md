@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-06-02
+> Last updated: 2026-07-22
 
 ## Phase
 
@@ -16,7 +16,9 @@
 
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
-- Multi-step homeowner intake form with TCPA consent
+- **Estimate wizard** (replaces hero AI chatbot) — trade-specific scoping, DMV ballpark, RFQ submit → contractor bids
+- Multi-step homeowner intake form with TCPA consent (short-form fallback)
+- Ops phone: **(571) 460-0006**
 - For Contractors page with application form
 - How It Works, For Homeowners, Trust & Safety pages
 - Thank-you page with project reference number

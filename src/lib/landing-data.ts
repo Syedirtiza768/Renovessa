@@ -55,27 +55,27 @@ export const APPOINTMENT_LOG = FIRST_JOB_MODE
 export const HOW_IT_WORKS_STEPS = [
   {
     step: "I",
-    title: "You submit the request.",
-    timing: "Avg. 60 seconds.",
-    body: "Tell us what's going on — a leak, a remodel, a long-overdue replacement. Select your category, add a brief description, and give us your contact info. No account needed.",
+    title: "You run the estimate wizard.",
+    timing: "About 3–5 minutes.",
+    body: "Pick your trade and answer scoped questions — size, materials, condition, timing, and constraints — so we capture the whole picture of the job you expect.",
   },
   {
     step: "II",
-    title: "Renovessa qualifies your project.",
-    timing: "Median 2–4 hours.",
-    body: "A Renovessa team member calls to confirm your project details, verify your ZIP is in our service area, and gather any specifics needed to find the right specialty contractor for your job.",
+    title: "You get a real DMV ballpark.",
+    timing: "Instant.",
+    body: "Based on your answers, Renovessa shows a planning range grounded in typical DMV labor and material costs. It's a ballpark for decisions — not a binding quote.",
   },
   {
     step: "III",
-    title: "Renovessa schedules your appointment.",
-    timing: "Same or next business day.",
-    body: "Once qualified, Renovessa matches your project to one vetted contractor in your ZIP who handles that exact type of work. You receive an SMS confirmation with the appointment date, time, and contractor details.",
+    title: "You submit an RFQ to Renovessa.",
+    timing: "Under a minute.",
+    body: "Turn the scoped job into a request for quote. We review your RFQ, then solicit bids from vetted contractors who handle that trade in your area.",
   },
   {
     step: "IV",
-    title: "You meet the contractor. No pressure.",
-    timing: "Always free.",
-    body: "Hire them, hire someone else, or decide later. Renovessa coordinates the scheduling — the contractor arrives for an estimate or site visit. You pay nothing to Renovessa. Ever.",
+    title: "We bring bids back to you.",
+    timing: "Usually 1–2 business days.",
+    body: "Renovessa compares contractor responses and gets back to you with options. Hire who you want, ask questions, or decide later — no obligation to Renovessa.",
   },
 ];
 
@@ -90,16 +90,16 @@ export const STATS = FIRST_JOB_MODE
 
 export const TRUST_CARDS = [
   {
-    title: "One Request, One Contractor",
-    body: "Your project is not sold to five companies at once. Renovessa routes your request to one vetted contractor who handles your type of work in your area.",
+    title: "Scoped RFQ, Not a Vague Lead",
+    body: "The estimate wizard captures trade, size, materials, constraints, and timing — so contractors bid on a real job description, not a one-line inquiry.",
   },
   {
-    title: "An Appointment, Not Just a Lead",
-    body: "You get a confirmed appointment date and time — not a flood of sales calls. Renovessa coordinates the scheduling and sends you a calendar confirmation with contractor details.",
+    title: "Ballpark First, Bids Next",
+    body: "See a DMV planning range instantly, then submit an RFQ. Renovessa solicits contractor bids and brings options back to you.",
   },
   {
-    title: "Backed by a Verification Trail",
-    body: "Every appointment includes call records, SMS confirmations, and a check-in log. Renovessa's audit trail means you know the process was real — and disputes are resolved with evidence, not guesswork.",
+    title: "Vetted Pros, Coordinated by Us",
+    body: "We work with licensed, insured contractors in your area. You stay in control of who you hire — Renovessa runs the process so you're not fielding cold call blasts.",
   },
 ];
 
@@ -113,37 +113,37 @@ export const VERIFICATION_BADGES = [
 export const FAQ_ITEMS = [
   {
     q: "Is Renovessa free for homeowners?",
-    a: "Yes, completely free. Renovessa is paid by contractors only when a verified appointment occurs. You pay nothing.",
+    a: "Yes, completely free. The estimate wizard, ballpark, and RFQ submission cost you nothing. Renovessa is paid by contractors when work is successfully coordinated — you pay nothing to us.",
   },
   {
-    q: "What happens after I submit?",
-    a: "A Renovessa team member calls you (within 4 business hours) to confirm your project details and verify your ZIP is in our service area. Once confirmed, we schedule your appointment.",
+    q: "How accurate is the ballpark estimate?",
+    a: "It's a planning range based on typical DMV labor and materials for the scope you described. Final bids can move with site conditions, permits, material choices, and access. Contractors confirm pricing after reviewing your RFQ (and often a site visit).",
+  },
+  {
+    q: "What happens after I submit an RFQ?",
+    a: "Renovessa reviews your scoped request, solicits bids from vetted contractors in your trade and area, then gets back to you with options — usually within 1–2 business days.",
   },
   {
     q: "Will I get calls from multiple contractors?",
-    a: "No. One vetted contractor is matched to your project. Renovessa does not sell your information to multiple companies simultaneously.",
+    a: "Renovessa runs the bid process for you. You hear from us with consolidated options rather than an uncontrolled blast of cold sales calls. We'll only connect you with contractors relevant to your RFQ.",
   },
   {
     q: "What areas does Renovessa serve?",
     a: FIRST_JOB_MODE
-      ? `Currently serving the DMV area for ${PILOT_TRADE} projects. Enter your ZIP in the form to check coverage.`
-      : "Washington DC, Maryland, and Northern Virginia. Enter your ZIP in the form — we'll let you know if your area is covered.",
+      ? `Currently serving the DMV area for ${PILOT_TRADE} projects. Enter your ZIP in the estimate wizard to check coverage.`
+      : "Washington DC, Maryland, and Northern Virginia. Enter your ZIP in the estimate wizard — we'll let you know if your area is covered.",
   },
   {
     q: "How are contractors vetted?",
     a: "Renovessa requires a valid state contractor license for the relevant trade, proof of general liability insurance, workers' compensation documentation, and a Google review check before granting network access.",
   },
   {
-    q: "What if I need to reschedule?",
-    a: "Contact Renovessa through the confirmation link in your SMS or email. We'll handle the rescheduling with the contractor.",
+    q: "Do I have to accept a bid?",
+    a: "No. The RFQ and bids are informational. Hire who you want, negotiate, or walk away. There is no obligation to Renovessa.",
   },
   {
-    q: "Is my contact information shared with multiple contractors?",
-    a: "No. Your information is shared with one matched contractor after your project is qualified and the appointment is scheduled.",
-  },
-  {
-    q: "What if the contractor doesn't show up?",
-    a: "Renovessa's audit trail records every step from scheduling to check-in. If a contractor no-shows, report it through your confirmation link. We review the evidence and take appropriate action, including contractor account review.",
+    q: "Is my contact information shared broadly?",
+    a: "Your RFQ is shared only as needed to solicit relevant contractor bids through Renovessa. We don't sell lead lists.",
   },
 ];
 

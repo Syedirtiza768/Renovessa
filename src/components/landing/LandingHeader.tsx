@@ -23,7 +23,7 @@ export function LandingHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const phoneDisplay = OPS_PHONE || "(202) 555-0100";
+  const phoneDisplay = OPS_PHONE || "(571) 460-0006";
   const phoneHref = `tel:${phoneDisplay.replace(/\D/g, "")}`;
 
   return (
@@ -62,8 +62,8 @@ export function LandingHeader() {
             <span className="landing-pulse" aria-hidden />
             <span className="font-mono-landing text-xs">{phoneDisplay}</span>
           </a>
-          <a href="#request" className="landing-btn-primary whitespace-nowrap text-sm">
-            Submit My Project →
+          <a href="#estimate" className="landing-btn-primary whitespace-nowrap text-sm">
+            Get Estimate →
           </a>
           {/* Hamburger — mobile only */}
           <button

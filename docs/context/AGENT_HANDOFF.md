@@ -1,40 +1,37 @@
 # Agent Handoff
 
-> Session: 2026-06-19 — Portal UX gap fixes
+> Session: 2026-07-22 — Estimate wizard replaces AI chatbot
 
 ## Completed This Session
 
-- Homeowner: settings page, in-portal submit, project detail view
-- Contractor: settings page (password off dashboard)
-- Admin: My Leads for ops agents, Team CRUD, role-based nav
-- API: session-aware project submission, `POST /api/team`
+- Phone number → **(571) 460-0006** across landing + env defaults
+- New **Estimate & RFQ wizard** on homepage (`#estimate`)
+  - Per-trade scoping questions (HVAC, roofing, kitchen, bath, etc.)
+  - Property/timing context + free-text notes
+  - Instant DMV ballpark range
+  - RFQ submit → `POST /api/project-requests` with `source: estimate_wizard`
+- Landing copy updated: estimate → RFQ → contractor bids → get back to homeowner
+- AI advisor removed from hero (API/components remain unused)
 
 ## Run
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 # → http://localhost:7090
+# or: npm run dev
 ```
 
-Demo accounts (password: `demo1234`):
+Ensure `NEXT_PUBLIC_OPS_PHONE=(571) 460-0006` in `.env`.
 
-| Email | Role |
-|-------|------|
-| admin@renovessa.com | Super Admin |
-| agent@renovessa.com | Ops Agent |
-| sarah.mitchell@demo.renovessa.com | Homeowner |
-| hvac@demo.renovessa.com | Contractor |
+## Key Files
 
-## Key Routes Added
-
-- `/portal/homeowner/submit` — submit another project in-portal
-- `/portal/homeowner/projects/[id]` — homeowner lead detail
-- `/portal/homeowner/settings` — change password
-- `/portal/admin/my-leads` — agent assigned leads
-- `/portal/admin/team` — manage ops employees
+- `src/components/landing/EstimateWizard.tsx`
+- `src/lib/estimate-pricing.ts`
+- `src/lib/estimate-wizard-data.ts`
+- `src/app/api/project-requests/route.ts` (longer description, source, qualificationNotes)
 
 ## Next
 
-- Stakeholder UAT on the five fixed gaps
-- Forgot-password email flow (still deferred)
-- Refactor `LandingProjectForm` to share more code with `PortalProjectForm` if desired
+- Ops workflow to solicit/return bids from RFQs (`estimate_wizard` source)
+- Optionally show ballpark + RFQ fields on admin lead detail
+- Tune pricing tables with real DMV bid data as jobs close

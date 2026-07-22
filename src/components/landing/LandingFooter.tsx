@@ -16,8 +16,8 @@ export function LandingFooter() {
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">For Homeowners</p>
           <ul className="mt-3 space-y-2 text-sm text-ink-70">
             <li>
-              <a href="#request" className="hover:text-ink-100">
-                Submit My Project Request
+              <a href="#estimate" className="hover:text-ink-100">
+                Free Estimate &amp; RFQ
               </a>
             </li>
             <li>
@@ -56,8 +56,8 @@ export function LandingFooter() {
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">Legal &amp; Contact</p>
           <ul className="mt-3 space-y-2 text-sm text-ink-70">
             <li>
-              <a href="tel:+12025550100" className="hover:text-ink-100">
-                (202) 555-0100
+              <a href="tel:+15714600006" className="hover:text-ink-100">
+                (571) 460-0006
               </a>
             </li>
             <li>Privacy Policy</li>

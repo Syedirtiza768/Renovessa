@@ -28,11 +28,11 @@ export function HowItWorksSection() {
       <div className="mx-auto max-w-[1440px]">
         <p className="landing-eyebrow">II. How it works</p>
         <h2 className="landing-h2 mt-3 max-w-2xl">
-          From a one-minute request to a confirmed appointment.
+          From a scoped estimate to real contractor bids.
         </h2>
         <p className="mt-4 max-w-[58ch] text-lg text-ink-70">
-          Most requests are matched to a vetted contractor the same day. Here&apos;s exactly what
-          happens after you submit.
+          The wizard captures the whole job, shows a DMV ballpark, and turns it into an RFQ
+          Renovessa can shop to vetted contractors for you.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
@@ -52,8 +52,8 @@ export function HowItWorksSection() {
 
         <aside className="mt-8 border-l-[3px] border-accent bg-accent-100 px-5 py-4">
           <p className="text-sm font-medium text-ink-100">
-            Renovessa schedules a confirmed appointment — not a flood of callbacks. Your project is
-            routed to one contractor, not shared with five companies simultaneously.
+            You get a planning ballpark up front, then Renovessa runs the RFQ — soliciting bids and
+            getting back to you with options, not a flood of unsolicited sales calls.
           </p>
         </aside>
       </div>
@@ -222,15 +222,15 @@ export function FinalCTASection() {
     <section className="bg-ink-100 px-4 py-16 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="font-serif-landing text-4xl text-bone-0 sm:text-5xl">
-          Ready to get started? It takes about a minute.
+          Ready for a real ballpark?
         </h2>
         <p className="mt-4 text-lg text-bone-1">
-          Tell Renovessa what you need done. We&apos;ll handle the qualification and schedule your
-          appointment with a vetted local contractor.
+          Run the estimate wizard, see a DMV planning range, and submit an RFQ. Renovessa collects
+          contractor bids and gets back to you.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <a href="#request" className="landing-btn-primary-lg">
-            Submit My Project Request →
+          <a href="#estimate" className="landing-btn-primary-lg">
+            Get my free estimate →
           </a>
           <a
             href="#how"
@@ -242,7 +242,7 @@ export function FinalCTASection() {
         <p className="mt-8 text-sm text-bone-2">
           Are you a contractor?{" "}
           <Link href="/for-contractors" className="underline underline-offset-2 hover:text-bone-0">
-            Learn about verified appointments →
+            Learn about joining Renovessa →
           </Link>
         </p>
       </div>

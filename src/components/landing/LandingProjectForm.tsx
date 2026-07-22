@@ -425,7 +425,7 @@ export function LandingProjectForm() {
                   id="phone"
                   type="tel"
                   className="landing-input mt-1"
-                  placeholder="(202) 555-0100"
+                  placeholder="(571) 460-0006"
                   value={form.phone}
                   onChange={(e) => update("phone", e.target.value)}
                   aria-invalid={!!errors.phone}

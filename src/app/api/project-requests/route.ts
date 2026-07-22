@@ -9,7 +9,7 @@ import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
 
 const schema = z.object({
   trade: z.string().min(1),
-  description: z.string().max(600).optional().default(""),
+  description: z.string().max(8000).optional().default(""),
   urgency: z.string(),
   budgetRange: z.string(),
   firstName: z.string().min(1),
@@ -22,6 +22,8 @@ const schema = z.object({
   address: z.string().optional(),
   ownershipAuthority: z.string().optional(),
   preferredAppointmentWindows: z.string().optional(),
+  source: z.enum(["organic", "homeowner_portal", "estimate_wizard", "ai_advisor"]).optional(),
+  qualificationNotes: z.string().max(12000).optional(),
 });
 
 function generateTempPassword(): string {
@@ -79,6 +81,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const source = isLoggedInHomeowner
+      ? "homeowner_portal"
+      : data.source === "estimate_wizard"
+        ? "estimate_wizard"
+        : data.source === "ai_advisor"
+          ? "ai_advisor"
+          : "organic";
+
     const project = await prisma.projectRequest.create({
       data: {
         referenceNumber,
@@ -97,15 +107,25 @@ export async function POST(req: NextRequest) {
         address: data.address,
         ownershipAuthority: data.ownershipAuthority,
         preferredAppointmentWindows: data.preferredAppointmentWindows,
+        qualificationNotes: data.qualificationNotes,
         status: "NEW",
-        source: isLoggedInHomeowner ? "homeowner_portal" : "organic",
+        source,
         serviceCellMatch,
       },
     });
 
+    const sourceLabel =
+      source === "estimate_wizard"
+        ? "estimate wizard RFQ"
+        : source === "homeowner_portal"
+          ? "homeowner portal"
+          : source === "ai_advisor"
+            ? "AI advisor"
+            : "landing page";
+
     await logAuditEvent({
       eventType: "FORM_SUBMITTED",
-      description: `Project request ${referenceNumber} submitted via ${isLoggedInHomeowner ? "homeowner portal" : "landing page"}`,
+      description: `Project request ${referenceNumber} submitted via ${sourceLabel}`,
       projectRequestId: project.id,
       actorId: isLoggedInHomeowner ? session.id : undefined,
     });

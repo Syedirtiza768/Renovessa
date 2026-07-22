@@ -1,4 +1,12 @@
 
+## 2026-07-22 — Estimate wizard + ops phone
+
+- Replaced homepage AI chatbot with multi-step **home improvement estimate wizard** (`EstimateWizard`)
+- Trade-specific scoping questions + DMV ballpark engine (`estimate-pricing.ts`, `estimate-wizard-data.ts`)
+- RFQ submit creates `ProjectRequest` with `source=estimate_wizard`, rich description, and ballpark notes for ops to solicit contractor bids
+- Updated how-it-works / FAQ / CTAs for estimate → RFQ → bids flow
+- Ops phone updated to **(571) 460-0006** (header, footer, env defaults)
+
 ## 2026-07-09 — SendGrid email sending enabled (ray@renovessa.com)
 
 - Deployed SendGrid API key + `SENDGRID_FROM_EMAIL=ray@renovessa.com` + `SENDGRID_REPLY_TO=ray@renovessa.com` to production server `/opt/renovessa/.env` (key stored only on the server, NOT in the repo)

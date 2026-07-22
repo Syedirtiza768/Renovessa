@@ -403,8 +403,8 @@ export function HouseSelector() {
 
         {selected.length > 0 && (
           <div className="mt-6 flex flex-wrap items-center gap-4">
-            <a href="#request" className="landing-btn-primary">
-              Continue to request →
+            <a href="#estimate" className="landing-btn-primary">
+              Continue to estimate →
             </a>
             <p className="text-sm text-ink-70">
               {selected.length} categor{selected.length === 1 ? "y" : "ies"} selected · Step 1 of 2 ·
