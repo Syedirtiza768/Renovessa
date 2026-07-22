@@ -8,6 +8,7 @@
 - Enforced suppression in bulk email and both Twilio outbound call paths; added signed inbound STOP webhook
 - Expanded the public Privacy Policy and added retention/deletion, vendor, privacy-request, and incident-response procedures
 - Added a code-linked register for every estimator branch and an objective-claim register; numeric publication now fails closed until exact model approval
+- Updated Next.js to 15.5.21 and pinned patched PostCSS 8.5.22 / Sharp 0.35.3 transitive versions; `npm install` reports zero known vulnerabilities and the production build passes
 
 ## 2026-07-23 - SEO P0 implementation and production release preparation
 

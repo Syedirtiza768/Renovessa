@@ -31,7 +31,7 @@
     "date-fns": "^4.1.0",
     "jose": "^6.0.11",
     "lucide-react": "^0.513.0",
-    "next": "^15.3.3",
+    "next": "^15.5.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.0",
@@ -50,6 +50,12 @@
     "tailwindcss": "^4.1.8",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.22",
+      "sharp": "^0.35.3"
+    }
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

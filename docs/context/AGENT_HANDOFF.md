@@ -11,6 +11,7 @@
 - Expanded Privacy Policy and added retention/deletion, vendor, privacy-request, and incident-response procedures
 - Added code-linked cost-range and objective-claim registers; AI numeric price generation is prohibited
 - Numeric estimator output is withheld unless `NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION` exactly matches the reviewed model
+- Dependency audit follow-up updated Next.js/PostCSS/Sharp to patched versions; install audit is clean and the build passes
 
 ## Before enabling public numeric ranges
 
