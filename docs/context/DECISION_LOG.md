@@ -4,6 +4,19 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-07-23 — Public intake, consent, and claim publication controls
+
+### Decision
+Public RFQs do not create or reset accounts, and the legacy AI booking route creates only an unassigned RFQ. Legal clickwrap and optional communication consent are server-versioned and evidenced in append-only events. Channel opt-outs are durable and enforced at outbound boundaries. Numeric estimator claims are fail-closed unless the exact model version has substantiation approval.
+
+### Reason
+Email ownership cannot be inferred from a form submission; preselected consent is not affirmative; opt-outs must remain enforceable; and objective advertising claims require a pre-publication reasonable basis.
+
+### Status
+Accepted and implemented.
+
+---
+
 ## 2026-06-02 — Documentation-First Project Setup
 
 ### Decision

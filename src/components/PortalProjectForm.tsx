@@ -13,6 +13,7 @@ import {
 import type { LandingCategoryId } from "@/lib/landing-data";
 import { FIRST_JOB_MODE, PILOT_ZIP_CLUSTERS } from "@/lib/first-job-config";
 import { mapBudget, mapContact, mapUrgency, splitName } from "@/lib/project-intake";
+import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 
 type FormErrors = Record<string, string>;
 
@@ -41,7 +42,8 @@ export function PortalProjectForm({ prefill }: { prefill: Prefill }) {
     appointmentWindows: "",
     contactWindow: "any",
     urgency: "",
-    consent: true,
+    consent: false,
+    legalAccepted: false,
   });
 
   const update = (field: string, value: string | boolean) =>
@@ -90,8 +92,8 @@ export function PortalProjectForm({ prefill }: { prefill: Prefill }) {
   }
 
   async function submit() {
-    if (!form.consent) {
-      setErrors({ consent: "Consent is required to submit." });
+    if (!form.legalAccepted) {
+      setErrors({ legalAccepted: "Accept the Terms and acknowledge the Privacy Policy to submit." });
       return;
     }
     setLoading(true);
@@ -117,7 +119,9 @@ export function PortalProjectForm({ prefill }: { prefill: Prefill }) {
           email: form.email,
           zipCode: form.zip,
           preferredContact: mapContact(form.contactWindow),
-          tcpaConsent: true,
+          tcpaConsent: form.consent,
+          termsAccepted: form.legalAccepted,
+          privacyAcknowledged: form.legalAccepted,
           address: form.address.trim() || undefined,
           ownershipAuthority: form.ownership || undefined,
           preferredAppointmentWindows: form.appointmentWindows.trim() || undefined,
@@ -339,12 +343,26 @@ export function PortalProjectForm({ prefill }: { prefill: Prefill }) {
                   className="mt-1 accent-accent"
                 />
                 <span>
-                  By submitting, I agree to be contacted by Renovessa by phone and SMS regarding my
-                  project request.{" "}
-                  <Link href="/trust" className="text-copper hover:underline">Consent disclosure</Link>
+                  {COMMUNICATION_CONSENT_TEXT}{" "}
+                  <Link href="/tcpa" className="text-copper hover:underline">Calls and texts disclosure</Link>
                 </span>
               </label>
               {errors.consent && <p className="mt-1 text-sm text-danger">{errors.consent}</p>}
+            </div>
+
+            <div>
+              <label className="flex items-start gap-3 text-sm text-muted">
+                <input
+                  type="checkbox"
+                  checked={form.legalAccepted}
+                  onChange={(e) => update("legalAccepted", e.target.checked)}
+                  className="mt-1 accent-accent"
+                />
+                <span>
+                  {LEGAL_CLICKWRAP_TEXT} <Link href="/terms" className="text-copper hover:underline">Terms</Link> · <Link href="/privacy" className="text-copper hover:underline">Privacy</Link>
+                </span>
+              </label>
+              {errors.legalAccepted && <p className="mt-1 text-sm text-danger">{errors.legalAccepted}</p>}
             </div>
 
             {errors.submit && <p className="text-sm text-danger">{errors.submit}</p>}
@@ -354,7 +372,7 @@ export function PortalProjectForm({ prefill }: { prefill: Prefill }) {
               <button
                 type="button"
                 className="btn-primary flex-1"
-                disabled={loading || !form.consent}
+                disabled={loading || !form.legalAccepted}
                 onClick={submit}
               >
                 {loading ? "Submitting…" : "Submit Project Request"}

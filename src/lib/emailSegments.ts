@@ -30,8 +30,17 @@ export interface Recipient {
 
 /** Loads the current suppression set as normalized emails. */
 async function loadSuppressed(): Promise<Set<string>> {
-  const rows = await prisma.emailSuppression.findMany({ select: { email: true } });
-  return new Set(rows.map((r) => normalizeEmail(r.email)));
+  const [legacyRows, complianceRows] = await Promise.all([
+    prisma.emailSuppression.findMany({ select: { email: true } }),
+    prisma.communicationSuppression.findMany({
+      where: { channel: "EMAIL" },
+      select: { normalizedValue: true },
+    }),
+  ]);
+  return new Set([
+    ...legacyRows.map((r) => normalizeEmail(r.email)),
+    ...complianceRows.map((r) => normalizeEmail(r.normalizedValue)),
+  ]);
 }
 
 async function resolveHomeowners(f: SegmentFilters): Promise<Recipient[]> {

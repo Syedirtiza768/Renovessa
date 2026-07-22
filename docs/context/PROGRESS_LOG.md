@@ -1,4 +1,14 @@
 
+## 2026-07-23 — Account integrity and compliance controls
+
+- Removed unauthenticated email-based password resets/account creation from public RFQ endpoints and deleted obsolete temporary-password UI
+- Repaired AI submission so it creates only an unassigned RFQ after explicit legal review; it cannot book, assign, or mutate accounts
+- Made every communication checkbox unchecked/optional and added required versioned Terms/Privacy clickwrap
+- Added append-only consent/acknowledgment/revocation evidence and durable EMAIL/PHONE/SMS suppression state
+- Enforced suppression in bulk email and both Twilio outbound call paths; added signed inbound STOP webhook
+- Expanded the public Privacy Policy and added retention/deletion, vendor, privacy-request, and incident-response procedures
+- Added a code-linked register for every estimator branch and an objective-claim register; numeric publication now fails closed until exact model approval
+
 ## 2026-07-23 - SEO P0 implementation and production release preparation
 
 - Repositioned all public acquisition copy around DMV estimate -> scoped RFQ -> available contractor bid options

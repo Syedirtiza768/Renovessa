@@ -9,6 +9,7 @@ import {
   CONTACT_TIMES,
   DMV_ZIPS,
 } from "@/lib/constants";
+import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 
 export function ProjectRequestForm({ defaultTrade }: { defaultTrade?: string }) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export function ProjectRequestForm({ defaultTrade }: { defaultTrade?: string }) 
     zipCode: "",
     preferredContact: CONTACT_TIMES[3],
     tcpaConsent: false,
+    legalAccepted: false,
   });
 
   const update = (field: string, value: string | boolean) =>
@@ -41,7 +43,11 @@ export function ProjectRequestForm({ defaultTrade }: { defaultTrade?: string }) 
       const res = await fetch("/api/project-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          termsAccepted: form.legalAccepted,
+          privacyAcknowledged: form.legalAccepted,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
@@ -167,16 +173,27 @@ export function ProjectRequestForm({ defaultTrade }: { defaultTrade?: string }) 
               checked={form.tcpaConsent}
               onChange={(e) => update("tcpaConsent", e.target.checked)}
               className="mt-1"
+            />
+            <span>
+              {COMMUNICATION_CONSENT_TEXT} <a href="/tcpa" className="text-copper underline">See the disclosure</a>.
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={form.legalAccepted}
+              onChange={(e) => update("legalAccepted", e.target.checked)}
+              className="mt-1"
               required
             />
             <span>
-              I agree to receive calls and SMS from Renovessa about my project request. Message and data rates may apply. Reply STOP to opt out. See TCPA consent disclosure.
+              {LEGAL_CLICKWRAP_TEXT} <a href="/terms" className="text-copper underline">Terms</a> · <a href="/privacy" className="text-copper underline">Privacy</a>
             </span>
           </label>
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex gap-3">
             <button type="button" className="btn-secondary flex-1" onClick={() => setStep(2)}>Back</button>
-            <button type="button" className="btn-primary flex-1" disabled={!form.tcpaConsent || loading} onClick={submit}>
+            <button type="button" className="btn-primary flex-1" disabled={!form.legalAccepted || loading} onClick={submit}>
               {loading ? "Submitting..." : "Submit My Project Request"}
             </button>
           </div>

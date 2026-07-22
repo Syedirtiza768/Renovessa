@@ -74,7 +74,7 @@ export function unsubscribeUrl(email: string): string {
  */
 export function complianceFooter(email: string): string {
   const address = process.env.MAILING_ADDRESS || "Renovessa";
-  return `\n\n—\nYou're receiving this because you inquired with or were matched through Renovessa.\n${address}\nUnsubscribe: ${unsubscribeUrl(email)}`;
+  return `\n\n—\nThis business message was sent by Renovessa.\n${address}\nUnsubscribe: ${unsubscribeUrl(email)}`;
 }
 
 function escapeHtml(s: string): string {
@@ -96,7 +96,7 @@ export function complianceFooterHtml(email: string): string {
   return (
     `<p style="color:#8a8a8a;font-size:12px;line-height:1.6;margin:28px 0 0;` +
     `border-top:1px solid #e6e6e6;padding-top:14px">` +
-    `You're receiving this because you inquired with or were matched through Renovessa.<br>` +
+    `This business message was sent by Renovessa.<br>` +
     `${escapeHtml(address)}<br>` +
     `<a href="${escapeHtml(url)}" style="color:#8a8a8a;text-decoration:underline">Unsubscribe</a>` +
     `</p>`

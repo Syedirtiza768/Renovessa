@@ -9,8 +9,12 @@
 
 ## Product and operations
 
-1. **Send RFQ pilot 50** - use `rfq_pilot_50_email_drafts.csv`; track yes/info/later/bounce by trade
-2. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
-3. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive
-4. **Fix SendGrid domain authentication** - re-add `renovessa.com` as a bare domain and add the three SendGrid CNAMEs so custom DKIM/SPF is active
-5. **Phase 2+ (deferred)** - SMS integration, calendar ICS, forgot-password email, payment gateway
+1. **Complete estimator evidence review** — attach representative, dated DMV bids/invoices or defensible datasets to every range record; reviewer approves the exact model version before configuring `NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION`
+2. **Operationalize privacy** — name privacy/security owners, complete the vendor register, run the first incident tabletop, and create the restricted privacy-request register
+3. **Harden authentication** — add rate limiting, MFA for privileged users, automated IDOR/consent tests, and a single-use expiring-token recovery email flow
+4. **Configure Twilio opt-out webhook when SMS is enabled** — point inbound messaging to `/api/webhooks/twilio/sms` and retain signature validation
+
+5. **Send RFQ pilot 50** - use `rfq_pilot_50_email_drafts.csv`; track yes/info/later/bounce by trade
+6. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
+7. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive
+8. **Fix SendGrid domain authentication** - re-add `renovessa.com` as a bare domain and add the three SendGrid CNAMEs so custom DKIM/SPF is active

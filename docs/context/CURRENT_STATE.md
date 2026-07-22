@@ -44,6 +44,10 @@
 
 ### Core Workflows
 - RFQ / project request submission with audit trail events + confirmation email
+- Public RFQs never create/reset accounts; AI advisor submissions create only unassigned RFQs, not appointments
+- Required versioned Terms/Privacy clickwrap plus optional, unchecked communication consent with immutable evidence
+- Durable email/phone/SMS suppressions enforced before bulk email and outbound calls
+- Public estimator numeric ranges fail closed until the exact claim-evidence model version is approved
 - Lead status management (admin)
 - Appointment accept / check-in (contractor)
 - Homeowner appointment confirmation
@@ -67,6 +71,7 @@ Password: `demo1234`
 - Payment processing
 - First evidence-rich HVAC/Fairfax cost and permit articles beyond the foundational hubs
 - Search Console verification and privacy-safe organic conversion analytics
+- Production-grade user-initiated password-recovery email flow, privacy-request UI, MFA, and public-endpoint rate limiting
 
 ## Run
 

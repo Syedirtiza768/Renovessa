@@ -4,6 +4,32 @@
 
 ---
 
+## Consent, Clickwrap, and Communication Suppression
+
+### Status
+Implemented
+
+### Purpose
+Record exactly which legal/communication disclosure a person affirmatively accepted and ensure later channel opt-outs are durable and enforced.
+
+### Important Files
+- `src/lib/compliance.ts`
+- `src/lib/compliance-versions.ts`
+- `src/app/api/unsubscribe/route.ts`
+- `src/app/api/webhooks/twilio/sms/route.ts`
+
+### Database Models
+- `ConsentEvent`
+- `CommunicationSuppression`
+
+### Acceptance Criteria
+- No communication option is pre-checked
+- Server requires Terms/Privacy clickwrap and controls stored versions/text
+- Public RFQs never mutate an account based on a submitted email
+- Email/phone/SMS opt-outs are auditable and checked before outbound marketing/calls
+
+---
+
 ## User Authentication
 
 ### Status

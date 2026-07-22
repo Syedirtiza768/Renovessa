@@ -1,70 +1,48 @@
-# Security
+# Security Architecture
 
-> **Status:** Planned — apply during Phase 1+ implementation.
+> **Status:** Implemented controls plus operating requirements, updated 2026-07-23.
 
-## Authentication Security
+## Authentication and account integrity
 
-- Password minimum length and complexity rules (define in implementation)
-- Hash passwords with bcrypt/argon2
-- HTTP-only cookies if session-based
-- Secure flag in production
-- Logout invalidates session
+- Passwords are bcrypt-hashed; JWT sessions use HTTP-only cookies with secure production settings.
+- Admin-only password resets require an authenticated admin-capable session.
+- Public RFQ endpoints never find a user by submitted email to create, link, or reset an account and never return credentials.
+- A submitted RFQ is linked to a homeowner only when that homeowner already has a valid session and the normalized email matches the session.
+- Public account recovery remains deferred until a single-use, expiring, hashed-token email flow with rate limits and session invalidation is implemented.
 
 ## Authorization
 
-- Deny by default on API routes
-- Verify project membership on every project-scoped resource
-- Prevent IDOR: never return project by ID without access check
+- Route handlers must deny by default and check role or resource ownership server-side.
+- Project IDs are not authorization. Every project-scoped read/write must verify membership, homeowner identity, contractor assignment, or an admin permission.
+- Privileged operations are recorded in `AuditEvent`; clickwrap and communication choices use immutable `ConsentEvent` entries.
 
-## Public vs Private
+## Public intake and AI
 
-Document actual routes in `AUTH_RBAC.md` as implemented.
+- `POST /api/project-requests` and legacy `POST /api/advisor/book` validate server-side clickwrap acceptance.
+- Optional communication consent defaults to false. Clients cannot choose disclosure or policy versions stored as evidence.
+- The AI endpoint creates only an unassigned `NEW` RFQ; it cannot confirm an appointment, select a contractor, create an account, or reset a password.
+- The AI prompt is prohibited from inventing numeric prices; approved estimator versions are the only public numeric-range source.
 
-## Sensitive Environment Variables
+## Communication suppression
 
-```env
-DATABASE_URL=
-JWT_SECRET=
-SESSION_SECRET=
-SMTP_API_KEY=
-S3_ACCESS_KEY=
-S3_SECRET_KEY=
-STRIPE_SECRET_KEY=
-```
+- Email unsubscribe, SendGrid unsubscribe/complaint, and signed Twilio STOP events create channel-specific `CommunicationSuppression` state.
+- Revocations append `ConsentEvent` evidence. Delivery bounces are suppressions, not falsely recorded as consent revocations.
+- Bulk email resolution and both Twilio call paths check suppression immediately before outbound contact.
 
-Never commit real values. Use `docs/operations/ENVIRONMENT_VARIABLES.md`.
+## Secrets and production
 
-## File Upload Risks
+- Secrets live only in environment configuration; never commit or print them.
+- Production access uses restricted SSH credentials, HTTPS, least privilege, database backups, and controlled deployments.
+- Rotate exposed keys and invalidate affected sessions. Follow `docs/operations/INCIDENT_RESPONSE.md` for suspected incidents.
 
-- Validate MIME type and extension
-- Enforce max file size
-- Store outside web root; serve via signed URLs
-- Scan for malware (optional, later)
+## Review checklist
 
-## Data Deletion
-
-- User account deletion policy: Needs Decision
-- Project deletion cascades tasks and file metadata; remove objects from storage
-
-## Payment / Finance
-
-Not in MVP. When added, PCI scope minimized via Stripe hosted flows.
-
-## Production Risks
-
-| Risk | Mitigation |
-|------|------------|
-| SQL injection | ORM parameterized queries |
-| XSS | Framework defaults + sanitize rich text if added |
-| CSRF | SameSite cookies + tokens if needed |
-| Secret leak | Pre-commit hooks, env-only secrets |
-| Broken auth | Tests on protected routes |
-
-## Security Review Checklist (Pre-Production)
-
-- [ ] Auth flows tested
-- [ ] RBAC tested per role
-- [ ] Dependencies audited (`npm audit`)
-- [ ] HTTPS enforced
-- [ ] Rate limiting on auth endpoints
-- [ ] Demo seed data removed
+- [x] Public RFQ/account-takeover regression removed
+- [x] AI direct-booking/account mutation removed
+- [x] Affirmative, versioned legal and communication evidence
+- [x] Email and phone suppression enforcement
+- [ ] Rate limiting for public auth/intake endpoints
+- [ ] MFA for privileged users
+- [ ] Production recovery email flow
+- [ ] Automated RBAC/IDOR and consent regression suite
+- [ ] Remove or isolate demo identities before a true public launch

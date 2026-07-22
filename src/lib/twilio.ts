@@ -1,6 +1,7 @@
 import twilio from "twilio";
 import { prisma } from "./db";
 import { logAuditEvent } from "./audit";
+import { isCommunicationSuppressed } from "./compliance";
 
 export class TwilioCallError extends Error {}
 
@@ -60,6 +61,9 @@ export async function placeCall(params: {
 
   const agentPhone = toE164(agent.phone, "Your phone number");
   const toNumber = toE164(params.toNumber, "The number you're calling");
+  if (await isCommunicationSuppressed("PHONE", toNumber)) {
+    throw new TwilioCallError("This number has opted out of phone calls");
+  }
 
   const twilioNumber = params.twilioPhoneNumberId
     ? await prisma.twilioPhoneNumber.findFirst({

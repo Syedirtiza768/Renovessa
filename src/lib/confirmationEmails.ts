@@ -90,25 +90,17 @@ export async function sendRfqConfirmationEmail(params: {
   budgetRange: string;
   description: string;
   projectRequestId: string;
-  tempPassword?: string | null;
-  isExistingAccount?: boolean;
+  hasPortalAccess?: boolean;
 }) {
   const loginUrl = `${appUrl()}/login`;
-  const portalBlock = params.tempPassword
+  const portalBlock = params.hasPortalAccess
     ? `
 
-Your Renovessa portal login (track this RFQ anytime):
-  [Portal](${loginUrl})
-  Email: ${params.to}
-  Password: ${params.tempPassword}
-${
-  params.isExistingAccount
-    ? "(We reset your portal password so you can sign in with this new one.)\n"
-    : ""
-}`
+Track this RFQ in your existing account: [Portal](${loginUrl})
+`
     : `
 
-Track this RFQ anytime: [Portal](${loginUrl})
+For security, submitting an RFQ does not create or reset an account. Reply to this email with questions and keep the reference number below.
 `;
 
   const subject = `Your Renovessa RFQ is in — ${params.referenceNumber}`;

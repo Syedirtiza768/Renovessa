@@ -1,4 +1,5 @@
 import type { LandingCategoryId } from "@/lib/landing-data";
+import { estimateClaimRecord } from "@/lib/estimate-substantiation";
 
 export type EstimateAnswers = Record<string, string>;
 
@@ -10,7 +11,13 @@ export type BallparkEstimate = {
   summary: string;
   drivers: string[];
   disclaimer: string;
+  claimId: string;
+  modelVersion: string;
+  substantiationStatus: "INTERNAL_BASELINE_PENDING_REVIEW" | "APPROVED";
+  publicationApproved: boolean;
 };
+
+type CalculatedRange = Omit<BallparkEstimate, "claimId" | "modelVersion" | "substantiationStatus" | "publicationApproved">;
 
 function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
@@ -20,7 +27,7 @@ function roundTo(n: number, step: number) {
   return Math.round(n / step) * step;
 }
 
-function range(low: number, high: number, drivers: string[], summary: string, confidence: BallparkEstimate["confidence"] = "rough"): BallparkEstimate {
+function range(low: number, high: number, drivers: string[], summary: string, confidence: BallparkEstimate["confidence"] = "rough"): CalculatedRange {
   const l = roundTo(low, low >= 5000 ? 500 : 50);
   const h = roundTo(high, high >= 5000 ? 500 : 50);
   return {
@@ -40,7 +47,7 @@ function mul(baseLow: number, baseHigh: number, factor: number) {
 }
 
 /** DMV-oriented ballpark engine driven by wizard answers. */
-export function calculateBallpark(trade: LandingCategoryId, answers: EstimateAnswers): BallparkEstimate {
+function calculateRange(trade: LandingCategoryId, answers: EstimateAnswers): CalculatedRange {
   const drivers: string[] = [];
   const quality = answers.finish_level || answers.quality || "standard";
   const urgency = answers.urgency || "";
@@ -269,6 +276,18 @@ export function calculateBallpark(trade: LandingCategoryId, answers: EstimateAns
   }
 }
 
+export function calculateBallpark(trade: LandingCategoryId, answers: EstimateAnswers): BallparkEstimate {
+  const estimate = calculateRange(trade, answers);
+  const claim = estimateClaimRecord(trade, answers);
+  return {
+    ...estimate,
+    claimId: claim.id,
+    modelVersion: claim.modelVersion,
+    substantiationStatus: claim.status,
+    publicationApproved: claim.status === "APPROVED",
+  };
+}
+
 export function formatMoney(n: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -278,6 +297,7 @@ export function formatMoney(n: number): string {
 }
 
 export function estimateToBudgetRange(est: BallparkEstimate): string {
+  if (!est.publicationApproved) return "Not published — substantiation review pending";
   const mid = est.mid;
   if (mid < 1000) return "Under $1,000";
   if (mid < 5000) return "$1,000-$5,000";
@@ -304,10 +324,11 @@ export function buildRfqDescription(
     lines.push(`- ${label}: ${value}`);
   }
   lines.push("");
-  lines.push(
-    `Homeowner ballpark shown: ${formatMoney(estimate.low)} – ${formatMoney(estimate.high)} (mid ~${formatMoney(estimate.mid)}, ${estimate.confidence} confidence)`
-  );
+  lines.push(estimate.publicationApproved
+    ? `Homeowner ballpark shown: ${formatMoney(estimate.low)} – ${formatMoney(estimate.high)} (mid ~${formatMoney(estimate.mid)}, ${estimate.confidence} confidence)`
+    : "No numeric range was shown; the model is pending substantiation approval.");
   lines.push(`Estimate summary: ${estimate.summary}`);
+  lines.push(`Estimate evidence record: ${estimate.claimId} (${estimate.modelVersion}; ${estimate.substantiationStatus})`);
   if (estimate.drivers.length) {
     lines.push(`Cost drivers noted: ${estimate.drivers.join("; ")}`);
   }

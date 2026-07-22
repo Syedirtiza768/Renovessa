@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyUnsubscribeToken, normalizeEmail } from "@/lib/unsubscribe";
+import { recordCommunicationOptOut, requestEvidence } from "@/lib/compliance";
 
 /**
  * Public one-click unsubscribe. No auth: the signed token is the credential.
@@ -24,6 +25,13 @@ export async function GET(req: NextRequest) {
     where: { email: normalized },
     update: {},
     create: { email: normalized, reason: "unsubscribe" },
+  });
+  await recordCommunicationOptOut({
+    channel: "EMAIL",
+    value: normalized,
+    reason: "unsubscribe",
+    source: "signed_email_unsubscribe_link",
+    evidence: requestEvidence(req),
   });
 
   return htmlResponse(

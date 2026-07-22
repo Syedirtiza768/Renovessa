@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { generateReferenceNumber } from "@/lib/utils";
 import { logAuditEvent } from "@/lib/audit";
 import { getSession, canAccessAdmin } from "@/lib/auth";
 import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
 import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
+import { recordProjectCompliance, requestEvidence } from "@/lib/compliance";
 
 const schema = z.object({
   trade: z.string().min(1),
@@ -15,23 +15,19 @@ const schema = z.object({
   budgetRange: z.string(),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  phone: z.string().min(10),
+  phone: z.string().refine((value) => value.replace(/\D/g, "").length === 10, "Valid 10-digit US phone number is required"),
   email: z.string().email(),
-  zipCode: z.string().length(5),
+  zipCode: z.string().regex(/^\d{5}$/, "ZIP code must be 5 digits"),
   preferredContact: z.string().optional(),
-  tcpaConsent: z.literal(true),
+  tcpaConsent: z.boolean().default(false),
+  termsAccepted: z.literal(true),
+  privacyAcknowledged: z.literal(true),
   address: z.string().optional(),
   ownershipAuthority: z.string().optional(),
   preferredAppointmentWindows: z.string().optional(),
   source: z.enum(["organic", "homeowner_portal", "estimate_wizard", "ai_advisor"]).optional(),
   qualificationNotes: z.string().max(12000).optional(),
 });
-
-function generateTempPassword(): string {
-  // Avoids ambiguous characters: 0, O, I, l, 1
-  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,44 +39,16 @@ export async function POST(req: NextRequest) {
     const serviceCellMatch = matchesPilotCell(data.zipCode) && matchesPilotTrade(data.trade);
     const isLoggedInHomeowner = session?.role === "HOMEOWNER";
 
-    if (isLoggedInHomeowner && data.email !== session.email) {
+    if (isLoggedInHomeowner && data.email.trim().toLowerCase() !== session.email.toLowerCase()) {
       return NextResponse.json(
         { error: "Email must match your portal account" },
         { status: 400 }
       );
     }
 
-    let homeownerId: string | undefined;
-    let tempPassword: string | null = null;
-    let isExistingAccount = false;
-
-    if (isLoggedInHomeowner) {
-      homeownerId = session.id;
-    } else {
-      const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
-
-      if (existingUser?.role === "HOMEOWNER") {
-        tempPassword = generateTempPassword();
-        await prisma.user.update({
-          where: { id: existingUser.id },
-          data: { passwordHash: await bcrypt.hash(tempPassword, 12) },
-        });
-        homeownerId = existingUser.id;
-        isExistingAccount = true;
-      } else if (!existingUser) {
-        tempPassword = generateTempPassword();
-        const newUser = await prisma.user.create({
-          data: {
-            email: data.email,
-            name: `${data.firstName} ${data.lastName}`,
-            phone: data.phone,
-            passwordHash: await bcrypt.hash(tempPassword, 12),
-            role: "HOMEOWNER",
-          },
-        });
-        homeownerId = newUser.id;
-      }
-    }
+    // Public submissions never create, link, or reset an account based only on
+    // an email address. Only an already-authenticated homeowner owns the RFQ.
+    const homeownerId = isLoggedInHomeowner ? session.id : undefined;
 
     const source = isLoggedInHomeowner
       ? "homeowner_portal"
@@ -90,29 +58,42 @@ export async function POST(req: NextRequest) {
           ? "ai_advisor"
           : "organic";
 
-    const project = await prisma.projectRequest.create({
-      data: {
-        referenceNumber,
-        homeownerId: homeownerId ?? null,
-        firstName: data.firstName,
-        lastName: data.lastName,
+    const evidence = requestEvidence(req);
+    const project = await prisma.$transaction(async (tx) => {
+      const created = await tx.projectRequest.create({
+        data: {
+          referenceNumber,
+          homeownerId: homeownerId ?? null,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email.trim().toLowerCase(),
+          phone: data.phone.replace(/\D/g, ""),
+          zipCode: data.zipCode,
+          trade: data.trade,
+          description: data.description,
+          urgency: data.urgency,
+          budgetRange: data.budgetRange,
+          preferredContact: data.preferredContact,
+          tcpaConsent: false,
+          address: data.address,
+          ownershipAuthority: data.ownershipAuthority,
+          preferredAppointmentWindows: data.preferredAppointmentWindows,
+          qualificationNotes: data.qualificationNotes,
+          status: "NEW",
+          source,
+          serviceCellMatch,
+        },
+      });
+      await recordProjectCompliance(tx, {
+        projectRequestId: created.id,
+        userId: homeownerId,
         email: data.email,
         phone: data.phone,
-        zipCode: data.zipCode,
-        trade: data.trade,
-        description: data.description,
-        urgency: data.urgency,
-        budgetRange: data.budgetRange,
-        preferredContact: data.preferredContact,
-        tcpaConsent: data.tcpaConsent,
-        address: data.address,
-        ownershipAuthority: data.ownershipAuthority,
-        preferredAppointmentWindows: data.preferredAppointmentWindows,
-        qualificationNotes: data.qualificationNotes,
-        status: "NEW",
         source,
-        serviceCellMatch,
-      },
+        communicationConsent: data.tcpaConsent,
+        evidence,
+      });
+      return created;
     });
 
     const sourceLabel =
@@ -133,8 +114,12 @@ export async function POST(req: NextRequest) {
 
     await logAuditEvent({
       eventType: "CONSENT_RECORDED",
-      description: "TCPA/SMS consent recorded",
+      description: data.tcpaConsent
+        ? "Versioned project-communication consent and legal acknowledgments recorded"
+        : "Versioned legal acknowledgments recorded; no phone/SMS consent granted",
       projectRequestId: project.id,
+      actorId: homeownerId,
+      metadata: { communicationConsent: data.tcpaConsent, source },
     });
 
     const emailSent = await sendRfqConfirmationEmail({
@@ -147,16 +132,13 @@ export async function POST(req: NextRequest) {
       budgetRange: data.budgetRange,
       description: data.description,
       projectRequestId: project.id,
-      tempPassword,
-      isExistingAccount,
+      hasPortalAccess: isLoggedInHomeowner,
     });
 
     return NextResponse.json({
       referenceNumber,
       id: project.id,
       email: data.email,
-      tempPassword,
-      isExistingAccount,
       confirmationEmailSent: emailSent,
     });
   } catch (e) {

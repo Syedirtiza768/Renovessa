@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifySendGridSignature } from "@/lib/sendgridWebhook";
 import { normalizeEmail } from "@/lib/unsubscribe";
+import { recordCommunicationOptOut } from "@/lib/compliance";
 
 export const runtime = "nodejs";
 
@@ -79,6 +80,14 @@ async function processEvent(ev: SendGridEvent) {
       where: { email },
       update: {},
       create: { email, reason: suppressReason },
+    });
+    await recordCommunicationOptOut({
+      channel: "EMAIL",
+      value: email,
+      reason: suppressReason,
+      source: "sendgrid_event_webhook",
+      // Bounces are delivery failures, not a person's withdrawal of consent.
+      recordRevocation: suppressReason === "unsubscribe" || suppressReason === "complaint",
     });
   }
 

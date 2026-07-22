@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logAuditEvent } from "@/lib/audit";
 import { getTwilioWebhookBaseUrl, toE164, verifyTwilioSignature } from "@/lib/twilio";
+import { isCommunicationSuppressed } from "@/lib/compliance";
 
 function escapeXml(value: string) {
   return value
@@ -60,6 +61,11 @@ export async function POST(req: NextRequest) {
     callerId = toE164(rawCallerId, "Caller ID");
   } catch (e: any) {
     return new NextResponse(e?.message || "Invalid phone number", { status: 400 });
+  }
+
+  if (await isCommunicationSuppressed("PHONE", to)) {
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Say>This number has opted out of calls.</Say><Hangup/></Response>`;
+    return new NextResponse(twiml, { headers: { "Content-Type": "text/xml" } });
   }
 
   const callSid = body.CallSid;

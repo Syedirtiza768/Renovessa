@@ -94,7 +94,7 @@ Renovessa`,
     subject: "New {{trade}} opportunity — {{reference}}",
     body: `Hi {{companyName}} team,
 
-We have a new {{trade}} opportunity that matches your service area. The homeowner is verified and ready to schedule.
+We have a new {{trade}} request that matches your service area. The homeowner submitted the project for review.
 
 You can review and accept it in your Renovessa portal. If you'd like to take it, please respond within your usual SLA window so we can lock in the appointment.
 

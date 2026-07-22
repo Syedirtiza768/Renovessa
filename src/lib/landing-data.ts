@@ -52,7 +52,7 @@ export const HOW_IT_WORKS_STEPS = [
     step: "II",
     title: "You get a real DMV ballpark.",
     timing: "Instant.",
-    body: "Based on your answers, Renovessa shows a planning range grounded in typical DMV labor and material costs. It's a ballpark for decisions — not a binding quote.",
+    body: "Based on your answers, Renovessa can show a versioned internal planning range only after its supporting DMV evidence record is approved. It is never a binding quote.",
   },
   {
     step: "III",
@@ -93,11 +93,11 @@ export const VERIFICATION_BADGES = [
 export const FAQ_ITEMS = [
   {
     q: "Is Renovessa free for homeowners?",
-    a: "Yes, completely free. The estimate wizard, ballpark, and RFQ submission cost you nothing. Renovessa is paid by contractors when work is successfully coordinated — you pay nothing to us.",
+    a: "Renovessa does not currently charge homeowners to use the estimate wizard or submit an RFQ. Any contractor proposal and payment for project work are separate.",
   },
   {
     q: "How accurate is the ballpark estimate?",
-    a: "It's a planning range based on typical DMV labor and materials for the scope you described. Final bids can move with site conditions, permits, material choices, and access. Contractors confirm pricing after reviewing your RFQ (and often a site visit).",
+    a: "It is a versioned internal planning model, not a claim that every DMV project falls in the range. Numeric output is withheld unless the matching evidence record and model version have been approved. Contractors determine actual pricing after reviewing the scope and site.",
   },
   {
     q: "What happens after I submit an RFQ?",

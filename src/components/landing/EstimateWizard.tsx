@@ -26,6 +26,7 @@ import {
   type EstimateAnswers,
 } from "@/lib/estimate-pricing";
 import { FIRST_JOB_MODE, PILOT_ZIP_CLUSTERS } from "@/lib/first-job-config";
+import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 import { useOptionalCategories } from "./CategoryContext";
 
 type Phase =
@@ -59,6 +60,7 @@ type ContactState = {
   phone: string;
   contactWindow: string;
   consent: boolean;
+  legalAccepted: boolean;
 };
 
 type DraftPayload = {
@@ -199,14 +201,12 @@ export function EstimateWizard({
     phone: prefill?.phone ?? "",
     contactWindow: "any",
     consent: false,
+    legalAccepted: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [receiptId, setReceiptId] = useState("");
   const [projectId, setProjectId] = useState("");
-  const [portalEmail, setPortalEmail] = useState("");
-  const [portalPassword, setPortalPassword] = useState("");
-  const [isExistingAccount, setIsExistingAccount] = useState(false);
   const [emailSent, setEmailSent] = useState(true);
   const [scopeStep, setScopeStep] = useState(0);
   const [contextStep, setContextStep] = useState(0);
@@ -279,7 +279,6 @@ export function EstimateWizard({
     setContextStep(0);
     setReceiptId("");
     setProjectId("");
-    setPortalPassword("");
     clearWizardEntry();
     if (isMobileViewport()) openSheet();
   }, [wizardEntryToken, wizardEntryTrade, clearWizardEntry, openSheet]);
@@ -389,7 +388,7 @@ export function EstimateWizard({
     if (contact.phone.replace(/\D/g, "").length !== 10)
       next.phone = "Enter a valid 10-digit US phone number.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) next.email = "Enter a valid email.";
-    if (!contact.consent) next.consent = "Consent is required to submit your RFQ.";
+    if (!contact.legalAccepted) next.legalAccepted = "Accept the Terms and acknowledge the Privacy Policy to continue.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setPhase("review");
@@ -506,7 +505,9 @@ export function EstimateWizard({
           email: contact.email.trim(),
           zipCode: zip,
           preferredContact: mapContact(contact.contactWindow),
-          tcpaConsent: true,
+          tcpaConsent: contact.consent,
+          termsAccepted: contact.legalAccepted,
+          privacyAcknowledged: contact.legalAccepted,
           ownershipAuthority: answers.ownership || undefined,
           source: "estimate_wizard",
           qualificationNotes: JSON.stringify({
@@ -515,6 +516,9 @@ export function EstimateWizard({
             ballparkMid: estimate.mid,
             confidence: estimate.confidence,
             summary: estimate.summary,
+            claimId: estimate.claimId,
+            estimateModelVersion: estimate.modelVersion,
+            substantiationStatus: estimate.substantiationStatus,
             answers,
             notes: notes.trim() || null,
           }),
@@ -525,11 +529,6 @@ export function EstimateWizard({
       setReceiptId(data.referenceNumber);
       setProjectId(data.id);
       setEmailSent(data.confirmationEmailSent !== false);
-      if (data.tempPassword) {
-        setPortalEmail(data.email);
-        setPortalPassword(data.tempPassword);
-        setIsExistingAccount(data.isExistingAccount ?? false);
-      }
       clearDraft();
       setDraftAvailable(false);
       setPhase("done");
@@ -555,11 +554,11 @@ export function EstimateWizard({
       phone: prefill?.phone ?? "",
       contactWindow: "any",
       consent: false,
+      legalAccepted: false,
     });
     setErrors({});
     setReceiptId("");
     setProjectId("");
-    setPortalPassword("");
     setEmailSent(true);
     setScopeStep(0);
     setContextStep(0);
@@ -579,6 +578,7 @@ export function EstimateWizard({
       phone: draft.contact?.phone ?? prefill?.phone ?? "",
       contactWindow: draft.contact?.contactWindow ?? "any",
       consent: draft.contact?.consent ?? false,
+      legalAccepted: draft.contact?.legalAccepted ?? false,
     });
     setScopeStep(draft.scopeStep ?? 0);
     setContextStep(draft.contextStep ?? 0);
@@ -729,9 +729,6 @@ export function EstimateWizard({
       answerRows={answerRows}
       receiptId={receiptId}
       emailSent={emailSent}
-      portalPassword={portalPassword}
-      portalEmail={portalEmail}
-      isExistingAccount={isExistingAccount}
       embedded={embedded}
       projectId={projectId}
       restart={restart}
@@ -1025,9 +1022,6 @@ function PhaseContent(props: {
   answerRows: { id: string; label: string; value: string }[];
   receiptId: string;
   emailSent: boolean;
-  portalPassword: string;
-  portalEmail: string;
-  isExistingAccount: boolean;
   embedded: boolean;
   projectId: string;
   restart: () => void;
@@ -1060,9 +1054,6 @@ function PhaseContent(props: {
     answerRows,
     receiptId,
     emailSent,
-    portalPassword,
-    portalEmail,
-    isExistingAccount,
     embedded,
     projectId,
     restart,
@@ -1242,17 +1233,25 @@ function PhaseContent(props: {
           <p className="font-mono-landing text-xs uppercase tracking-wide text-ink-40">
             Estimated range
           </p>
-          <p className="mt-2 font-mono-landing text-3xl font-medium text-ink-100 sm:text-4xl">
-            {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
-          </p>
-          <p className="mt-2 text-sm text-ink-70">
-            Midpoint ~{formatMoney(estimate.mid)} ·{" "}
-            {estimate.confidence === "solid"
-              ? "Fairly tight range"
-              : estimate.confidence === "wide"
-                ? "Wide range — site visit will narrow it"
-                : "Typical planning range"}
-          </p>
+          {estimate.publicationApproved ? (
+            <>
+              <p className="mt-2 font-mono-landing text-3xl font-medium text-ink-100 sm:text-4xl">
+                {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
+              </p>
+              <p className="mt-2 text-sm text-ink-70">
+                Midpoint ~{formatMoney(estimate.mid)} ·{" "}
+                {estimate.confidence === "solid"
+                  ? "Fairly tight range"
+                  : estimate.confidence === "wide"
+                    ? "Wide range — site visit will narrow it"
+                    : "Typical planning range"}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-base font-medium text-ink-100">
+              Numeric range temporarily withheld while its DMV evidence record is reviewed.
+            </p>
+          )}
         </div>
         {estimate.drivers.length > 0 && (
           <div>
@@ -1274,6 +1273,9 @@ function PhaseContent(props: {
         <details className="rounded-lg border border-ink-15 bg-white px-4 py-3">
           <summary className="cursor-pointer text-sm font-medium text-ink-100">How we estimate</summary>
           <p className="mt-2 text-xs leading-relaxed text-ink-40">{estimate.disclaimer}</p>
+          <p className="mt-2 text-xs text-ink-40">
+            Methodology record {estimate.claimId} · model {estimate.modelVersion} · {estimate.substantiationStatus}
+          </p>
         </details>
         <div className="rounded-lg border border-ink-15 bg-bone-0 p-4">
           <p className="text-sm font-semibold text-ink-100">Next: turn this into an RFQ</p>
@@ -1381,12 +1383,11 @@ function PhaseContent(props: {
             onChange={(e) => setContact((c) => ({ ...c, consent: e.target.checked }))}
           />
           <span>
-            I agree to be contacted by Renovessa about this RFQ and contractor bids.
+            Optional: I agree that Renovessa may call or text me about this project request.
             <details className="mt-1">
               <summary className="cursor-pointer text-xs text-ink-40">Read full consent</summary>
               <span className="mt-1 block text-xs leading-relaxed text-ink-40">
-                Contact may be by phone, SMS, and email. Message/data rates may apply. Consent is not
-                a condition of purchase. <a href="/tcpa" className="text-accent underline">Read the calls and texts disclosure.</a>
+                {COMMUNICATION_CONSENT_TEXT} <a href="/tcpa" className="text-accent underline">Read the calls and texts disclosure.</a>
               </span>
             </details>
           </span>
@@ -1394,6 +1395,22 @@ function PhaseContent(props: {
         {errors.consent && (
           <p className="text-sm text-danger-landing" role="alert">
             {errors.consent}
+          </p>
+        )}
+        <label className="flex items-start gap-3 text-sm text-ink-70">
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4 shrink-0"
+            checked={contact.legalAccepted}
+            onChange={(e) => setContact((c) => ({ ...c, legalAccepted: e.target.checked }))}
+          />
+          <span>
+            {LEGAL_CLICKWRAP_TEXT} <a href="/terms" className="text-accent underline">Terms</a> · <a href="/privacy" className="text-accent underline">Privacy</a>
+          </span>
+        </label>
+        {errors.legalAccepted && (
+          <p className="text-sm text-danger-landing" role="alert">
+            {errors.legalAccepted}
           </p>
         )}
       </div>
@@ -1430,7 +1447,7 @@ function PhaseContent(props: {
             <ReviewRow label="ZIP" value={zip} />
             <ReviewRow
               label="Ballpark shown"
-              value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
+              value={estimate.publicationApproved ? `${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}` : "Withheld pending evidence review"}
             />
             <ReviewRow
               label="Contact"
@@ -1524,7 +1541,7 @@ function PhaseContent(props: {
             <ReviewRow label="ZIP" value={zip} />
             <ReviewRow
               label="Ballpark"
-              value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
+              value={estimate.publicationApproved ? `${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}` : "Withheld pending evidence review"}
             />
           </dl>
           {answerRows.length > 0 && (
@@ -1558,35 +1575,6 @@ function PhaseContent(props: {
             </li>
           </ol>
         </div>
-        {portalPassword && (
-          <div className="rounded-lg border border-ink-15 bg-bone-0 p-4">
-            <p className="text-sm font-semibold text-ink-100">
-              {isExistingAccount
-                ? "Your portal password has been reset"
-                : "Your homeowner portal account is ready"}
-            </p>
-            <p className="mt-1 text-xs text-ink-70">
-              Log in to track this RFQ and any bids we return. Credentials are also in your
-              confirmation email.
-            </p>
-            <dl className="mt-3 space-y-2 font-mono-landing text-sm">
-              <div className="flex flex-col gap-0.5 rounded border border-ink-15 bg-white px-3 py-2 sm:flex-row sm:justify-between">
-                <dt className="text-ink-40">Email</dt>
-                <dd className="break-all">{portalEmail}</dd>
-              </div>
-              <div className="flex flex-col gap-0.5 rounded border border-ink-15 bg-white px-3 py-2 sm:flex-row sm:justify-between">
-                <dt className="text-ink-40">Password</dt>
-                <dd className="break-all">{portalPassword}</dd>
-              </div>
-            </dl>
-            <a
-              href="/login"
-              className="landing-btn-primary mt-4 inline-flex w-full justify-center text-sm sm:w-auto"
-            >
-              Open portal →
-            </a>
-          </div>
-        )}
         {embedded && projectId && (
           <a
             href={`/portal/homeowner/projects/${projectId}`}

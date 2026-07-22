@@ -14,7 +14,7 @@ export default function EstimateMethodologyPage() {
     <PublicPage
       eyebrow="Estimate methodology"
       title="How Renovessa calculates a project planning range."
-      intro="The estimator applies documented trade rules to the information a homeowner enters. It produces a directional low-to-high range, not a contractor quote, appraisal, offer, or guarantee."
+      intro="The estimator applies documented trade rules to the information a homeowner enters. A numeric range is shown only when the exact model version has passed the claim-evidence publication gate; it is never a contractor quote, appraisal, offer, or guarantee."
       breadcrumbs={[{ label: "Home", href: "/" }, { label: "Methodology" }, { label: "Estimate Methodology" }]}
     >
       <div className="grid gap-5 md:grid-cols-2">
@@ -22,13 +22,13 @@ export default function EstimateMethodologyPage() {
           <p>Inputs vary by trade and can include job type, system or project size, age, materials, finish level, property type, access, urgency, and homeowner notes.</p>
         </InfoCard>
         <InfoCard title="Calculation">
-          <p>Each trade has a maintained DMV base range or unit-cost assumption. Selected scope factors adjust that range. Results are rounded to useful planning increments instead of displaying false precision.</p>
+          <p>Each trade has a versioned internal base range or unit-cost assumption and a unique evidence record. Selected scope factors adjust that range. Results are rounded to planning increments rather than false precision.</p>
         </InfoCard>
         <InfoCard title="Confidence labels">
           <p>“Solid” is used for narrower common service scopes, “rough” for work with meaningful selection or site variation, and “wide” for work where concealed conditions or scope differences can dominate.</p>
         </InfoCard>
         <InfoCard title="Current evidence limitation">
-          <p>The present rules are modeled planning assumptions. Renovessa does not yet claim that the displayed ranges are statistically representative of completed DMV projects or a large first-party bid sample.</p>
+          <p>The present rules are modeled planning assumptions and are marked pending source review. Until representative evidence is attached and the model version is approved, the public estimator withholds its numeric output.</p>
         </InfoCard>
       </div>
       <section className="mt-10 rounded-lg border border-ink-15 bg-bone-1 p-6">

@@ -1,5 +1,15 @@
 # Database Schema
 
+## Implemented compliance records (2026-07-23)
+
+- `ProjectRequest` stores current consent and the versions/timestamps of communication consent, Terms acceptance, and Privacy acknowledgment.
+- `ConsentEvent` is the append-only evidence ledger: action, purpose, channels, normalized subject contacts, exact server-controlled disclosure, document version, source, IP/user-agent evidence, optional project/user link, and timestamp.
+- `CommunicationSuppression` is the current do-not-contact state, uniquely keyed by channel plus normalized email/phone.
+- `EmailSuppression` remains for SendGrid compatibility; bulk sends check both stores.
+
+The Prisma schema is the source of truth. Corrections append a new event. Privacy deletion may de-identify subject fields while retaining the minimum evidence required to honor a suppression or legal obligation.
+
+
 > **Status:** Planned — no migrations exist. Schema is a **draft** for discussion.
 
 ## Overview

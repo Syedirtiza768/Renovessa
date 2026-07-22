@@ -1,5 +1,23 @@
 # Agent Handoff
 
+> Current session: 2026-07-23 — account integrity, consent, privacy, and substantiation
+
+## Implemented
+
+- Removed public email-based account creation/password resets and credential responses from all RFQ paths
+- Converted `/api/advisor/book` into an unassigned RFQ submission with explicit clickwrap; no appointment or contractor assignment
+- Added server-versioned `ConsentEvent` evidence and channel-specific `CommunicationSuppression`
+- Added signed Twilio STOP handling and enforcement for email segments, click-to-call, and softphone calls
+- Expanded Privacy Policy and added retention/deletion, vendor, privacy-request, and incident-response procedures
+- Added code-linked cost-range and objective-claim registers; AI numeric price generation is prohibited
+- Numeric estimator output is withheld unless `NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION` exactly matches the reviewed model
+
+## Before enabling public numeric ranges
+
+Attach representative DMV evidence and reviewer approval for every applicable record in `docs/compliance/substantiation/ESTIMATE_RANGE_REGISTER.md`; then set the production approval variable to `dmv-estimator-2026-07-23-v1` and rebuild.
+
+---
+
 > Current session: 2026-07-23 - SEO P0 implementation and deployment
 
 ## SEO P0 Implemented

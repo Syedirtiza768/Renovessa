@@ -1,5 +1,11 @@
 # Environment Variables
 
+## Claim-publication gate (implemented)
+
+`NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION` must remain blank unless the claim reviewer has approved every applicable record for that exact version. A blank or mismatched value causes the public estimator to withhold numeric ranges. Current review candidate: `dmv-estimator-2026-07-23-v1`.
+
+Twilio inbound messaging must be configured to post to `/api/webhooks/twilio/sms`; `TWILIO_AUTH_TOKEN` is required for signature verification. `UNSUBSCRIBE_SECRET` signs durable email unsubscribe links.
+
 > **Status:** Planned — `.env.example` does not exist yet.
 
 ## Required (Planned — Phase 1+)

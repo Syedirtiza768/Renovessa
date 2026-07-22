@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { getVisibleCategories, type LandingCategoryId } from "@/lib/landing-data";
 import { parseAdvisorMessage, parseAdvisorBooking, type AdvisorSuggestion, type AdvisorBooking } from "@/lib/advisor";
 import { useCategories } from "./CategoryContext";
+import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -21,8 +23,6 @@ interface BookingResult {
   success: boolean;
   referenceNumber: string;
   email: string;
-  tempPassword: string;
-  isExistingAccount: boolean;
   appointment: {
     id: string;
     scheduledAt: string;
@@ -39,6 +39,8 @@ export function AIAdvisor() {
   const [booking, setBooking] = useState<AdvisorBooking | null>(null);
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [bookingResult, setBookingResult] = useState<BookingResult | null>(null);
+  const [communicationConsent, setCommunicationConsent] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState(false);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -89,7 +91,11 @@ export function AIAdvisor() {
 
         setMessages([...nextMessages, { role: "assistant", content: text }]);
         setStreaming("");
-        if (parsedBooking) setBooking(parsedBooking);
+        if (parsedBooking) {
+          setBooking(parsedBooking);
+          setCommunicationConsent(false);
+          setLegalAccepted(false);
+        }
         else if (parsed) setSuggestion(parsed);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
@@ -123,7 +129,12 @@ export function AIAdvisor() {
       const res = await fetch("/api/advisor/book", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(booking),
+        body: JSON.stringify({
+          ...booking,
+          tcpaConsent: communicationConsent,
+          termsAccepted: legalAccepted,
+          privacyAcknowledged: legalAccepted,
+        }),
       });
 
       const data = await res.json();
@@ -132,9 +143,7 @@ export function AIAdvisor() {
       setBookingResult(data);
       setBooking(null);
 
-      const confirmMsg = data.appointment
-        ? `All set! Your ${booking.categoryIds[0]} appointment is confirmed for ${new Date(data.appointment.scheduledAt).toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })} with ${data.appointment.contractorName}.\n\nYour login details have been emailed to ${data.email}. You can also use:\n\nEmail: ${data.email}\nPassword: ${data.tempPassword}\n\nLog in at any time to manage your project.`
-        : `Got it! Your ${booking.categoryIds[0]} request has been submitted (ref: ${data.referenceNumber}). We're matching you with a contractor and will confirm your appointment shortly.\n\nYour login details have been emailed to ${data.email}.\n\nEmail: ${data.email}\nPassword: ${data.tempPassword}`;
+      const confirmMsg = `Your ${booking.categoryIds[0]} RFQ has been submitted for review (ref: ${data.referenceNumber}). For security, this submission did not create or reset an account. Renovessa will check current trade and ZIP availability and email next steps.`;
 
       setMessages((prev) => [...prev, { role: "assistant", content: confirmMsg }]);
     } catch (e) {
@@ -142,7 +151,7 @@ export function AIAdvisor() {
     } finally {
       setBookingInProgress(false);
     }
-  }, [booking]);
+  }, [booking, communicationConsent, legalAccepted]);
 
   const started = messages.length > 0 || streaming.length > 0;
 
@@ -205,7 +214,7 @@ export function AIAdvisor() {
         {booking && !busy && !bookingResult && (
           <div className="rounded-lg border border-accent/40 bg-bone-1 p-3">
             <p className="text-sm font-semibold text-ink-100">
-              Ready to book your appointment?
+              Ready to submit this RFQ for review?
             </p>
             <div className="mt-2 space-y-1 text-xs text-ink-70">
               <p><span className="font-medium">Project:</span> {booking.description || booking.categoryIds.join(", ")}</p>
@@ -217,13 +226,35 @@ export function AIAdvisor() {
                 <p><span className="font-medium">Preferred time:</span> {booking.preferredTime}</p>
               )}
             </div>
+            <label className="mt-3 flex items-start gap-2 text-xs text-ink-70">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={communicationConsent}
+                onChange={(event) => setCommunicationConsent(event.target.checked)}
+              />
+              <span>
+                {COMMUNICATION_CONSENT_TEXT} <Link href="/tcpa" className="text-accent underline">Details</Link>.
+              </span>
+            </label>
+            <label className="mt-3 flex items-start gap-2 text-xs text-ink-70">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={legalAccepted}
+                onChange={(event) => setLegalAccepted(event.target.checked)}
+              />
+              <span>
+                {LEGAL_CLICKWRAP_TEXT} <Link href="/terms" className="text-accent underline">Terms</Link> · <Link href="/privacy" className="text-accent underline">Privacy</Link>
+              </span>
+            </label>
             <button
               type="button"
               className="landing-btn-primary mt-3 w-full"
               onClick={confirmBooking}
-              disabled={bookingInProgress}
+              disabled={bookingInProgress || !legalAccepted}
             >
-              {bookingInProgress ? "Booking…" : "Confirm & Book Appointment"}
+              {bookingInProgress ? "Submitting…" : "Submit RFQ for Review"}
             </button>
           </div>
         )}
@@ -232,7 +263,7 @@ export function AIAdvisor() {
         {bookingResult && (
           <div className="rounded-lg border border-green-300 bg-green-50 p-3">
             <p className="text-sm font-semibold text-green-800">
-              {bookingResult.appointment ? "Appointment confirmed!" : "Request submitted!"}
+              Request submitted for review
             </p>
             {bookingResult.appointment && (
               <p className="mt-1 text-xs text-green-700">
@@ -240,7 +271,7 @@ export function AIAdvisor() {
               </p>
             )}
             <p className="mt-1 text-xs text-green-700">
-              Ref: {bookingResult.referenceNumber} · Login details emailed to {bookingResult.email}
+              Ref: {bookingResult.referenceNumber} · Confirmation sent to {bookingResult.email}
             </p>
           </div>
         )}

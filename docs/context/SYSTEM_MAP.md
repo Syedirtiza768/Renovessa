@@ -18,11 +18,13 @@ flowchart TB
     subgraph external [External]
         Twilio[Twilio Voice SDK]
         SendGrid[SendGrid Email]
+        AI[OpenRouter AI]
     end
     Web --> API
     API --> DB
     API --> Twilio
     API --> SendGrid
+    API --> AI
 ```
 
 ## Frontend Structure
@@ -51,7 +53,7 @@ prisma/              # Database schema and seed data
 
 **Status: Implemented**
 
-PostgreSQL schema via Prisma. Contains 13 models (User, ContractorProfile, CapacityCell, ProjectRequest, Appointment, AuditEvent, Invoice, Feedback, CaseStudy, Dispute, ContractorInquiry, Notification, CallLog).
+PostgreSQL schema via Prisma. In addition to marketplace and communications models, `ConsentEvent` provides immutable clickwrap/consent evidence and `CommunicationSuppression` provides current channel-specific opt-out state.
 See `docs/architecture/DATABASE_SCHEMA.md` and `prisma/schema.prisma`.
 
 ## Authentication Flow
@@ -79,6 +81,8 @@ See `docs/architecture/DATABASE_SCHEMA.md` and `prisma/schema.prisma`.
 |-------------|---------|--------|
 | Email (SendGrid) | Notifications | Implemented |
 | Voice (Twilio) | Softphone dialer | Implemented |
+| SMS (Twilio) | Signed inbound STOP/opt-out processing | Implemented; provider routing requires configuration |
+| AI (OpenRouter) | Informational advisor and RFQ preparation | Implemented; no direct booking/account mutation |
 | Object storage | File uploads | Planned |
 | Payment | Invoicing | Planned |
 
