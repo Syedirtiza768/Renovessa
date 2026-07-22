@@ -383,31 +383,33 @@ model CaseStudy {
 }
 
 model ContractorInquiry {
-  id              String   @id @default(cuid())
-  companyName     String
-  contactName     String
-  phone           String
-  email           String
-  trade           String
-  serviceZips     String
-  yearsInBusiness Int?
-  employeeCount   Int?
-  licensedInsured Boolean  @default(false)
-  usesLeadGen     Boolean  @default(false)
-  avgJobSize      String?
-  referralSource  String?
+  id                String    @id @default(cuid())
+  companyName       String
+  contactName       String
+  phone             String
+  email             String
+  trade             String
+  serviceZips       String
+  yearsInBusiness   Int?
+  employeeCount     Int?
+  licensedInsured   Boolean   @default(false)
+  usesLeadGen       Boolean   @default(false)
+  avgJobSize        String?
+  referralSource    String?
   // Cold-outreach prospect fields (populated by the DMV scraper import). These
   // carry through to the email merge context so bulk sends can personalize with
   // the prospect's city and review rating.
-  city            String?
-  state           String?
-  rating          String?
-  reviewCount     Int?
-  website         String?
-  source          String?
-  status          String   @default("new")
-  isDemo          Boolean  @default(false)
-  createdAt       DateTime @default(now())
+  city              String?
+  state             String?
+  rating            String?
+  reviewCount       Int?
+  website           String?
+  source            String?
+  licenseRegNumber  String?
+  licenseExpiration DateTime?
+  status            String    @default("new")
+  isDemo            Boolean   @default(false)
+  createdAt         DateTime  @default(now())
 
   tags ContactTagInquiry[]
 

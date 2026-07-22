@@ -27,6 +27,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/data/contractor_enrichment/prospects.json ./data/contractor_enrichment/prospects.json
+COPY --from=builder /app/data/contractor_enrichment/rfq_pilot_15_campaign.json ./data/contractor_enrichment/rfq_pilot_15_campaign.json
 COPY package.json package-lock.json ./
 COPY docker-entrypoint.sh ./
 

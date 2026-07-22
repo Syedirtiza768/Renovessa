@@ -1,4 +1,18 @@
 
+# 2026-07-23 — RFQ Pilot 15 campaign preparation and send-safety controls
+
+- Selected 15 unique, high-fit, matched contractor prospects across all 13 represented trades; every selected license is active and no selected record has an outreach caution
+- Replaced two weak addresses with email-first alternatives; all 15 domains publish MX records and the four phone-first addresses are published on their company websites
+- Added exact contact-tag campaign targeting, expected-recipient count locking, preview mismatch warnings, and a server-side refusal to send when the resolved count differs from 15
+- Added Ray Cooper as the actual bulk-email display sender when he owns the campaign, plus a shorter RFQ-first template with truthful variable-availability language
+- Added repeatable generate/verify/production-prepare commands and the pre-send approval packet at `data/contractor_enrichment/rfq_pilot_15_campaign.{json,csv,md}`
+- Verified all 15 production records are currently `new`, unsuppressed, and have zero prior outbound messages
+- Confirmed a valid SendGrid domain-authentication entry now exists for `renovessa.com`; the older malformed/invalid entries remain but are not the active valid entry
+- Found the SendGrid event webhook disabled and the production signature-verification key unset
+- A diagnostic command unintentionally surfaced the active SendGrid API key in tool output; rotate/revoke that key before any further email send
+- `npm run campaign:verify-pilot15`, `npx tsc --noEmit`, and the full production build pass; the build reports expected database-unreachable logs during static collection when local PostgreSQL is not running
+- No contractor email was sent
+
 ## 2026-07-23 — Account integrity and compliance controls
 
 - Removed unauthenticated email-based password resets/account creation from public RFQ endpoints and deleted obsolete temporary-password UI

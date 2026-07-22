@@ -26,6 +26,9 @@ export interface EmailContext {
   reviewCount?: string;
   ratingLine?: string;
   ratingMath?: string;
+  zip?: string;
+  proofLine?: string;
+  licenseLine?: string;
 }
 
 export interface EmailTemplate {
@@ -133,6 +136,26 @@ Thanks,
 Renovessa`,
   },
   // --- Cold outreach (bulk) ---
+  {
+    id: "prospect_contractor_rfq_pilot_15",
+    name: "Prospecting — RFQ pilot (trade balanced)",
+    audience: ["prospect_contractor"],
+    subject: "{{companyName}} — {{tradeLabel}} requests near {{city}}",
+    body: `Hi {{greetingName}},
+
+I came across {{companyName}} while reviewing {{city}} contractors. {{proofLine}}
+
+On Renovessa, homeowners use a guided estimator to describe the trade, size, materials, and timing of a project. If they want contractor bids, they can submit that scope as a request for quote.
+
+We're building our {{tradeLabel}} coverage around {{city}} and {{zip}}. Once approved, {{companyName}} can review matching requests and decide which ones to bid. Availability varies; there is no promised job volume or obligation to accept a request.
+
+Reply “yes” for onboarding, “info” for a sample RFQ, or “later.” Or apply here: [Apply](https://renovessa.com/for-contractors)
+
+{{agentName}}
+[Renovessa](https://renovessa.com)
+
+{{licenseLine}}`,
+  },
   {
     id: "prospect_contractor_intro",
     name: "Prospecting — icebreaker (astrology)",

@@ -179,4 +179,31 @@ SendGrid domain authentication (whitelabel) for `renovessa.com` was created with
 4. Wait for SendGrid to verify `valid:true` (usually minutes after DNS propagation)
 
 ### Status
-Open
+Resolved for sending as of 2026-07-23. SendGrid reports a newer bare-domain
+`renovessa.com` authentication entry as valid, including the mail CNAME and both
+DKIM records. Two older invalid entries remain and can be cleaned up later.
+
+---
+
+## SendGrid API Key Exposure and Disabled Event Webhook
+
+### Type
+Security / Deliverability / Suppression Risk
+
+### Severity
+High
+
+### Description
+During the 2026-07-23 Pilot 15 preflight, a malformed read-only diagnostic
+command printed the active SendGrid API key in tool output. The production event
+webhook is also disabled, and `SENDGRID_WEBHOOK_VERIFICATION_KEY` is unset.
+
+### Required mitigation
+1. Create a replacement SendGrid API key with only the permissions required by the application
+2. Update production without printing the secret, restart the app, verify an internal send, and revoke the exposed key
+3. Enable the event webhook for delivery and negative events at `/api/webhooks/sendgrid/events`
+4. Enable signed-webhook verification and store the public key in production
+5. Send a SendGrid test event and confirm the endpoint rejects unsigned events after configuration
+
+### Status
+Open — blocks all external contractor campaign sends

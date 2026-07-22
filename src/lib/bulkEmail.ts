@@ -83,12 +83,22 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
   const owner = campaign.ownerAgentId
     ? await prisma.user.findUnique({ where: { id: campaign.ownerAgentId }, select: { name: true } })
     : null;
-  const agentName = owner?.name || fromName;
+  const senderName = owner?.name || fromName;
 
-  const recipients = await resolveSegment(
-    campaign.audience as EmailAudience,
-    (campaign.filters as SegmentFilters) || {}
-  );
+  const filters = (campaign.filters as SegmentFilters) || {};
+  const recipients = await resolveSegment(campaign.audience as EmailAudience, filters);
+
+  if (filters.expectedCount !== undefined) {
+    const expected = Number(filters.expectedCount);
+    if (!Number.isInteger(expected) || expected < 1 || expected > 10000) {
+      throw new SendGridError("Campaign expectedCount must be an integer between 1 and 10000");
+    }
+    if (recipients.length !== expected) {
+      throw new SendGridError(
+        `Campaign safety check failed: expected ${expected} recipients but resolved ${recipients.length}. Review the audience, tags, and suppressions before sending.`
+      );
+    }
+  }
 
   // Determine the HTML body template: prefer bodyHtml from the TipTap editor,
   // fall back to converting the plain-text bodyTemplate.
@@ -110,7 +120,7 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
         const { subject, text, html } = render(
           campaign.subject,
           htmlTemplate || campaign.bodyTemplate,
-          { ...r.context, agentName: r.context.agentName || agentName },
+          { ...r.context, agentName: r.context.agentName || senderName },
           r.email,
           Boolean(htmlTemplate)
         );
@@ -120,7 +130,7 @@ export async function sendCampaign(campaignId: string): Promise<SendCampaignResu
         try {
           const [response] = await client.send({
             to: r.email,
-            from: { email: fromEmail, name: fromName },
+            from: { email: fromEmail, name: senderName },
             replyTo,
             subject,
             text,

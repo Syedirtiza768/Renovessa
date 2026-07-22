@@ -1,5 +1,26 @@
 # Agent Handoff
 
+> Current session: 2026-07-23 — RFQ Pilot 15 pre-send preparation
+
+## Implemented
+
+- Exact 15-recipient, 13-trade contractor cohort with rendered review assets in `data/contractor_enrichment/rfq_pilot_15_campaign.*`
+- Contact-tag targeting and `expectedCount=15` fail-closed enforcement in bulk campaign preview/send
+- Repeatable campaign generation, verification, and production draft-preparation commands
+- Short RFQ-first, variable-availability copy; Ray Cooper is used as the actual display sender when he owns the campaign
+- Production data check: all 15 are new, unsuppressed, and previously uncontacted
+- Recipient check: all 15 domains have MX; four originally phone-first addresses were confirmed on company websites
+
+## Hard send blockers
+
+1. Rotate and revoke the current SendGrid API key because it appeared in diagnostic tool output
+2. Enable the SendGrid event webhook for processed/delivered/dropped/bounce/spam/unsubscribe (and optional open/click), enable signature verification, and set `SENDGRID_WEBHOOK_VERIFICATION_KEY` in production
+3. Send and inspect an internal monitoring test after the new key/webhook configuration is live
+4. Re-resolve the production draft and confirm exactly 15 recipients
+5. Obtain explicit final approval before the external send
+
+**No contractor email has been sent.**
+
 > Current session: 2026-07-23 — account integrity, consent, privacy, and substantiation
 
 ## Implemented

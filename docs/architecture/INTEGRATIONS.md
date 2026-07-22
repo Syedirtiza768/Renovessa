@@ -37,6 +37,11 @@ contractors). Each recipient gets a personalized message with a CAN-SPAM footer
 (mailing address + one-click unsubscribe) and its own `EmailMessage` row linked
 back to the campaign. Managed from **Ops → Campaigns**.
 
+Prospective-contractor campaigns can target an exact `ContactTag`. An optional
+`expectedCount` safety lock is re-checked after current suppressions are applied;
+the sender refuses to run if the count differs. The RFQ Pilot 15 uses both
+controls so a broad `new` segment cannot be sent accidentally.
+
 Additional env vars: `SENDGRID_REPLY_TO` (shared inbox for campaign replies),
 `MAILING_ADDRESS` (footer), `UNSUBSCRIBE_SECRET` (signs unsubscribe tokens),
 `SENDGRID_WEBHOOK_VERIFICATION_KEY` (webhook signature).
@@ -47,6 +52,10 @@ authentication. In SendGrid: **Settings → Sender Authentication → Authentica
 Your Domain**, then add the generated **SPF** and **DKIM** DNS records. Add a
 **DMARC** record (`v=DMARC1; p=none; rua=mailto:dmarc@renovessa.com`) and tighten
 the policy once aligned. Warm up volume gradually on a new domain/IP.
+
+As of 2026-07-23, SendGrid reports one valid `renovessa.com` domain-authentication
+entry (including mail CNAME and both DKIM records). Two older invalid entries
+remain in the account and may be removed during credential cleanup.
 
 ## Webhooks
 
@@ -66,6 +75,11 @@ upsert; timestamps are set-once), so SendGrid retries are safe.
 
 If `SENDGRID_WEBHOOK_VERIFICATION_KEY` is unset, signature verification is
 skipped — acceptable in local dev, not in production.
+
+**Current production preflight (2026-07-23):** the event webhook is disabled and
+the verification key is unset. Bulk contractor sends remain blocked until the
+webhook is enabled, signature verification is configured, and a test event is
+accepted by the production endpoint.
 
 ## Twilio
 

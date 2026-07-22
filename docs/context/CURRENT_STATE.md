@@ -26,6 +26,9 @@
 ### Contractor outreach (prep)
 - Enriched MD license prospects + Wave A–D onboarding drafts (`data/contractor_enrichment/`)
 - **RFQ pilot 50** — trade/ZIP-balanced customized emails pitching estimate → RFQ → bid routing (`rfq_pilot_50_*`)
+- **RFQ Pilot 15 approval packet** — exact 15-company cohort across 13 trades, rendered copy, CSV/JSON/Markdown review assets, active-license checks, recipient-domain MX checks, and website evidence for phone-first addresses (`rfq_pilot_15_campaign.*`)
+- Bulk campaigns support contact-tag targeting plus an `expectedCount` safety lock; sending fails closed if the resolved/suppression-filtered audience drifts from the approved count
+- Pilot 15 is **not sent**. Production send is blocked until the exposed SendGrid API key is rotated, the signed event webhook is enabled/configured, an internal rendering test passes, and the final approval gate is cleared
 
 ### Organic Search Foundation (Implemented)
 - Comprehensive DMV organic-search and content blueprint at `docs/marketing/SEO_STRATEGY_DMV.md`

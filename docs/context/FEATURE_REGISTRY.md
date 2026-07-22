@@ -30,6 +30,35 @@ Record exactly which legal/communication disclosure a person affirmatively accep
 
 ---
 
+## Bulk Email Campaigns
+
+### Status
+Implemented; RFQ Pilot 15 prepared but not sent
+
+### Purpose
+Send personalized, suppression-aware outreach to approved homeowner, contractor,
+or prospective-contractor segments through SendGrid.
+
+### Important Files
+- `src/lib/bulkEmail.ts`
+- `src/lib/emailSegments.ts`
+- `src/app/api/campaigns/preview/route.ts`
+- `data/contractor_enrichment/rfq_pilot_15_campaign.*`
+
+### Safety Controls
+- Demo contacts, duplicate addresses, and both suppression stores are excluded
+- Prospective contractors can be targeted by an exact contact tag
+- `expectedCount` is checked at preview and send time; a mismatch refuses the send
+- Every message receives the mailing-address and one-click unsubscribe footer
+- Pilot 15 production preparation fails on prior outreach, non-new status, expired licenses, cautions, suppressions, duplicates, or a count other than 15
+
+### Current Blockers
+- Rotate the exposed SendGrid API key
+- Enable and sign the SendGrid event webhook
+- Pass an internal monitoring send and obtain final approval
+
+---
+
 ## User Authentication
 
 ### Status

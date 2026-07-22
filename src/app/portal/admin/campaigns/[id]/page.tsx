@@ -21,7 +21,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   });
   if (!campaign) notFound();
 
-  const filters = (campaign.filters as Record<string, string> | null) || {};
+  const filters = (campaign.filters as Record<string, string | number> | null) || {};
   const activeFilters = Object.entries(filters).filter(([, v]) => v);
 
   // Delivery stats from the SendGrid event webhook (phase 2). Only meaningful
@@ -105,7 +105,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
       {activeFilters.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {activeFilters.map(([k, v]) => (
-            <span key={k} className="rounded bg-blueprint px-2 py-1 text-xs text-muted">{k}: {v}</span>
+            <span key={k} className="rounded bg-blueprint px-2 py-1 text-xs text-muted">{k}: {String(v)}</span>
           ))}
         </div>
       )}
@@ -157,7 +157,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         audience={campaign.audience}
         subject={campaign.subject}
         bodyTemplate={campaign.bodyTemplate}
-        filters={filters}
+        filters={Object.fromEntries(Object.entries(filters).map(([key, value]) => [key, value]))}
         status={campaign.status}
       />
     </div>

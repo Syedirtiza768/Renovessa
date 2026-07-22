@@ -19,6 +19,8 @@ export interface SegmentFilters {
   zip?: string;
   status?: string;
   tier?: string;
+  tag?: string;
+  expectedCount?: number;
 }
 
 export interface Recipient {
@@ -128,6 +130,26 @@ function ratingLine(rating: string | null | undefined): string {
     : `Your reviews are exactly why I'm emailing you and not the guy down the road.`;
 }
 
+function proofLine(
+  rating: string | null | undefined,
+  reviewCount: number | null | undefined
+): string {
+  const ratingValue = rating?.trim();
+  const ratingNumber = Number(ratingValue);
+  if (ratingValue && ratingNumber >= 4.5 && reviewCount && reviewCount > 0) {
+    return `Its ${ratingValue}-star profile across ${reviewCount} reviews stood out.`;
+  }
+  if (ratingValue && ratingNumber >= 4.5) return `Its ${ratingValue}-star profile stood out.`;
+  return `Your local work appears relevant to the project requests homeowners bring to Renovessa.`;
+}
+
+function licenseLine(companyName: string, licenseRegNumber: string | null | undefined): string {
+  const license = licenseRegNumber?.trim();
+  return license
+    ? `P.S. This note is intended for ${companyName} (MD license ${license}). Wrong inbox? Please forward it to the owner.`
+    : `P.S. This note is intended for ${companyName}. Wrong inbox? Please forward it to the owner.`;
+}
+
 /**
  * Computes the "harsh reality" math line: how many consecutive 5-star reviews
  * a contractor needs to reach 4.9, given their current rating and review count.
@@ -173,6 +195,7 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
       status: f.status === "all" ? undefined : (f.status || "new"),
       // serviceZips is a comma-separated string on inquiries.
       serviceZips: f.zip ? { contains: f.zip } : undefined,
+      tags: f.tag ? { some: { tag: { name: f.tag } } } : undefined,
     },
     select: {
       companyName: true,
@@ -182,6 +205,8 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
       city: true,
       rating: true,
       reviewCount: true,
+      serviceZips: true,
+      licenseRegNumber: true,
     },
   });
   return rows
@@ -200,6 +225,9 @@ async function resolveProspectContractors(f: SegmentFilters): Promise<Recipient[
         reviewCount: r.reviewCount ? String(r.reviewCount) : undefined,
         ratingLine: ratingLine(r.rating),
         ratingMath: ratingMath(r.rating, r.reviewCount),
+        zip: r.serviceZips?.split(",").map((z) => z.trim()).find(Boolean),
+        proofLine: proofLine(r.rating, r.reviewCount),
+        licenseLine: licenseLine(r.companyName, r.licenseRegNumber),
       },
     }));
 }

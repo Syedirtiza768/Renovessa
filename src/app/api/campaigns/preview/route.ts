@@ -31,7 +31,20 @@ export async function POST(req: NextRequest) {
       };
     }
 
-    return NextResponse.json({ count: recipients.length, sample, example });
+    const expectedCount = filters?.expectedCount === undefined
+      ? null
+      : Number(filters.expectedCount);
+    const countMatchesExpected = expectedCount === null
+      ? null
+      : Number.isInteger(expectedCount) && recipients.length === expectedCount;
+
+    return NextResponse.json({
+      count: recipients.length,
+      sample,
+      example,
+      expectedCount,
+      countMatchesExpected,
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Failed to preview segment" }, { status: e?.status || 500 });
   }

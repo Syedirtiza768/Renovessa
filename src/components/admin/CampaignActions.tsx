@@ -20,7 +20,7 @@ export function CampaignActions({
   audience: string;
   subject: string;
   bodyTemplate: string;
-  filters: Record<string, string>;
+  filters: Record<string, string | number>;
   status: string;
 }) {
   const router = useRouter();
@@ -49,6 +49,9 @@ export function CampaignActions({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to resolve recipients");
       setCount(data.count);
+      if (data.countMatchesExpected === false) {
+        throw new Error(`Safety check failed: expected ${data.expectedCount} recipients but resolved ${data.count}.`);
+      }
       setConfirming(true);
     } catch (e: any) {
       setError(e.message);

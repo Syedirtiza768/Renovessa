@@ -21,6 +21,8 @@ interface PreviewState {
   count: number;
   sample: string[];
   example: { to: string; subject: string; body: string } | null;
+  expectedCount: number | null;
+  countMatchesExpected: boolean | null;
 }
 
 export default function NewCampaignPage() {
@@ -31,7 +33,7 @@ export default function NewCampaignPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
-  const [filters, setFilters] = useState({ trade: "", zip: "", status: "", tier: "" });
+  const [filters, setFilters] = useState({ trade: "", zip: "", status: "", tier: "", tag: "", expectedCount: "" });
   const [showPreview, setShowPreview] = useState(false);
 
   const [preview, setPreview] = useState<PreviewState | null>(null);
@@ -68,6 +70,10 @@ export default function NewCampaignPage() {
       zip: filters.zip.trim() || undefined,
       status: filters.status.trim() || undefined,
       tier: audience === "contractor" ? filters.tier.trim() || undefined : undefined,
+      tag: audience === "prospect_contractor" ? filters.tag.trim() || undefined : undefined,
+      expectedCount: filters.expectedCount.trim()
+        ? Number.parseInt(filters.expectedCount, 10)
+        : undefined,
     };
   }
 
@@ -187,6 +193,18 @@ export default function NewCampaignPage() {
                   onChange={(e) => setFilters((f) => ({ ...f, tier: e.target.value }))} />
               </div>
             )}
+            {audience === "prospect_contractor" && (
+              <div>
+                <label className="text-xs font-medium text-muted">Contact tag</label>
+                <input className="input mt-1" placeholder="e.g. RFQ Pilot 15 — July 2026" value={filters.tag}
+                  onChange={(e) => setFilters((f) => ({ ...f, tag: e.target.value }))} />
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium text-muted">Expected recipient count</label>
+              <input className="input mt-1" type="number" min="1" max="10000" placeholder="Fail send if count changes" value={filters.expectedCount}
+                onChange={(e) => setFilters((f) => ({ ...f, expectedCount: e.target.value }))} />
+            </div>
           </div>
           <p className="text-xs text-muted">Leave a filter blank to include everyone. Demo and unsubscribed contacts are always excluded.</p>
         </div>
@@ -243,6 +261,11 @@ export default function NewCampaignPage() {
               <span className="text-2xl font-bold">{preview.count}</span>{" "}
               <span className="text-muted">recipient{preview.count === 1 ? "" : "s"} match this segment</span>
             </p>
+            {preview.countMatchesExpected === false && (
+              <p className="text-sm font-medium text-red-700">
+                Safety check failed: expected {preview.expectedCount} recipients but resolved {preview.count}.
+              </p>
+            )}
             {preview.sample.length > 0 && (
               <p className="text-xs text-muted">
                 Sample: {preview.sample.join(", ")}{preview.count > preview.sample.length ? " …" : ""}

@@ -10,7 +10,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "campaign:generate-pilot15": "tsx scripts/generate-rfq-pilot-15-campaign.ts",
+    "campaign:prepare-pilot15": "tsx prisma/prepare-rfq-pilot-15.ts data/contractor_enrichment/rfq_pilot_15_campaign.json",
+    "campaign:verify-pilot15": "tsx scripts/verify-rfq-pilot-15-campaign.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",

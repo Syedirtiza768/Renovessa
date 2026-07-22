@@ -14,7 +14,9 @@
 3. **Harden authentication** — add rate limiting, MFA for privileged users, automated IDOR/consent tests, and a single-use expiring-token recovery email flow
 4. **Configure Twilio opt-out webhook when SMS is enabled** — point inbound messaging to `/api/webhooks/twilio/sms` and retain signature validation
 
-5. **Send RFQ pilot 50** - use `rfq_pilot_50_email_drafts.csv`; track yes/info/later/bounce by trade
-6. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
-7. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive
-8. **Fix SendGrid domain authentication** - re-add `renovessa.com` as a bare domain and add the three SendGrid CNAMEs so custom DKIM/SPF is active
+5. **Rotate the SendGrid API key before email use** — create a replacement key, update production without printing it, restart the app, verify a safe internal send, then revoke the exposed key
+6. **Enable the signed SendGrid event webhook** — point it to `https://renovessa.com/api/webhooks/sendgrid/events`, enable delivery/bounce/drop/spam/unsubscribe events, enable signature verification, store the public verification key, and test the endpoint
+7. **Prepare and review RFQ Pilot 15 in production** — run `npm run campaign:prepare-pilot15`, verify the draft resolves exactly 15 recipients, inspect the rendered approval packet, and send one internal monitoring test
+8. **Final approval then send Pilot 15** — do not contact contractors until the named cohort and rendered messages are explicitly approved; follow up once after 4–5 business days only with non-responders
+9. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
+10. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive after key rotation

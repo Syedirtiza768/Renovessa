@@ -33,3 +33,18 @@ npm run test:coverage
 ## Implementation Status
 
 No test framework configured.
+
+### Implemented campaign verification
+
+```bash
+npm run campaign:generate-pilot15
+npm run campaign:verify-pilot15
+npx tsc --noEmit
+npm run build
+```
+
+The Pilot 15 verifier checks exact count, trade allocation, unique companies and
+addresses, matched/hot status, active licenses, absence of outreach cautions,
+resolved merge fields, required CTA/disclaimer content, and prohibited claims.
+Production preparation separately fails on suppressions, prior outbound contact,
+non-new status, expired licenses, or a tagged cohort other than exactly 15.
