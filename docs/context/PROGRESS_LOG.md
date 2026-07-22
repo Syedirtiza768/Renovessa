@@ -1,4 +1,19 @@
 
+## 2026-07-22 — RFQ-only path + confirmation emails
+
+- Homeowner RFQ confirmation email on `POST /api/project-requests` (`confirmationEmails.ts`)
+- Contractor application confirmation email on `POST /api/contractor-inquiries`
+- Estimate wizard: review/preview step before submit + rich success screen with full RFQ summary
+- Removed landing short-form request; `/for-homeowners` and portal submit rebuilt around the wizard
+- Public/portal CTAs point to `#estimate` / Submit RFQ
+
+## 2026-07-22 — RFQ pilot 50 contractor emails
+
+- Combined live Estimates/RFQ homepage insight with existing enrichment + Wave A–D outreach prep
+- Selected 50 contractors (few per trade, spread across 16 ZIPs) from Rockville/Gaithersburg pool
+- Generated short RFQ-first onboarding drafts: homeowner wizard → ballpark → RFQ → we send RFQs to onboarded pros
+- Artifacts: `rfq_pilot_50_strategy.md`, `rfq_pilot_50_email_drafts.{md,csv,json}`, `scripts/generate_rfq_pilot_50_emails.py`
+
 ## 2026-07-22 — Estimate wizard + ops phone
 
 - Replaced homepage AI chatbot with multi-step **home improvement estimate wizard** (`EstimateWizard`)

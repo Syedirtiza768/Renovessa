@@ -28,9 +28,10 @@ type Phase =
   | "notes"
   | "estimate"
   | "contact"
+  | "review"
   | "done";
 
-const PHASES: Phase[] = ["trade", "scope", "context", "notes", "estimate", "contact"];
+const PHASES: Phase[] = ["trade", "scope", "context", "notes", "estimate", "contact", "review"];
 
 function phaseIndex(p: Phase) {
   return PHASES.indexOf(p);
@@ -55,7 +56,28 @@ function mapContact(w: string): string {
   return "Any time";
 }
 
-export function EstimateWizard() {
+function displayAnswer(tradeId: LandingCategoryId, id: string, value: string): string {
+  const tradeQ = getTradeWizard(tradeId)?.questions.find((q) => q.id === id);
+  if (tradeQ) return optionLabel(tradeQ, value);
+  const shared = SHARED_CONTEXT_QUESTIONS.find((q) => q.id === id);
+  if (shared) return optionLabel(shared, value);
+  return value;
+}
+
+export type EstimateWizardProps = {
+  /** "landing" = full section chrome; "embedded" = portal / secondary pages */
+  variant?: "landing" | "embedded";
+  prefill?: { name?: string; email?: string; phone?: string };
+  lockEmail?: boolean;
+  onSubmitted?: (result: { id: string; referenceNumber: string }) => void;
+};
+
+export function EstimateWizard({
+  variant = "landing",
+  prefill,
+  lockEmail = false,
+  onSubmitted,
+}: EstimateWizardProps) {
   const categories = getWizardCategories();
   const [phase, setPhase] = useState<Phase>("trade");
   const [trade, setTrade] = useState<LandingCategoryId | null>(null);
@@ -63,18 +85,22 @@ export function EstimateWizard() {
   const [notes, setNotes] = useState("");
   const [zip, setZip] = useState("");
   const [contact, setContact] = useState({
-    name: "",
-    email: "",
-    phone: "",
+    name: prefill?.name ?? "",
+    email: prefill?.email ?? "",
+    phone: prefill?.phone ?? "",
     contactWindow: "any",
     consent: true,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [receiptId, setReceiptId] = useState("");
+  const [projectId, setProjectId] = useState("");
   const [portalEmail, setPortalEmail] = useState("");
   const [portalPassword, setPortalPassword] = useState("");
   const [isExistingAccount, setIsExistingAccount] = useState(false);
+  const [emailSent, setEmailSent] = useState(true);
+  const embedded = variant === "embedded";
+
 
   const tradeConfig = trade ? getTradeWizard(trade) : null;
   const tradeLabel =
@@ -148,8 +174,7 @@ export function EstimateWizard() {
     setPhase("contact");
   }
 
-  async function submitRfq() {
-    if (!trade || !estimate) return;
+  function goReview() {
     const next: Record<string, string> = {};
     if (!contact.name.trim()) next.name = "Enter your full name.";
     const digits = contact.phone.replace(/\D/g, "");
@@ -158,10 +183,17 @@ export function EstimateWizard() {
     if (!contact.consent) next.consent = "Consent is required to submit your RFQ.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
+    setPhase("review");
+  }
+
+  async function submitRfq() {
+    if (!trade || !estimate) return;
 
     setLoading(true);
+    setErrors({});
     try {
       const { firstName, lastName } = splitName(contact.name);
+      const digits = contact.phone.replace(/\D/g, "");
       const labelMap = buildQuestionLabelMap(trade);
       const description = buildRfqDescription(tradeLabel, answers, estimate, labelMap, notes);
 
@@ -196,12 +228,15 @@ export function EstimateWizard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Submission failed");
       setReceiptId(data.referenceNumber);
+      setProjectId(data.id);
+      setEmailSent(data.confirmationEmailSent !== false);
       if (data.tempPassword) {
         setPortalEmail(data.email);
         setPortalPassword(data.tempPassword);
         setIsExistingAccount(data.isExistingAccount ?? false);
       }
       setPhase("done");
+      onSubmitted?.({ id: data.id, referenceNumber: data.referenceNumber });
     } catch (e) {
       setErrors({ submit: e instanceof Error ? e.message : "Something went wrong" });
     } finally {
@@ -215,28 +250,61 @@ export function EstimateWizard() {
     setAnswers({});
     setNotes("");
     setZip("");
-    setContact({ name: "", email: "", phone: "", contactWindow: "any", consent: true });
+    setContact({
+      name: prefill?.name ?? "",
+      email: prefill?.email ?? "",
+      phone: prefill?.phone ?? "",
+      contactWindow: "any",
+      consent: true,
+    });
     setErrors({});
     setReceiptId("");
+    setProjectId("");
     setPortalPassword("");
+    setEmailSent(true);
   }
 
   const stepNum = phase === "done" ? PHASES.length : Math.max(1, phaseIndex(phase) + 1);
   const stepTotal = PHASES.length;
 
-  return (
-    <section id="estimate" className="scroll-mt-20 bg-bone-1 px-4 py-14 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-3xl">
-        <p className="landing-eyebrow">I. Free project estimate</p>
-        <h2 className="landing-h2 mt-3 max-w-2xl">
-          Home improvement estimate wizard
-        </h2>
-        <p className="mt-4 max-w-[58ch] text-lg text-ink-70">
-          Answer a focused set of questions so we understand the full job — then get a real DMV
-          ballpark and submit an RFQ. Renovessa gathers contractor bids and gets back to you.
-        </p>
+  const answerRows =
+    trade == null
+      ? []
+      : Object.entries(answers)
+          .filter(([, v]) => v)
+          .map(([id, value]) => ({
+            id,
+            label: buildQuestionLabelMap(trade)[id] || id,
+            value: displayAnswer(trade, id, value),
+          }));
 
-        <div className="landing-card mt-10 overflow-hidden shadow-[0_8px_24px_rgba(26,26,26,0.06)]">
+  const sectionClass = embedded
+    ? "scroll-mt-20"
+    : "scroll-mt-20 bg-bone-1 px-4 py-14 sm:px-6 sm:py-16";
+  const innerClass = embedded ? "" : "mx-auto max-w-3xl";
+
+  return (
+    <section id="estimate" className={sectionClass}>
+      <div className={innerClass}>
+        {!embedded && (
+          <>
+            <p className="landing-eyebrow">I. Free project estimate</p>
+            <h2 className="landing-h2 mt-3 max-w-2xl">
+              Home improvement estimate wizard
+            </h2>
+            <p className="mt-4 max-w-[58ch] text-lg text-ink-70">
+              Answer a focused set of questions so we understand the full job — then get a real DMV
+              ballpark, preview your RFQ, and submit. Renovessa gathers contractor bids and gets back
+              to you.
+            </p>
+          </>
+        )}
+
+        <div
+          className={`landing-card overflow-hidden shadow-[0_8px_24px_rgba(26,26,26,0.06)] ${
+            embedded ? "" : "mt-10"
+          }`}
+        >
           {phase !== "done" && (
             <div className="flex items-center justify-between gap-3 border-b border-ink-15 px-5 py-3 sm:px-6">
               <div className="flex items-center gap-2 text-sm font-semibold text-ink-100">
@@ -474,42 +542,11 @@ export function EstimateWizard() {
             {phase === "contact" && estimate && (
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-lg font-semibold text-ink-100">Submit your RFQ</h3>
+                  <h3 className="text-lg font-semibold text-ink-100">Your contact details</h3>
                   <p className="mt-1 text-sm text-ink-70">
-                    We&apos;ll use this to follow up with bids for your {tradeLabel.toLowerCase()} project
-                    in {zip}.
+                    We&apos;ll use this to send your RFQ confirmation and follow up with bids for your{" "}
+                    {tradeLabel.toLowerCase()} project in {zip}.
                   </p>
-                </div>
-
-                <div className="rounded-lg border border-ink-15 bg-bone-0 p-4 text-sm">
-                  <p className="font-semibold text-ink-100">RFQ summary</p>
-                  <dl className="mt-2 space-y-1 text-ink-70">
-                    <div className="flex justify-between gap-4">
-                      <dt>Trade</dt>
-                      <dd className="font-medium text-ink-100">{tradeLabel}</dd>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <dt>Ballpark</dt>
-                      <dd className="font-medium text-ink-100">
-                        {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <dt>Timing</dt>
-                      <dd className="font-medium text-ink-100">
-                        {answers.urgency
-                          ? optionLabel(
-                              SHARED_CONTEXT_QUESTIONS.find((q) => q.id === "urgency")!,
-                              answers.urgency
-                            )
-                          : "—"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-4">
-                      <dt>ZIP</dt>
-                      <dd className="font-medium text-ink-100">{zip}</dd>
-                    </div>
-                  </dl>
                 </div>
 
                 <div>
@@ -529,45 +566,51 @@ export function EstimateWizard() {
                     </p>
                   )}
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="est-email" className="landing-label">
-                      Email <span className="text-danger-landing">*</span>
-                    </label>
-                    <input
-                      id="est-email"
-                      type="email"
-                      className="landing-input mt-1"
-                      value={contact.email}
-                      onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
-                      autoComplete="email"
-                    />
-                    {errors.email && (
-                      <p className="mt-1 text-sm text-danger-landing" role="alert">
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="est-phone" className="landing-label">
-                      Phone <span className="text-danger-landing">*</span>
-                    </label>
-                    <input
-                      id="est-phone"
-                      type="tel"
-                      className="landing-input mt-1"
-                      value={contact.phone}
-                      onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
-                      placeholder="(571) 460-0006"
-                      autoComplete="tel"
-                    />
-                    {errors.phone && (
-                      <p className="mt-1 text-sm text-danger-landing" role="alert">
-                        {errors.phone}
-                      </p>
-                    )}
-                  </div>
+
+                <div>
+                  <label htmlFor="est-email" className="landing-label">
+                    Email <span className="text-danger-landing">*</span>
+                  </label>
+                  <input
+                    id="est-email"
+                    type="email"
+                    className="landing-input mt-1"
+                    value={contact.email}
+                    onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
+                    autoComplete="email"
+                    readOnly={lockEmail}
+                    disabled={lockEmail}
+                  />
+                  {lockEmail && (
+                    <p className="mt-1 text-xs text-ink-40">Tied to your portal account.</p>
+                  )}
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-danger-landing" role="alert">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
+
+                <div>
+                  <label htmlFor="est-phone" className="landing-label">
+                    Mobile phone <span className="text-danger-landing">*</span>
+                  </label>
+                  <input
+                    id="est-phone"
+                    type="tel"
+                    className="landing-input mt-1"
+                    value={contact.phone}
+                    onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
+                    autoComplete="tel"
+                    placeholder="(555) 555-5555"
+                  />
+                  {errors.phone && (
+                    <p className="mt-1 text-sm text-danger-landing" role="alert">
+                      {errors.phone}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="est-window" className="landing-label">
                     Best time to reach you
@@ -595,7 +638,8 @@ export function EstimateWizard() {
                   />
                   <span>
                     I agree to be contacted by Renovessa by phone, SMS, and email about this RFQ and
-                    contractor bids. Message and data rates may apply. Reply STOP to opt out.
+                    contractor bids. Message/data rates may apply. Consent is not a condition of
+                    purchase.
                   </span>
                 </label>
                 {errors.consent && (
@@ -603,6 +647,83 @@ export function EstimateWizard() {
                     {errors.consent}
                   </p>
                 )}
+
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" className="landing-btn-ghost" onClick={() => setPhase("estimate")}>
+                    Back
+                  </button>
+                  <button type="button" className="landing-btn-primary" onClick={goReview}>
+                    Preview my RFQ →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {phase === "review" && estimate && trade && (
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-ink-100">Preview your RFQ</h3>
+                  <p className="mt-1 text-sm text-ink-70">
+                    Confirm everything looks right before we send it to Renovessa. You can go back to
+                    edit any step.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-ink-15 bg-bone-0 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">
+                    Request for quote
+                  </p>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">Trade</dt>
+                      <dd className="font-medium text-ink-100">{tradeLabel}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">ZIP</dt>
+                      <dd className="font-medium text-ink-100">{zip}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">Ballpark shown</dt>
+                      <dd className="font-medium text-ink-100">
+                        {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">Contact</dt>
+                      <dd className="text-right font-medium text-ink-100">
+                        {contact.name}
+                        <br />
+                        <span className="font-normal text-ink-70">
+                          {contact.email} · {contact.phone}
+                        </span>
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+
+                {answerRows.length > 0 && (
+                  <div className="rounded-lg border border-ink-15 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-100">Scope answers</p>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      {answerRows.map((row) => (
+                        <div key={row.id} className="flex justify-between gap-4 border-b border-ink-15/60 pb-2 last:border-0 last:pb-0">
+                          <dt className="text-ink-70">{row.label}</dt>
+                          <dd className="max-w-[55%] text-right font-medium text-ink-100">{row.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                )}
+
+                {notes.trim() && (
+                  <div className="rounded-lg border border-ink-15 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-100">Your notes</p>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-ink-70">{notes.trim()}</p>
+                  </div>
+                )}
+
+                <p className="text-xs leading-relaxed text-ink-40">{estimate.disclaimer}</p>
+
                 {errors.submit && (
                   <p className="text-sm text-danger-landing" role="alert">
                     {errors.submit}
@@ -610,7 +731,7 @@ export function EstimateWizard() {
                 )}
 
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" className="landing-btn-ghost" onClick={() => setPhase("estimate")}>
+                  <button type="button" className="landing-btn-ghost" onClick={() => setPhase("contact")}>
                     Back
                   </button>
                   <button
@@ -625,7 +746,7 @@ export function EstimateWizard() {
               </div>
             )}
 
-            {phase === "done" && (
+            {phase === "done" && estimate && trade && (
               <div className="space-y-5">
                 <div className="rounded-lg border border-green-300 bg-green-50 px-5 py-6 text-center">
                   <p className="font-mono-landing text-sm font-medium uppercase tracking-wide text-green-800">
@@ -636,8 +757,49 @@ export function EstimateWizard() {
                   </p>
                   <p className="mt-2 text-sm text-ink-70">
                     Thanks{contact.name.trim() ? `, ${contact.name.trim().split(/\s+/)[0]}` : ""}. Your{" "}
-                    {tradeLabel.toLowerCase()} estimate is in our queue.
+                    {tradeLabel.toLowerCase()} RFQ is in our queue.
                   </p>
+                  <p className="mt-2 text-sm text-ink-70">
+                    {emailSent
+                      ? `A confirmation with this RFQ summary was sent to ${contact.email}.`
+                      : `We saved your RFQ, but the confirmation email may be delayed — keep this reference number.`}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-ink-15 bg-bone-0 p-4">
+                  <p className="text-sm font-semibold text-ink-100">Your submitted RFQ</p>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">Trade</dt>
+                      <dd className="font-medium text-ink-100">{tradeLabel}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">ZIP</dt>
+                      <dd className="font-medium text-ink-100">{zip}</dd>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-ink-70">Ballpark</dt>
+                      <dd className="font-medium text-ink-100">
+                        {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
+                      </dd>
+                    </div>
+                  </dl>
+                  {answerRows.length > 0 && (
+                    <dl className="mt-4 space-y-2 border-t border-ink-15 pt-3 text-sm">
+                      {answerRows.map((row) => (
+                        <div key={row.id} className="flex justify-between gap-4">
+                          <dt className="text-ink-70">{row.label}</dt>
+                          <dd className="max-w-[55%] text-right font-medium text-ink-100">{row.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  {notes.trim() && (
+                    <div className="mt-4 border-t border-ink-15 pt-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">Notes</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-ink-70">{notes.trim()}</p>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -666,7 +828,8 @@ export function EstimateWizard() {
                         : "Your homeowner portal account is ready"}
                     </p>
                     <p className="mt-1 text-xs text-ink-70">
-                      Log in to track this RFQ and any bids we return.
+                      Log in to track this RFQ and any bids we return. Credentials are also in your
+                      confirmation email.
                     </p>
                     <dl className="mt-3 space-y-2 font-mono-landing text-sm">
                       <div className="flex justify-between gap-4 rounded border border-ink-15 bg-white px-3 py-2">
@@ -678,7 +841,19 @@ export function EstimateWizard() {
                         <dd>{portalPassword}</dd>
                       </div>
                     </dl>
+                    <a href="/login" className="landing-btn-primary mt-4 inline-flex text-sm">
+                      Open portal →
+                    </a>
                   </div>
+                )}
+
+                {embedded && projectId && (
+                  <a
+                    href={`/portal/homeowner/projects/${projectId}`}
+                    className="landing-btn-primary inline-flex"
+                  >
+                    View this RFQ in my portal →
+                  </a>
                 )}
 
                 <button type="button" className="landing-btn-ghost" onClick={restart}>

@@ -21,7 +21,7 @@ export default function TrustPage() {
             </div>
           ))}
         </div>
-        <Link href="/#request" className="btn-primary mt-10 inline-flex">Submit My Project</Link>
+        <Link href="/#estimate" className="btn-primary mt-10 inline-flex">Get Free Estimate &amp; RFQ</Link>
       </main>
       <SiteFooter />
     </>

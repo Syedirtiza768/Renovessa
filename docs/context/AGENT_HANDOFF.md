@@ -1,37 +1,25 @@
 # Agent Handoff
 
-> Session: 2026-07-22 — Estimate wizard replaces AI chatbot
+> Session: 2026-07-22 — RFQ-only homeowner path + confirmation emails
 
 ## Completed This Session
 
-- Phone number → **(571) 460-0006** across landing + env defaults
-- New **Estimate & RFQ wizard** on homepage (`#estimate`)
-  - Per-trade scoping questions (HVAC, roofing, kitchen, bath, etc.)
-  - Property/timing context + free-text notes
-  - Instant DMV ballpark range
-  - RFQ submit → `POST /api/project-requests` with `source: estimate_wizard`
-- Landing copy updated: estimate → RFQ → contractor bids → get back to homeowner
-- AI advisor removed from hero (API/components remain unused)
+- **RFQ confirmation email** to homeowner on project-request submit (`src/lib/confirmationEmails.ts`)
+- **Contractor application confirmation email** on `/api/contractor-inquiries`
+- Estimate wizard: **review/preview step** before submit + **rich success screen** with full RFQ summary
+- Landing: removed short-form “Quick project request”; estimate wizard is the only public homeowner submit path
+- Rebuilt `/for-homeowners` and `/portal/homeowner/submit` around the wizard
+- CTAs updated (`/#estimate`) across header, footer, how-it-works, trust
 
-## Run
+## How to verify
 
-```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-# → http://localhost:7090
-# or: npm run dev
-```
-
-Ensure `NEXT_PUBLIC_OPS_PHONE=(571) 460-0006` in `.env`.
-
-## Key Files
-
-- `src/components/landing/EstimateWizard.tsx`
-- `src/lib/estimate-pricing.ts`
-- `src/lib/estimate-wizard-data.ts`
-- `src/app/api/project-requests/route.ts` (longer description, source, qualificationNotes)
+1. Submit an RFQ via `/#estimate` → preview → submit → check homeowner inbox for confirmation
+2. Apply at `/for-contractors#inquiry` → check applicant inbox
+3. Confirm landing has no short form; `/for-homeowners` and portal Submit RFQ use the wizard
 
 ## Next
 
-- Ops workflow to solicit/return bids from RFQs (`estimate_wizard` source)
-- Optionally show ballpark + RFQ fields on admin lead detail
-- Tune pricing tables with real DMV bid data as jobs close
+1. Send RFQ pilot 50; track replies
+2. Ops bid workflow for `source=estimate_wizard` RFQs
+3. Align `/for-contractors` copy with RFQ language
+4. Fix SendGrid domain authentication (deliverability)

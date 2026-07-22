@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PortalProjectForm } from "@/components/PortalProjectForm";
+import { HomeownerSubmitClient } from "./submit-client";
 
 export default async function HomeownerSubmitPage() {
   const session = await getSession();
@@ -14,16 +14,17 @@ export default async function HomeownerSubmitPage() {
   });
 
   return (
-    <div>
+    <div className="landing-page">
       <Link href="/portal/homeowner" className="text-sm text-copper hover:underline">
         ← Back to My Projects
       </Link>
-      <h1 className="mt-4 text-2xl font-bold">Submit a Project</h1>
-      <p className="mt-1 text-sm text-muted">
-        Same intake form as our website — submitted directly to your portal account.
+      <h1 className="mt-4 text-2xl font-bold text-ink-100">Submit an RFQ</h1>
+      <p className="mt-1 max-w-[58ch] text-sm text-ink-70">
+        Use the estimate wizard — get a DMV ballpark, preview your request for quote, then submit.
+        This is the only way to request contractor bids through Renovessa.
       </p>
-      <div className="mt-6 max-w-2xl">
-        <PortalProjectForm
+      <div className="mt-6">
+        <HomeownerSubmitClient
           prefill={{
             name: session.name,
             email: session.email,

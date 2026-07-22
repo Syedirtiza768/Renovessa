@@ -13,7 +13,7 @@ export function SiteFooter() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Homeowners</p>
           <ul className="mt-3 space-y-2 text-sm">
-            <li><Link href="/#request" className="hover:text-copper">Submit a Project</Link></li>
+            <li><Link href="/#estimate" className="hover:text-copper">Free Estimate &amp; RFQ</Link></li>
             <li><Link href="/how-it-works" className="hover:text-copper">How It Works</Link></li>
             <li><Link href="/trust" className="hover:text-copper">Trust & Safety</Link></li>
           </ul>

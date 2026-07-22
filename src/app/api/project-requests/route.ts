@@ -6,6 +6,7 @@ import { generateReferenceNumber } from "@/lib/utils";
 import { logAuditEvent } from "@/lib/audit";
 import { getSession, canAccessAdmin } from "@/lib/auth";
 import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
+import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 
 const schema = z.object({
   trade: z.string().min(1),
@@ -136,11 +137,18 @@ export async function POST(req: NextRequest) {
       projectRequestId: project.id,
     });
 
-    await logAuditEvent({
-      eventType: "SMS_SENT",
-      description: `Confirmation SMS queued for ${data.phone}`,
+    const emailSent = await sendRfqConfirmationEmail({
+      to: data.email,
+      firstName: data.firstName,
+      referenceNumber,
+      trade: data.trade,
+      zipCode: data.zipCode,
+      urgency: data.urgency,
+      budgetRange: data.budgetRange,
+      description: data.description,
       projectRequestId: project.id,
-      metadata: { template: "project_received" },
+      tempPassword,
+      isExistingAccount,
     });
 
     return NextResponse.json({
@@ -149,6 +157,7 @@ export async function POST(req: NextRequest) {
       email: data.email,
       tempPassword,
       isExistingAccount,
+      confirmationEmailSent: emailSent,
     });
   } catch (e) {
     if (e instanceof z.ZodError) {

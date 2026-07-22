@@ -31,8 +31,8 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/#request" className="btn-primary text-sm">
-            Submit My Project
+          <Link href="/#estimate" className="btn-primary text-sm">
+            Get Free Estimate
           </Link>
           {/* Hamburger — mobile only */}
           <button

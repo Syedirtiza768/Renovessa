@@ -30,15 +30,15 @@ export default async function HomeownerDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">My Projects</h1>
         <Link href="/portal/homeowner/submit" className="btn-primary text-sm">
-          Submit Another Project
+          Submit Another RFQ
         </Link>
       </div>
 
       {projects.length === 0 ? (
         <div className="mt-8 card p-8 text-center">
-          <p className="text-muted">No projects yet. Submit a project request to get started.</p>
+          <p className="text-muted">No RFQs yet. Start with the estimate wizard to get a ballpark and submit a request for quote.</p>
           <Link href="/portal/homeowner/submit" className="btn-primary mt-4 inline-flex">
-            Submit My Project
+            Start Estimate &amp; RFQ
           </Link>
         </div>
       ) : (

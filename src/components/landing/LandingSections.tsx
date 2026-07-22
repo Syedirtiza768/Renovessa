@@ -182,7 +182,7 @@ export function FAQSection() {
   return (
     <section id="faq" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-3xl">
-        <p className="landing-eyebrow">VI. Frequently asked</p>
+        <p className="landing-eyebrow">V. Frequently asked</p>
         <h2 className="landing-h2 mt-3">Things homeowners ask before submitting.</h2>
 
         <div className="mt-8 divide-y divide-ink-15 border border-ink-15 rounded-lg bg-white">

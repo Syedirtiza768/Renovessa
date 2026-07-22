@@ -59,11 +59,13 @@ export default async function HomeownerProjectDetailPage({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <div className="card p-4">
-          <h2 className="font-semibold">What You Submitted</h2>
+          <h2 className="font-semibold">Your RFQ</h2>
           <dl className="mt-4 space-y-2 text-sm">
             <div>
-              <dt className="text-muted">Description</dt>
-              <dd>{project.description}</dd>
+              <dt className="text-muted">Details</dt>
+              <dd className="mt-1 whitespace-pre-wrap rounded-md bg-blueprint/40 p-3 text-sm">
+                {project.description}
+              </dd>
             </div>
             <div>
               <dt className="text-muted">Urgency</dt>

@@ -49,7 +49,7 @@ export function ContractorInquiryForm() {
     return (
       <div className="card-accent p-8 text-center">
         <h3 className="text-xl font-semibold text-slate">Inquiry Received</h3>
-        <p className="mt-2 text-muted">Our contractor success team will review your application within 1–2 business days.</p>
+        <p className="mt-2 text-muted">Our contractor success team will review your application within 1–2 business days. A confirmation email is on its way.</p>
       </div>
     );
   }

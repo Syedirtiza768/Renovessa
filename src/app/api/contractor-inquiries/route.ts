@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { sendContractorApplicationConfirmationEmail } from "@/lib/confirmationEmails";
 
 const schema = z.object({
   companyName: z.string().min(1),
@@ -39,7 +40,15 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    const confirmationEmailSent = await sendContractorApplicationConfirmationEmail({
+      to: data.email,
+      contactName: data.contactName,
+      companyName: data.companyName,
+      trade: data.trade,
+      serviceZips: data.serviceZips,
+    });
+
+    return NextResponse.json({ success: true, confirmationEmailSent });
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: e.errors[0].message }, { status: 400 });

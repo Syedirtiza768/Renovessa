@@ -16,20 +16,23 @@
 
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
-- **Estimate wizard** (replaces hero AI chatbot) — trade-specific scoping, DMV ballpark, RFQ submit → contractor bids
-- Multi-step homeowner intake form with TCPA consent (short-form fallback)
+- **Estimate wizard** — sole homeowner request path: trade scoping → DMV ballpark → RFQ preview → submit → contractor bids
+- RFQ submit sends **homeowner confirmation email** (SendGrid); contractor apply sends **application confirmation email**
 - Ops phone: **(571) 460-0006**
 - For Contractors page with application form
-- How It Works, For Homeowners, Trust & Safety pages
-- Thank-you page with project reference number
+- How It Works, For Homeowners (wizard-based), Trust & Safety pages
+
+### Contractor outreach (prep)
+- Enriched MD license prospects + Wave A–D onboarding drafts (`data/contractor_enrichment/`)
+- **RFQ pilot 50** — trade/ZIP-balanced customized emails pitching estimate → RFQ → bid routing (`rfq_pilot_50_*`)
 
 ### Portals
-- **Homeowner Portal** — project status, verification trail, appointment confirmation
+- **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only
 - **Contractor Portal** — appointments, accept/check-in, billing, profile
 - **Admin Operations Command Center** — KPI dashboard, lead pipeline, operations queues, appointments, contractors, capacity cells, finance, disputes
 
 ### Core Workflows
-- Project request submission with audit trail events
+- RFQ / project request submission with audit trail events + confirmation email
 - Lead status management (admin)
 - Appointment accept / check-in (contractor)
 - Homeowner appointment confirmation
@@ -45,7 +48,7 @@ Password: `demo1234`
 
 ## Not Yet Implemented (Phase 2+)
 
-- Real SMS/email integrations
+- Real SMS integrations (email confirmations for RFQ + contractor apply are live via SendGrid)
 - Calendar ICS generation
 - Production reset UI
 - HR, QA, CRM, Marketing modules (full)

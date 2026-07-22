@@ -29,7 +29,7 @@ export default function HowItWorksPage() {
             </div>
           ))}
         </div>
-        <Link href="/#request" className="btn-primary mt-10 inline-flex">Submit My Project Request</Link>
+        <Link href="/#estimate" className="btn-primary mt-10 inline-flex">Get Free Estimate &amp; RFQ</Link>
       </main>
       <SiteFooter />
     </>
