@@ -16,3 +16,6 @@ data/contractor_enrichment/progress.jsonl
 data/contractor_enrichment/failed.jsonl
 data/contractor_enrichment/enriched.json
 tsconfig.tsbuildinfo
+
+# Machine-local AI assistant permissions and settings.
+.claude/

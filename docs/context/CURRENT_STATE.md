@@ -27,6 +27,15 @@
 - Enriched MD license prospects + Wave A–D onboarding drafts (`data/contractor_enrichment/`)
 - **RFQ pilot 50** — trade/ZIP-balanced customized emails pitching estimate → RFQ → bid routing (`rfq_pilot_50_*`)
 
+### Organic Search Foundation (Implemented)
+- Comprehensive DMV organic-search and content blueprint at `docs/marketing/SEO_STRATEGY_DMV.md`
+- Public positioning: DMV home-improvement cost estimator + managed RFQ service
+- Initial organic wedge: HVAC in Fairfax County / Northern Virginia, expanding only with real contractor capacity and unique local evidence
+- Crawlable foundations now include estimator, service/HVAC, location/Northern Virginia/Fairfax County, cost-guide, resource, methodology, trust, and legal pages
+- Shared unique metadata/canonical framework, XML sitemap, robots policy, public/private noindex controls, Organization/WebSite/Service/Breadcrumb structured data, and custom 404 are implemented
+- Unsupported public metrics and fixed turnaround promises were removed; phone and estimate -> RFQ -> available contractor-options copy are consistent
+- Communication consent is affirmative (not pre-checked) and links to a dedicated calls/text disclosure
+
 ### Portals
 - **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only
 - **Contractor Portal** — appointments, accept/check-in, billing, profile
@@ -55,6 +64,8 @@ Password: `demo1234`
 - HR, QA, CRM, Marketing modules (full)
 - File photo uploads to object storage
 - Payment processing
+- First evidence-rich HVAC/Fairfax cost and permit articles beyond the foundational hubs
+- Search Console verification and privacy-safe organic conversion analytics
 
 ## Run
 

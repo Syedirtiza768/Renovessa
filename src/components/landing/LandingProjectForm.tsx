@@ -66,7 +66,7 @@ export function LandingProjectForm() {
     appointmentWindows: "",
     contactWindow: "any",
     urgency: "",
-    consent: true,
+    consent: false,
   });
 
   const categories = getVisibleCategories();
@@ -190,7 +190,7 @@ export function LandingProjectForm() {
       appointmentWindows: "",
       contactWindow: "any",
       urgency: "",
-      consent: true,
+      consent: false,
     });
     setSelected([]);
   }
@@ -214,7 +214,7 @@ export function LandingProjectForm() {
             {[
               { label: "Submitted", status: "done" },
               { label: "Reviewing", status: "pending" },
-              { label: "Qualification call", status: "pending", note: "Within 4 business hours" },
+              { label: "Qualification call", status: "pending", note: "Timing depends on current availability" },
               { label: "Appointment scheduled", status: "pending" },
             ].map((item) => (
               <li key={item.label} className="flex items-start gap-3 text-sm">
@@ -613,7 +613,7 @@ export function LandingProjectForm() {
                 <span>
                   By submitting, I agree to be contacted by Renovessa by phone and SMS regarding my
                   project request. Message and data rates may apply. Reply STOP to opt out.{" "}
-                  <a href="/trust" className="text-accent underline">
+                  <a href="/tcpa" className="text-accent underline">
                     Consent disclosure
                   </a>
                 </span>
@@ -646,7 +646,7 @@ export function LandingProjectForm() {
             </div>
 
             <p className="text-center text-xs font-medium text-ink-40">
-              Free to submit · Renovessa will call to confirm within 4 business hours · No obligation
+              Free to submit · Response timing varies by trade and ZIP · No obligation
               to hire
             </p>
           </div>

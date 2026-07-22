@@ -7,7 +7,6 @@ import { EstimateWizard } from "./EstimateWizard";
 import { HouseSelector } from "./HouseSelector";
 import {
   HowItWorksSection,
-  StatsStrip,
   CategoriesSection,
   WhySection,
   FAQSection,
@@ -26,7 +25,6 @@ export function LandingPage() {
           <HouseSelector />
           <EstimateWizard />
           <HowItWorksSection />
-          <StatsStrip />
           <CategoriesSection />
           <WhySection />
           <FAQSection />

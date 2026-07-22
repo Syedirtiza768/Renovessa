@@ -52,7 +52,7 @@ export function ContractorInquiryForm() {
       <div className="card-accent p-8 text-center">
         <h3 className="text-xl font-semibold text-slate">Inquiry Received</h3>
         <p className="mt-2 text-muted">
-          Our contractor success team will review your application within 1–2 business days.
+          Our contractor operations team will review the application and contact you if the current trade and ZIP needs are a fit.
           {emailSent
             ? ` A confirmation was sent to ${form.email}.`
             : " We saved your application, but the confirmation email may be delayed — keep an eye on your inbox."}

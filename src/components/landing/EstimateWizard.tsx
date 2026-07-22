@@ -198,7 +198,7 @@ export function EstimateWizard({
     email: prefill?.email ?? "",
     phone: prefill?.phone ?? "",
     contactWindow: "any",
-    consent: true,
+    consent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -554,7 +554,7 @@ export function EstimateWizard({
       email: prefill?.email ?? "",
       phone: prefill?.phone ?? "",
       contactWindow: "any",
-      consent: true,
+      consent: false,
     });
     setErrors({});
     setReceiptId("");
@@ -578,7 +578,7 @@ export function EstimateWizard({
       email: draft.contact?.email ?? prefill?.email ?? "",
       phone: draft.contact?.phone ?? prefill?.phone ?? "",
       contactWindow: draft.contact?.contactWindow ?? "any",
-      consent: draft.contact?.consent ?? true,
+      consent: draft.contact?.consent ?? false,
     });
     setScopeStep(draft.scopeStep ?? 0);
     setContextStep(draft.contextStep ?? 0);
@@ -1278,8 +1278,8 @@ function PhaseContent(props: {
         <div className="rounded-lg border border-ink-15 bg-bone-0 p-4">
           <p className="text-sm font-semibold text-ink-100">Next: turn this into an RFQ</p>
           <p className="mt-1 text-sm text-ink-70">
-            Submit your request for quote to Renovessa. We share the scoped job with vetted
-            contractors, collect bids, and get back to you with options — no obligation to hire.
+            Submit your request for quote to Renovessa. We check current trade and ZIP availability,
+            request responses from relevant contractors, and bring available options back to you.
           </p>
         </div>
       </div>
@@ -1386,7 +1386,7 @@ function PhaseContent(props: {
               <summary className="cursor-pointer text-xs text-ink-40">Read full consent</summary>
               <span className="mt-1 block text-xs leading-relaxed text-ink-40">
                 Contact may be by phone, SMS, and email. Message/data rates may apply. Consent is not
-                a condition of purchase.
+                a condition of purchase. <a href="/tcpa" className="text-accent underline">Read the calls and texts disclosure.</a>
               </span>
             </details>
           </span>
@@ -1549,12 +1549,12 @@ function PhaseContent(props: {
               ballpark you saw.
             </li>
             <li>
-              <span className="font-medium text-ink-100">We solicit contractor bids</span> from vetted
-              pros who handle this trade in your area.
+              <span className="font-medium text-ink-100">We check current availability</span> and
+              request responses from relevant contractors who handle this trade in your area.
             </li>
             <li>
-              <span className="font-medium text-ink-100">We get back to you</span> with bid options
-              and next steps — usually within 1–2 business days.
+              <span className="font-medium text-ink-100">We get back to you</span> with available bid
+              options and next steps. Timing varies by trade, ZIP, and current contractor capacity.
             </li>
           </ol>
         </div>

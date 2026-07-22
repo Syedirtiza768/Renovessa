@@ -1,4 +1,21 @@
 
+## 2026-07-23 - SEO P0 implementation and production release preparation
+
+- Repositioned all public acquisition copy around DMV estimate -> scoped RFQ -> available contractor bid options
+- Removed unsupported volume, success-rate, ZIP-coverage, vetting, and fixed-response-time claims from public pages and confirmation messaging
+- Added crawlable estimator, service/HVAC, location/Northern Virginia/Fairfax County, cost-guide, resources, methodology, about/contact, editorial, privacy, terms, accessibility, TCPA, and honest case-study foundation pages
+- Added public navigation/footer architecture, unique metadata and canonicals, Organization/WebSite/Service/Breadcrumb JSON-LD, XML sitemap, robots policy, noindex controls for login/portal/confirmation/case-study placeholders, and a custom 404
+- Changed call/text consent from pre-checked to affirmative opt-in with a dedicated disclosure
+- Verified with `npx tsc --noEmit`, a successful Next.js production build (94 routes), and local production HTTP/metadata checks
+
+## 2026-07-23 - DMV organic search and content strategy
+
+- Audited the implemented and deployed public site, positioning, metadata, routes, crawl foundations, and estimate-to-RFQ conversion path
+- Researched current Google Search/Business Profile guidance, the DMV search landscape, and official DC/MD/VA permit and contractor-license sources
+- Authored `docs/marketing/SEO_STRATEGY_DMV.md`: positioning, keyword architecture, site hierarchy, location quality gates, page templates, 48-topic editorial roadmap, original-data methodology, technical SEO, authority, measurement, and 12-month rollout
+- Flagged P0 trust issues: production/repository copy drift, stale phone/content, unsupported public performance/coverage claims, and no page-level SEO/crawl framework
+- The strategy was subsequently implemented through the P0 trust, architecture, and crawl foundation described above
+
 ## 2026-07-23 — Mobile fullscreen RFQ wizard
 
 - Estimate wizard opens as fullscreen immersive sheet on viewports &lt;768px (sticky progress/footer, safe-area, scroll/focus on step change)

@@ -41,17 +41,6 @@ export const HERO_SERVICE_TAGS = FIRST_JOB_MODE
       "Decks",
     ];
 
-export const APPOINTMENT_LOG = FIRST_JOB_MODE
-  ? []
-  : [
-      { time: "09:12 EDT", project: "Full bathroom remodel, master suite", zip: "20910", isNew: true },
-      { time: "08:47 EDT", project: "Kitchen cabinet replacement + countertops", zip: "22308", isNew: true },
-      { time: "08:31 EDT", project: "Roof repair, missing shingles", zip: "20854", isNew: false },
-      { time: "07:58 EDT", project: "AC not cooling, two-story townhouse", zip: "22202", isNew: false },
-      { time: "07:14 EDT", project: "Replace 12 windows, double-hung", zip: "20815", isNew: false },
-      { time: "06:42 EDT", project: "Basement finishing, 800 sq ft", zip: "22101", isNew: false },
-    ];
-
 export const HOW_IT_WORKS_STEPS = [
   {
     step: "I",
@@ -69,24 +58,15 @@ export const HOW_IT_WORKS_STEPS = [
     step: "III",
     title: "You submit an RFQ to Renovessa.",
     timing: "Under a minute.",
-    body: "Turn the scoped job into a request for quote. We review your RFQ, then solicit bids from vetted contractors who handle that trade in your area.",
+    body: "Turn the scoped job into a request for quote. We review it and, where trade and ZIP capacity is available, ask relevant contractors for responses.",
   },
   {
     step: "IV",
     title: "We bring bids back to you.",
-    timing: "Usually 1–2 business days.",
-    body: "Renovessa compares contractor responses and gets back to you with options. Hire who you want, ask questions, or decide later — no obligation to Renovessa.",
+    timing: "Timing varies by project and availability.",
+    body: "Renovessa organizes the responses it receives and returns the available options. Ask questions, compare the scope, hire who you want, or decide later.",
   },
 ];
-
-export const STATS = FIRST_JOB_MODE
-  ? []
-  : [
-      { value: "312", unit: "this month", label: "Verified appointments confirmed in the DMV in the last 30 days.", source: "Updated daily" },
-      { value: "2–4 hrs", unit: "", label: "Median time from request submission to qualification call.", source: "Rolling 30-day median" },
-      { value: "94%", unit: "", label: "Homeowner confirmation rate on scheduled appointments.", source: "Q1 2025, n=1,847" },
-      { value: "412", unit: "", label: "DMV ZIP codes with active vetted contractor coverage.", source: "DC · MD · VA" },
-    ];
 
 export const TRUST_CARDS = [
   {
@@ -98,16 +78,16 @@ export const TRUST_CARDS = [
     body: "See a DMV planning range instantly, then submit an RFQ. Renovessa solicits contractor bids and brings options back to you.",
   },
   {
-    title: "Vetted Pros, Coordinated by Us",
-    body: "We work with licensed, insured contractors in your area. You stay in control of who you hire — Renovessa runs the process so you're not fielding cold call blasts.",
+    title: "Credential Review, Explained",
+    body: "Before bid routing, Renovessa reviews the credential information required for the relevant trade. You remain responsible for confirming credentials and contract terms before work begins.",
   },
 ];
 
 export const VERIFICATION_BADGES = [
-  "License Verified",
-  "Insurance Confirmed",
-  "Workers' Comp on File",
-  "Appointment Audited",
+  "Published verification criteria",
+  "Official license-source checks",
+  "Credential review dates",
+  "Homeowner re-check encouraged",
 ];
 
 export const FAQ_ITEMS = [
@@ -121,7 +101,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "What happens after I submit an RFQ?",
-    a: "Renovessa reviews your scoped request, solicits bids from vetted contractors in your trade and area, then gets back to you with options — usually within 1–2 business days.",
+    a: "Renovessa reviews your scoped request and checks current trade and ZIP availability. When relevant contractors are available, we request responses and organize the options received. Timing depends on project complexity and contractor availability.",
   },
   {
     q: "Will I get calls from multiple contractors?",
@@ -135,7 +115,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "How are contractors vetted?",
-    a: "Renovessa requires a valid state contractor license for the relevant trade, proof of general liability insurance, workers' compensation documentation, and a Google review check before granting network access.",
+    a: "Renovessa reviews the credential information required for the relevant trade and jurisdiction before routing bids. Our verification methodology explains what is checked and when. Credential status can change, so homeowners should verify it again with the official state source before signing a contract.",
   },
   {
     q: "Do I have to accept a bid?",

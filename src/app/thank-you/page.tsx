@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Project Request Received",
+  description: "Confirmation that Renovessa received a project request.",
+  path: "/thank-you",
+  noIndex: true,
+});
 
 export default async function ThankYouPage({
   searchParams,
@@ -23,7 +32,7 @@ export default async function ThankYouPage({
             Your project request is received, {name}.
           </h1>
           <p className="mt-4 text-muted">
-            Renovessa will reach out within 2 business hours to confirm your project details.
+            Renovessa will review your request and contact you using the details you provided.
           </p>
           <p className="mt-6 font-mono text-lg text-copper">{ref}</p>
 

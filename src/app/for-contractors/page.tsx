@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ContractorInquiryForm } from "@/components/ContractorInquiryForm";
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Receive Scoped Home Improvement RFQs in the DMV",
+  description:
+    "Apply to receive relevant, scope-rich homeowner RFQs in your DMV trade and service area. Availability and commercial terms are reviewed before activation.",
+  path: "/for-contractors",
+});
 
 export default function ForContractorsPage() {
   return (
@@ -8,21 +17,22 @@ export default function ForContractorsPage() {
       <SiteHeader />
       <main>
         <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-          <h1 className="text-3xl font-bold text-slate md:text-4xl">
-            Renovessa gives contractors verified appointments, not shared leads.
-          </h1>
-          <p className="mt-4 text-lg text-muted">
-            Renovessa qualifies homeowner project requests, confirms appointment details, tracks the full audit trail, and routes each appointment exclusively to one contractor per trade and territory. You pay only when a qualified appointment is verified.
+          <p className="landing-eyebrow">For contractors</p>
+          <h1 className="mt-3 text-3xl font-bold text-slate md:text-4xl">Review scoped RFQs for the trades and ZIPs you serve.</h1>
+          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-muted">
+            Renovessa helps homeowners define the job before outreach. Approved contractors may receive
+            relevant RFQs based on trade, service area, current capacity, and credential review. Application
+            does not guarantee activation, exclusivity, job volume, or revenue.
           </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {[
-              { title: "Exclusive Appointments", desc: "One contractor per trade and ZIP cluster." },
-              { title: "Homeowner-Confirmed", desc: "Billing triggered only after homeowner confirms." },
-              { title: "Full Audit Trail", desc: "Call logs, SMS, calendar, check-in — all recorded." },
-              { title: "Fair Dispute Policy", desc: "Evidence-based case files, not guesses." },
+              { title: "Structured scope", desc: "Trade-specific answers, project context, timing, and homeowner notes in one RFQ." },
+              { title: "Relevant routing", desc: "Requests are considered against your declared trades, ZIPs, and availability." },
+              { title: "Published expectations", desc: "Credential review, response expectations, and commercial terms are documented before activation." },
+              { title: "Homeowner choice", desc: "A homeowner may compare, decline, negotiate, or choose another option without obligation to Renovessa." },
             ].map((item) => (
               <div key={item.title} className="card p-5">
-                <h3 className="font-semibold">{item.title}</h3>
+                <h2 className="font-semibold">{item.title}</h2>
                 <p className="mt-2 text-sm text-muted">{item.desc}</p>
               </div>
             ))}

@@ -190,13 +190,13 @@ export function AIAdvisor() {
         {suggestion && !booking && !busy && !bookingResult && (
           <div className="rounded-lg border border-accent/40 bg-bone-1 p-3">
             <p className="text-sm font-semibold text-ink-100">
-              Ready to line up a real appointment?
+              Ready to turn this into an RFQ?
             </p>
             <p className="mt-1 text-xs text-ink-70">
-              One vetted DMV contractor — not five sales calls. I&apos;ll carry over what you told me.
+              I&apos;ll carry over what you told me so you can review the scope before submitting.
             </p>
             <button type="button" className="landing-btn-primary mt-3 w-full" onClick={applySuggestion}>
-              Book with these details →
+              Build the RFQ with these details →
             </button>
           </div>
         )}

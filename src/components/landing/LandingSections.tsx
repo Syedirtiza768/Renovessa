@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   FAQ_ITEMS,
   HOW_IT_WORKS_STEPS,
-  STATS,
   TRUST_CARDS,
   VERIFICATION_BADGES,
   getVisibleCategories,
@@ -32,7 +31,7 @@ export function HowItWorksSection() {
         </h2>
         <p className="mt-4 max-w-[58ch] text-lg text-ink-70">
           The wizard captures the whole job, shows a DMV ballpark, and turns it into an RFQ
-          Renovessa can shop to vetted contractors for you.
+          Renovessa can review and route to relevant contractors when capacity is available.
         </p>
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
@@ -61,29 +60,6 @@ export function HowItWorksSection() {
   );
 }
 
-export function StatsStrip() {
-  if (STATS.length === 0) return null;
-
-  return (
-    <section className="bg-bone-1 px-4 py-14 sm:px-6 sm:py-[72px]" aria-label="Key metrics">
-      <div className="mx-auto grid max-w-[1440px] gap-10 sm:grid-cols-2 lg:grid-cols-4">
-        {STATS.map((stat) => (
-          <div key={stat.value}>
-            <p className="font-mono-landing text-3xl font-medium text-ink-100 sm:text-4xl">
-              {stat.value}
-              {stat.unit && (
-                <span className="ml-1 text-base text-ink-40">{stat.unit}</span>
-              )}
-            </p>
-            <p className="mt-2 text-sm text-ink-70">{stat.label}</p>
-            <p className="mt-1 font-mono-landing text-[11px] text-ink-40">↳ {stat.source}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function CategoriesSection() {
   const { isSelected, startWizardWithTrade } = useCategories();
   const categories = getVisibleCategories();
@@ -95,14 +71,14 @@ export function CategoriesSection() {
   return (
     <section id="services" className="bg-bone-0 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
-        <p className="landing-eyebrow">IV. Trades we cover</p>
+        <p className="landing-eyebrow">IV. Project types</p>
         {FIRST_JOB_MODE ? (
           <h2 className="landing-h2 mt-3 max-w-3xl">
             {LANDING_HEADLINE || `Currently taking RFQs for ${categories.length > 0 ? categories[0].label : "home improvement"}.`}
           </h2>
         ) : (
           <h2 className="landing-h2 mt-3 max-w-3xl">
-            Twelve categories — tap one to start an estimate and RFQ.
+            Scope a project, then check contractor availability for your trade and ZIP.
           </h2>
         )}
 
@@ -142,8 +118,8 @@ export function CategoriesSection() {
         </div>
 
         <p className="mt-8 text-sm italic text-ink-70">
-          Renovessa verifies contractor licenses and insurance before granting access to the network.
-          You should always confirm credentials directly before work begins.
+          Estimator support does not guarantee contractor availability. Renovessa reviews applicable
+          credential information before bid routing; always confirm credentials directly before signing.
         </p>
       </div>
     </section>
@@ -155,7 +131,7 @@ export function WhySection() {
     <section id="why" className="bg-bone-1 px-4 py-14 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-[1440px]">
         <p className="landing-eyebrow">V. Why homeowners use Renovessa</p>
-        <h2 className="landing-h2 mt-3">Less chaos. One vetted contractor. A confirmed appointment.</h2>
+        <h2 className="landing-h2 mt-3">Less guessing. Better scope. A controlled bid process.</h2>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-3">
           {TRUST_CARDS.map((card) => (

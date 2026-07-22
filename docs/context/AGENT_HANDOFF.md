@@ -1,5 +1,47 @@
 # Agent Handoff
 
+> Current session: 2026-07-23 - SEO P0 implementation and deployment
+
+## SEO P0 Implemented
+
+- The approved public story is now **DMV planning estimate -> scoped RFQ -> available contractor bid options**
+- Public claims, phone, response expectations, contractor credential language, confirmation emails, and consent disclosures were aligned
+- Foundational service, location, resource, methodology, company, trust, legal, and compliance routes were added
+- Metadata/canonical utilities, sitemap, robots, noindex rules, structured data, and custom 404 were added
+- Type checking and the full Next.js production build pass; 94 routes are generated
+
+## Immediate Follow-up
+
+1. Verify the production revision and URLs after deployment
+2. Add Search Console verification and submit `/sitemap.xml`
+3. Instrument organic estimate-start, estimate-complete, RFQ-submit, qualified-RFQ, and contractor-response events
+4. Publish the first evidence-rich HVAC/Fairfax cost guide and permit guide; keep thin case-study placeholders noindexed
+
+---
+
+> Prior session: 2026-07-23 - DMV organic search and content strategy
+
+## SEO Strategy Completed
+
+- Authored the comprehensive strategy at `docs/marketing/SEO_STRATEGY_DMV.md`
+- Defined Renovessa as a **DMV home-improvement cost estimator + managed RFQ service**, not a generic directory, lead marketplace, or project-management tool
+- Defined the first organic wedge as **HVAC in Fairfax County / Northern Virginia**, gated by real fulfillment coverage
+- Specified the site hierarchy, keyword/intent map, location-page quality gates, page templates, 48-topic editorial roadmap, original-data moat, trust model, technical SEO, conversion analytics, KPIs, and 12-month rollout
+- Researched current Google guidance and official DC/MD/VA permit/license sources; source links are included in the strategy
+- Identified that Renovessa's current online coordination/lead-generation model is not eligible for a Google Business Profile under current Google rules
+- Identified P0 public-site risks: deployed copy/phone differs from the repository, unsupported performance/coverage claims are public, and page-level SEO/crawl controls are absent
+
+## SEO Verification and Next Actions
+
+1. Review `docs/marketing/SEO_STRATEGY_DMV.md`
+2. Approve or revise the positioning and first HVAC/Fairfax wedge before engineering work begins
+3. Fix public truth issues: remove unsupported metrics, deploy the actual phone, and align all pages to estimate -> RFQ -> contractor options
+4. Implement unique metadata, canonical host, sitemap, robots/noindex controls, Search Console, and privacy-safe conversion attribution
+5. Publish the trust layer and crawlable estimator/service/location foundations before starting the editorial calendar
+6. Continue the RFQ pilot 50; SEO expansion must follow actual trade/ZIP fulfillment
+
+---
+
 > Session: 2026-07-23 — Mobile fullscreen RFQ wizard
 
 ## Completed This Session

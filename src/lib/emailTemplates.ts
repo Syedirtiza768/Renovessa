@@ -49,7 +49,7 @@ export const EMAIL_TEMPLATES: EmailTemplate[] = [
     subject: "Your {{trade}} project request ({{reference}})",
     body: `Hi {{firstName}},
 
-Thanks for your {{trade}} request with Renovessa. I'm {{agentName}}, and I'll be your point of contact while we match you with a vetted local pro.
+Thanks for your {{trade}} request with Renovessa. I'm {{agentName}}, and I'll be your point of contact while we review your scope and current contractor availability.
 
 I tried reaching you by phone — when's a good time to talk through the details so we can get your appointment set up? Reply here or let me know a number and time that works.
 
@@ -220,7 +220,7 @@ Renovessa`,
     subject: "Your Renovessa project request — {{reference}}",
     body: `Hi {{firstName}},
 
-Thanks for your {{trade}} request with Renovessa! We've received your details and are matching you with a vetted contractor in your area.
+Thanks for your {{trade}} request with Renovessa! We've received your details and are reviewing current contractor availability in your area.
 
 Your Renovessa portal login:
   [Portal]({{loginUrl}})
@@ -244,7 +244,7 @@ Renovessa`,
 
 I'm {{agentName}} with Renovessa. A little while back you looked into getting {{trade}} work done, and I wanted to check whether you're still planning it.
 
-If so, I can match you with a vetted local pro and get an appointment set up — it only takes a few minutes. Just reply and let me know a good time to reach you.
+If so, I can review your scope and current local contractor availability. Just reply and let me know a good time to reach you.
 
 Best,
 {{agentName}}

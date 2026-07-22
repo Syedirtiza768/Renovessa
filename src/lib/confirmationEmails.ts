@@ -128,8 +128,8 @@ ${params.description.trim() || "(See portal for full details)"}
 
 What happens next:
 1. We review your scoped RFQ (trade, ZIP, ballpark, notes).
-2. We solicit bids from vetted contractors who handle this work in your area.
-3. We get back to you with bid options — usually within 1–2 business days.
+2. We check current trade and ZIP availability and request responses from relevant contractors.
+3. We get back to you with available bid options and next steps. Timing varies with capacity.
 ${portalBlock}
 Questions? Just reply to this email.
 
@@ -164,7 +164,7 @@ Thanks for applying to join Renovessa. We've received your application for ${par
 Trade: ${params.trade}
 Service ZIPs: ${params.serviceZips}
 
-Our contractor success team will review it within 1–2 business days. If you're a fit for the RFQs homeowners are submitting in your area, we'll follow up with onboarding next steps.
+Our contractor success team will review the application. If you're a fit for the RFQs homeowners are submitting in your area, we'll follow up with onboarding next steps. Review timing varies with current volume.
 
 Questions? Just reply to this email.
 

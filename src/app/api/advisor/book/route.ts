@@ -262,7 +262,7 @@ Ray Cooper
 [Renovessa](${appUrl})`
       : `Hi ${data.firstName},
 
-Thanks for your ${trade} request with Renovessa! We've received your details and are matching you with a vetted contractor in your area.
+Thanks for your ${trade} request with Renovessa! We've received your details and are reviewing current contractor availability in your area.
 
 Your Renovessa portal login:
   [Portal](${loginUrl})

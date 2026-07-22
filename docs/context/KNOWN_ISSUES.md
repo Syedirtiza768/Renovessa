@@ -1,5 +1,38 @@
 # Known Issues
 
+## Public Marketing Claims and Deployment Drift
+
+### Type
+Trust / Compliance / SEO Risk
+
+### Severity
+High
+
+### Description
+The public site inspected on 2026-07-23 presented the older “one verified appointment” model, stale contact details, and numerical claims including appointment volume, confirmation rate, and ZIP coverage that were not supported by verified production evidence in the repository.
+
+Conflicting product promises and unsupported claims can harm homeowners, conversion, organic-search trust, and the Renovessa brand.
+
+### Affected Areas
+- Homepage and public acquisition pages
+- Search snippets and future indexed content
+- Trust & Safety and contractor-vetting claims
+- Phone/contact consistency
+- Estimate/RFQ conversion expectations
+
+### Suggested Fix or Mitigation
+1. Remove every unsubstantiated metric, turnaround, coverage, and vetting claim
+2. Deploy one approved estimate -> RFQ -> contractor-options message across all public pages
+3. Use the actual operations phone and consistent entity details
+4. Publish actual trade/ZIP coverage and estimate/quote disclosures
+5. Add a release check comparing production public copy with the approved repository version
+6. Complete the P0 trust and technical work in `docs/marketing/SEO_STRATEGY_DMV.md` before scaling content
+
+### Status
+Resolved in repository on 2026-07-23; production verification required after deployment. Public copy now uses the estimate -> RFQ -> available contractor-options model, actual phone, qualified credential language, and variable availability/response expectations.
+
+---
+
 ## Product Vision Unconfirmed
 
 ### Type
