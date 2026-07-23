@@ -14,9 +14,8 @@
 3. **Harden authentication** — add rate limiting, MFA for privileged users, automated IDOR/consent tests, and a single-use expiring-token recovery email flow
 4. **Configure Twilio opt-out webhook when SMS is enabled** — point inbound messaging to `/api/webhooks/twilio/sms` and retain signature validation
 
-5. **Rotate the SendGrid API key before email use** — create a replacement key, update production without printing it, restart the app, verify a safe internal send, then revoke the exposed key
-6. **Enable the signed SendGrid event webhook** — point it to `https://renovessa.com/api/webhooks/sendgrid/events`, enable delivery/bounce/drop/spam/unsubscribe events, enable signature verification, store the public verification key, and test the endpoint
-7. **Prepare and review RFQ Pilot 15 in production** — run `npm run campaign:prepare-pilot15`, verify the draft resolves exactly 15 recipients, inspect the rendered approval packet, and send one internal monitoring test
-8. **Final approval then send Pilot 15** — do not contact contractors until the named cohort and rendered messages are explicitly approved; follow up once after 4–5 business days only with non-responders
-9. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
-10. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive after key rotation
+5. **Monitor RFQ Pilot 15 replies** — campaign `cmrws4saz000hmv43jgoh5rmk` sent 15/15 on 2026-07-23; track yes/info/later and one follow-up to non-responders after 4–5 business days
+6. **Rotate the previously exposed SendGrid API key** — create a replacement key, update production without printing it, restart the app, then revoke the exposed key
+7. **Enable the signed SendGrid event webhook** — point it to `https://renovessa.com/api/webhooks/sendgrid/events`, enable delivery/bounce/drop/spam/unsubscribe events, enable signature verification, store the public verification key, and test the endpoint
+8. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
+9. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive after key rotation

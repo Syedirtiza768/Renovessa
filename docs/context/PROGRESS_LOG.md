@@ -1,4 +1,12 @@
 
+# 2026-07-23 — RFQ Pilot 15 sent
+
+- Pushed and deployed commit `d6736b3` (fail-closed Pilot 15 tooling) to production
+- Ran `prepare-rfq-pilot-15` on production: draft `cmrws4saz000hmv43jgoh5rmk`, tag `RFQ Pilot 15 — July 2026`, exactly 15 `pilot15_ready` recipients
+- Sent campaign: **15/15 accepted by SendGrid, 0 failures**; owner display name set to Ray Cooper
+- Reply-to on the campaign is `ray@inbound.renovessa.com`
+- Still outstanding: rotate previously exposed SendGrid API key; enable signed event webhook for bounce/complaint tracking
+
 # 2026-07-23 — RFQ Pilot 15 campaign preparation and send-safety controls
 
 - Selected 15 unique, high-fit, matched contractor prospects across all 13 represented trades; every selected license is active and no selected record has an outreach caution

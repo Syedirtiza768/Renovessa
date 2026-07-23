@@ -1,25 +1,18 @@
 # Agent Handoff
 
-> Current session: 2026-07-23 — RFQ Pilot 15 pre-send preparation
+> Current session: 2026-07-23 — RFQ Pilot 15 sent
 
-## Implemented
+## Done
 
-- Exact 15-recipient, 13-trade contractor cohort with rendered review assets in `data/contractor_enrichment/rfq_pilot_15_campaign.*`
-- Contact-tag targeting and `expectedCount=15` fail-closed enforcement in bulk campaign preview/send
-- Repeatable campaign generation, verification, and production draft-preparation commands
-- Short RFQ-first, variable-availability copy; Ray Cooper is used as the actual display sender when he owns the campaign
-- Production data check: all 15 are new, unsuppressed, and previously uncontacted
-- Recipient check: all 15 domains have MX; four originally phone-first addresses were confirmed on company websites
+- Deployed Pilot 15 commit `d6736b3` to production and prepared draft campaign `cmrws4saz000hmv43jgoh5rmk`
+- Sent RFQ Pilot 15: **15 sent / 0 failed** via SendGrid; display sender Ray Cooper; reply-to `ray@inbound.renovessa.com`
+- All 15 tagged `pilot15_ready` under contact tag `RFQ Pilot 15 — July 2026`
 
-## Hard send blockers
+## Next
 
-1. Rotate and revoke the current SendGrid API key because it appeared in diagnostic tool output
-2. Enable the SendGrid event webhook for processed/delivered/dropped/bounce/spam/unsubscribe (and optional open/click), enable signature verification, and set `SENDGRID_WEBHOOK_VERIFICATION_KEY` in production
-3. Send and inspect an internal monitoring test after the new key/webhook configuration is live
-4. Re-resolve the production draft and confirm exactly 15 recipients
-5. Obtain explicit final approval before the external send
-
-**No contractor email has been sent.**
+1. Watch replies in admin campaigns/replies; follow up non-responders once after 4–5 business days
+2. Rotate the previously exposed SendGrid API key
+3. Enable signed SendGrid event webhook for bounce/complaint/unsubscribe ingestion
 
 > Current session: 2026-07-23 — account integrity, consent, privacy, and substantiation
 

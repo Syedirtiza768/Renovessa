@@ -33,7 +33,7 @@ Record exactly which legal/communication disclosure a person affirmatively accep
 ## Bulk Email Campaigns
 
 ### Status
-Implemented; RFQ Pilot 15 prepared but not sent
+Implemented; RFQ Pilot 15 sent 2026-07-23 (15/15)
 
 ### Purpose
 Send personalized, suppression-aware outreach to approved homeowner, contractor,
@@ -52,10 +52,10 @@ or prospective-contractor segments through SendGrid.
 - Every message receives the mailing-address and one-click unsubscribe footer
 - Pilot 15 production preparation fails on prior outreach, non-new status, expired licenses, cautions, suppressions, duplicates, or a count other than 15
 
-### Current Blockers
-- Rotate the exposed SendGrid API key
-- Enable and sign the SendGrid event webhook
-- Pass an internal monitoring send and obtain final approval
+### Follow-up
+- Rotate the previously exposed SendGrid API key
+- Enable and sign the SendGrid event webhook for delivery/bounce/complaint tracking
+- Monitor Pilot 15 replies; one follow-up to non-responders after 4–5 business days
 
 ---
 
