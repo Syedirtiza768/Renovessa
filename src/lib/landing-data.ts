@@ -13,6 +13,12 @@ export const LANDING_CATEGORIES = [
   { id: "flooring", ref: "10", label: "Flooring", description: "Hardwood, tile, LVP, carpet, refinishing", houseZone: "flooring" },
   { id: "painting", ref: "11", label: "Painting", description: "Interior, exterior, trim, decks, cabinets", houseZone: null },
   { id: "handyman", ref: "12", label: "General Repairs", description: "Drywall, doors, tile, fences, handyman tasks", houseZone: null },
+  { id: "design-build", ref: "13", label: "Design-Build", description: "Additions, ADUs, whole-home projects from concept through construction", houseZone: null },
+  { id: "general-contracting", ref: "14", label: "General Contracting", description: "Multi-trade project management, structural work, permits", houseZone: null },
+  { id: "hardscaping", ref: "15", label: "Hardscaping & Outdoor Living", description: "Patios, walkways, retaining walls, outdoor kitchens, fire pits", houseZone: null },
+  { id: "masonry", ref: "16", label: "Masonry & Concrete", description: "Brick, block, stone, chimneys, driveways, foundations", houseZone: null },
+  { id: "remodeling", ref: "17", label: "Remodeling", description: "Whole-home, multi-room, and addition remodeling", houseZone: null },
+  { id: "restoration", ref: "18", label: "Restoration", description: "Water, fire, mold, and storm damage repair", houseZone: null },
 ] as const;
 
 export type LandingCategoryId = (typeof LANDING_CATEGORIES)[number]["id"];

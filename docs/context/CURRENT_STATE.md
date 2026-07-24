@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-07-23
+> Last updated: 2026-07-24
 
 ## Phase
 
@@ -29,6 +29,8 @@
 - **RFQ Pilot 15 approval packet** — exact 15-company cohort across 13 trades, rendered copy, CSV/JSON/Markdown review assets, active-license checks, recipient-domain MX checks, and website evidence for phone-first addresses (`rfq_pilot_15_campaign.*`)
 - Bulk campaigns support contact-tag targeting plus an `expectedCount` safety lock; sending fails closed if the resolved/suppression-filtered audience drifts from the approved count
 - **RFQ Pilot 15 sent** on 2026-07-23 — campaign `cmrws4saz000hmv43jgoh5rmk`, **15/15 delivered to SendGrid**, 0 failures; reply-to `ray@inbound.renovessa.com`; follow up non-responders once after 4–5 business days
+- **Pilot 15 contractor call workbook** prepared on 2026-07-24 at `outputs/019f8bec-effb-72c0-9f9b-a2f87ae6196b/Renovessa_Contractor_Call_Sheet.xlsx`; includes the live call queue, existing enriched profiles, personalized hooks, script variants, objections, dropdown outcomes, and follow-up tracking
+- The uploaded Google Sheets version now includes a `Pre-Call SMS` tab with 15 personalized messages, six situational alternatives, send-timing guidance, reply notes, and SMS-status validation
 - Remaining email hygiene: rotate the previously exposed SendGrid API key; enable the signed SendGrid event webhook for bounce/complaint/unsubscribe tracking
 
 ### Organic Search Foundation (Implemented)

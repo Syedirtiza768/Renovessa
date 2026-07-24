@@ -1,5 +1,24 @@
 # Agent Handoff
 
+> Current session: 2026-07-24 - Pilot 15 contractor call workbook
+
+## Completed
+
+- Created `outputs/019f8bec-effb-72c0-9f9b-a2f87ae6196b/Renovessa_Contractor_Call_Sheet.xlsx` for calling the 15 contractors already targeted by campaign `cmrws4saz000hmv43jgoh5rmk`
+- The workbook contains `Call Queue`, `Profiles`, `Call Script`, and `Objections` tabs
+- The live Google Sheets copy also contains a `Pre-Call SMS` tab with one personalized pre-call message per contractor and a six-version message library
+- Call Queue is initialized with all 15 campaign rows and `Email Status = Sent`; it also warns the caller to verify bounce/unsubscribe/complaint/suppression/DNC state before referencing the email
+- All worksheets were rendered and visually checked; formulas calculate without detected error values
+
+## Operational use
+
+1. Check current SendGrid/suppression state before each call
+2. Use `Pre-Call SMS` where messaging is permitted, then work from `Call Queue`, recording outcome, capacity, preferences, concern, follow-up, and discovery time
+3. Respect a clear no immediately and mark `Do Not Contact` when requested
+4. Use the 10-minute discovery call as a mutual-fit assessment, not a first-call sale
+
+---
+
 > Current session: 2026-07-23 — RFQ Pilot 15 sent
 
 ## Done

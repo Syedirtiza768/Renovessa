@@ -50,5 +50,30 @@ Each range is produced from the base values in code plus documented size, materi
 | COST-HANDYMAN-SMALL | Small visit, $150–$600 |
 | COST-HANDYMAN-MEDIUM | General package, $400–$2,000 |
 | COST-HANDYMAN-LARGE | Large package, $1,500–$6,000 |
+| COST-DESIGN-BUILD-ADDITION | Home addition, $220–$400 per sq ft |
+| COST-DESIGN-BUILD-ADU | ADU / in-law suite, $280–$480 per sq ft |
+| COST-DESIGN-BUILD-WHOLE-HOME | Whole-home design-build, $180–$350 per sq ft |
+| COST-DESIGN-BUILD-OUTDOOR-LIVING | Outdoor living design-build, $90–$220 per sq ft |
+| COST-GENERAL-CONTRACTING-SINGLE-TRADE | Single-trade coordination, $1,500–$5,000 per room |
+| COST-GENERAL-CONTRACTING-MULTI-TRADE | Multi-trade project, $3,500–$9,000 per room |
+| COST-GENERAL-CONTRACTING-FULL-RENO | Whole-house GC, $12,000–$30,000 per room |
+| COST-HARDSCAPING-PATIO | Patio / walkway, $14–$32 per sq ft (material-adjusted) |
+| COST-HARDSCAPING-RETAINING-WALL | Retaining wall, $35–$75 per sq ft of wall face |
+| COST-HARDSCAPING-OUTDOOR-KITCHEN | Outdoor kitchen, $8,000–$35,000 |
+| COST-HARDSCAPING-FIRE-PIT | Fire pit / seating area, $1,200–$6,000 |
+| COST-HARDSCAPING-FULL-YARD | Full outdoor living package, $14–$32 per sq ft |
+| COST-MASONRY-CHIMNEY | Chimney repair/rebuild, $800–$6,500 |
+| COST-MASONRY-FOUNDATION-REPAIR | Foundation crack/masonry repair, $2,500–$15,000 |
+| COST-MASONRY-BRICK-REPAIR | Brick/block repair or repointing, $600–$4,500 |
+| COST-MASONRY-BLOCK-WALL | New masonry/block wall, $25–$55 per sq ft |
+| COST-MASONRY-DRIVEWAY | Concrete driveway/walkway, $9–$20 per sq ft |
+| COST-REMODELING-SINGLE-ROOM | Single-room remodel, $60–$150 per sq ft |
+| COST-REMODELING-MULTI-ROOM | Multi-room remodel, $80–$180 per sq ft |
+| COST-REMODELING-WHOLE-HOME | Whole-home remodel, $100–$250 per sq ft |
+| COST-REMODELING-ADDITION | Remodel addition, $220–$400 per sq ft |
+| COST-RESTORATION-WATER | Water damage restoration, $4–$12 per sq ft (severity-adjusted) |
+| COST-RESTORATION-FIRE | Fire/smoke damage restoration, $12–$30 per sq ft (severity-adjusted) |
+| COST-RESTORATION-MOLD | Mold remediation, $8–$20 per sq ft (severity-adjusted) |
+| COST-RESTORATION-STORM | Storm damage restoration, $6–$18 per sq ft (severity-adjusted) |
 
 For each approval, append: evidence artifact IDs/locations, sample dates and DMV geography, sample size, calculation workbook/hash, exclusions, owner, reviewer, approval UTC, expiration, and exact approved wording.

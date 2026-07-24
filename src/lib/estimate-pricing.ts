@@ -266,7 +266,133 @@ function calculateRange(trade: LandingCategoryId, answers: EstimateAnswers): Cal
       return range(s * 1.8, s * 4.5 * qualityFactor, drivers, "Interior painting", "rough");
     }
 
-    case "handyman":
+    case "handyman": {
+      const size = answers.job_size || "medium";
+      if (size === "small") return range(150, 600, drivers, "Small handyman / repair visit", "solid");
+      if (size === "large") return range(1500, 6000, drivers, "Larger multi-item repair package", "wide");
+      return range(400, 2000, drivers, "General repairs package", "rough");
+    }
+
+    case "design-build": {
+      const sqft = Number(answers.sqft || "400");
+      const projectType = answers.project_type || "addition";
+      const s = clamp(sqft, 150, 3000);
+      let perLow = 220;
+      let perHigh = 400;
+      if (projectType === "adu") {
+        perLow = 280;
+        perHigh = 480;
+        drivers.push("ADUs need a full kitchen/bath and separate utility systems");
+      } else if (projectType === "outdoor_living") {
+        perLow = 90;
+        perHigh = 220;
+      } else if (projectType === "whole_home") {
+        perLow = 180;
+        perHigh = 350;
+      }
+      if (answers.design_stage === "concept_only") {
+        drivers.push("Architectural design and permitting add to early-stage cost");
+      }
+      drivers.push(`~${s} sq ft of design-build scope`);
+      return range(s * perLow * qualityFactor, s * perHigh * qualityFactor, drivers, "Design-build project ballpark (design + construction)", "wide");
+    }
+
+    case "general-contracting": {
+      const scope = answers.scope || "multi_trade";
+      const rooms = Number(answers.rooms_affected || "2");
+      const r = clamp(rooms, 1, 12);
+      let perRoomLow = 3500;
+      let perRoomHigh = 9000;
+      if (scope === "full_reno") {
+        perRoomLow = 12000;
+        perRoomHigh = 30000;
+        drivers.push("Whole-house GC scope spans structural, mechanical, and finish trades");
+      } else if (scope === "single_trade") {
+        perRoomLow = 1500;
+        perRoomHigh = 5000;
+      }
+      drivers.push(`${r} room(s)/area(s) in scope`);
+      return range(r * perRoomLow * qualityFactor, r * perRoomHigh * qualityFactor, drivers, "General contracting project ballpark", "wide");
+    }
+
+    case "hardscaping": {
+      const job = answers.job_type || "patio";
+      const sqft = Number(answers.sqft || "300");
+      const material = answers.material || "pavers";
+      const matFactor = material === "natural_stone" ? 1.5 : material === "stamped_concrete" ? 1.1 : material === "gravel" ? 0.6 : 1;
+      if (job === "retaining_wall") {
+        const s = clamp(sqft, 20, 800);
+        drivers.push(`~${s} sq ft of wall face`);
+        return range(s * 35 * matFactor, s * 75 * matFactor * qualityFactor, drivers, "Retaining wall ballpark", "rough");
+      }
+      if (job === "outdoor_kitchen") {
+        return range(8000, 35000 * qualityFactor, drivers, "Outdoor kitchen build", "wide");
+      }
+      if (job === "fire_pit") {
+        return range(1200, 6000 * qualityFactor, drivers, "Fire pit / seating area", "rough");
+      }
+      const s = clamp(sqft, 100, 2000);
+      drivers.push(`~${s} sq ft · ${material}`);
+      return range(
+        s * 14 * matFactor,
+        s * 32 * matFactor * qualityFactor,
+        drivers,
+        job === "full_yard" ? "Full outdoor living package" : "Patio / walkway hardscaping",
+        "rough",
+      );
+    }
+
+    case "masonry": {
+      const job = answers.job_type || "brick_repair";
+      const sqft = Number(answers.sqft || "400");
+      if (job === "chimney") return range(800, 6500, drivers, "Chimney masonry repair / rebuild", "wide");
+      if (job === "foundation_repair") return range(2500, 15000, drivers, "Foundation crack / masonry repair", "wide");
+      if (job === "brick_repair") return range(600, 4500, drivers, "Brick / block repair or repointing", "rough");
+      if (job === "block_wall") {
+        const s = clamp(sqft, 20, 600);
+        drivers.push(`~${s} sq ft of wall`);
+        return range(s * 25, s * 55 * qualityFactor, drivers, "New masonry / block wall", "rough");
+      }
+      const s = clamp(sqft, 100, 2000);
+      drivers.push(`~${s} sq ft of concrete/masonry`);
+      return range(s * 9, s * 20 * qualityFactor, drivers, "Concrete driveway / walkway", "rough");
+    }
+
+    case "remodeling": {
+      const scope = answers.scope || "single_room";
+      const sqft = Number(answers.sqft || "500");
+      const s = clamp(sqft, 100, 5000);
+      let perLow = 60;
+      let perHigh = 150;
+      if (scope === "multi_room") {
+        perLow = 80;
+        perHigh = 180;
+      } else if (scope === "whole_home") {
+        perLow = 100;
+        perHigh = 250;
+        drivers.push("Whole-home remodels often touch structure, mechanicals, and finishes");
+      } else if (scope === "addition") {
+        perLow = 220;
+        perHigh = 400;
+        drivers.push("Additions include new foundation, framing, and systems");
+      }
+      drivers.push(`~${s} sq ft remodeled`);
+      return range(s * perLow * qualityFactor, s * perHigh * qualityFactor, drivers, "General remodeling ballpark", "wide");
+    }
+
+    case "restoration": {
+      const damage = answers.damage_type || "water";
+      const severity = answers.severity || "moderate";
+      const sqft = Number(answers.sqft || "500");
+      const s = clamp(sqft, 50, 5000);
+      const sevFactor = severity === "minor" ? 0.6 : severity === "major" ? 1.8 : 1;
+      const [bLow, bHigh] =
+        damage === "fire" ? [12, 30] : damage === "mold" ? [8, 20] : damage === "storm" ? [6, 18] : [4, 12];
+      drivers.push(`${damage} damage restoration, ${severity} severity`);
+      drivers.push(`~${s} sq ft affected`);
+      return range(s * bLow * sevFactor, s * bHigh * sevFactor * qualityFactor, drivers, "Restoration ballpark (damage remediation + repair)", "wide");
+    }
+
     default: {
       const size = answers.job_size || "medium";
       if (size === "small") return range(150, 600, drivers, "Small handyman / repair visit", "solid");

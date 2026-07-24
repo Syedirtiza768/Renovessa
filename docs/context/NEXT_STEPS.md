@@ -9,6 +9,8 @@
 
 ## Product and operations
 
+- **Run the Pilot 15 calling pass** - use the live Google Sheet and its `Pre-Call SMS` tab where messaging is permitted; verify bounce/unsubscribe/complaint/suppression/DNC status before each outreach and record every outcome in the queue
+
 1. **Complete estimator evidence review** — attach representative, dated DMV bids/invoices or defensible datasets to every range record; reviewer approves the exact model version before configuring `NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION`
 2. **Operationalize privacy** — name privacy/security owners, complete the vendor register, run the first incident tabletop, and create the restricted privacy-request register
 3. **Harden authentication** — add rate limiting, MFA for privileged users, automated IDOR/consent tests, and a single-use expiring-token recovery email flow

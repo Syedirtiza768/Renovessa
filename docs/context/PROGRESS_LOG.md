@@ -121,3 +121,19 @@
 - Built public website, homeowner/contractor/admin portals per blueprint MVP scope
 - Added Docker Compose deployment on port 7090 with demo seed data
 - Recorded tech stack decisions (Next.js, Prisma, JWT auth, Tailwind)
+
+# 2026-07-24 - Pilot 15 contractor calling workspace
+
+- Prepared `outputs/019f8bec-effb-72c0-9f9b-a2f87ae6196b/Renovessa_Contractor_Call_Sheet.xlsx` for post-email contractor calls
+- Joined the exact 15-company cohort to existing phone, trade, service-area, reputation, license, and public-source data
+- Added a live call queue with status/email/capacity/concern dropdowns, personalized hooks, discovery/follow-up dates, attempt counts, and formula-driven summary metrics
+- Added recommended, direct, and owner-operated call-script variants plus voicemail, SMS, and concise objection handling
+- Marked the SendGrid campaign record as sent while requiring the caller to recheck bounces, unsubscribes, complaints, suppressions, and DNC status before each call
+- Rendered and visually reviewed all four worksheets; formula scan found no Excel error values
+# 2026-07-24 - Google Sheets pre-call SMS workspace
+
+- Added a dedicated `Pre-Call SMS` tab to the live contractor calling Google Sheet
+- Added 15 personalized, ready-to-edit messages that reference the email and set up a brief later call without attempting to sell by text
+- Added recommended, short/busy, warm, capacity-sensitive, unread-email, and day-before variants
+- Added timing guidance, reply notes, SMS-status dropdowns, conditional status colors, and explicit STOP/DNC/suppression safeguards
+- Verified the new ranges, formatting, frozen headers, validation rules, and conditional formatting through the live Sheets API

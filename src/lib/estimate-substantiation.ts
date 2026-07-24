@@ -32,6 +32,12 @@ function variant(trade: LandingCategoryId, answers: Record<string, string>) {
     case "flooring": return answers.material || "lvp";
     case "painting": return answers.scope || "interior";
     case "handyman": return answers.job_size || "medium";
+    case "design-build": return answers.project_type || "addition";
+    case "general-contracting": return answers.scope || "multi_trade";
+    case "hardscaping": return answers.job_type || "patio";
+    case "masonry": return answers.job_type || "brick_repair";
+    case "remodeling": return answers.scope || "single_room";
+    case "restoration": return answers.damage_type || "water";
     default: return "general";
   }
 }
