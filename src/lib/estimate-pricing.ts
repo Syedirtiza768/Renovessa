@@ -297,7 +297,6 @@ export function formatMoney(n: number): string {
 }
 
 export function estimateToBudgetRange(est: BallparkEstimate): string {
-  if (!est.publicationApproved) return "Not published — substantiation review pending";
   const mid = est.mid;
   if (mid < 1000) return "Under $1,000";
   if (mid < 5000) return "$1,000-$5,000";
@@ -324,9 +323,9 @@ export function buildRfqDescription(
     lines.push(`- ${label}: ${value}`);
   }
   lines.push("");
-  lines.push(estimate.publicationApproved
-    ? `Homeowner ballpark shown: ${formatMoney(estimate.low)} – ${formatMoney(estimate.high)} (mid ~${formatMoney(estimate.mid)}, ${estimate.confidence} confidence)`
-    : "No numeric range was shown; the model is pending substantiation approval.");
+  lines.push(
+    `Homeowner ballpark shown: ${formatMoney(estimate.low)} – ${formatMoney(estimate.high)} (mid ~${formatMoney(estimate.mid)}, ${estimate.confidence} confidence)`
+  );
   lines.push(`Estimate summary: ${estimate.summary}`);
   lines.push(`Estimate evidence record: ${estimate.claimId} (${estimate.modelVersion}; ${estimate.substantiationStatus})`);
   if (estimate.drivers.length) {

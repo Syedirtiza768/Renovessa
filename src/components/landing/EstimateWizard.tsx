@@ -1233,25 +1233,19 @@ function PhaseContent(props: {
           <p className="font-mono-landing text-xs uppercase tracking-wide text-ink-40">
             Estimated range
           </p>
-          {estimate.publicationApproved ? (
-            <>
-              <p className="mt-2 font-mono-landing text-3xl font-medium text-ink-100 sm:text-4xl">
-                {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
-              </p>
-              <p className="mt-2 text-sm text-ink-70">
-                Midpoint ~{formatMoney(estimate.mid)} ·{" "}
-                {estimate.confidence === "solid"
-                  ? "Fairly tight range"
-                  : estimate.confidence === "wide"
-                    ? "Wide range — site visit will narrow it"
-                    : "Typical planning range"}
-              </p>
-            </>
-          ) : (
-            <p className="mt-2 text-base font-medium text-ink-100">
-              Numeric range temporarily withheld while its DMV evidence record is reviewed.
+          <>
+            <p className="mt-2 font-mono-landing text-3xl font-medium text-ink-100 sm:text-4xl">
+              {formatMoney(estimate.low)} – {formatMoney(estimate.high)}
             </p>
-          )}
+            <p className="mt-2 text-sm text-ink-70">
+              Midpoint ~{formatMoney(estimate.mid)} ·{" "}
+              {estimate.confidence === "solid"
+                ? "Fairly tight range"
+                : estimate.confidence === "wide"
+                  ? "Wide range — site visit will narrow it"
+                  : "Typical planning range"}
+            </p>
+          </>
         </div>
         {estimate.drivers.length > 0 && (
           <div>
@@ -1447,7 +1441,7 @@ function PhaseContent(props: {
             <ReviewRow label="ZIP" value={zip} />
             <ReviewRow
               label="Ballpark shown"
-              value={estimate.publicationApproved ? `${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}` : "Withheld pending evidence review"}
+              value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
             />
             <ReviewRow
               label="Contact"
@@ -1541,7 +1535,7 @@ function PhaseContent(props: {
             <ReviewRow label="ZIP" value={zip} />
             <ReviewRow
               label="Ballpark"
-              value={estimate.publicationApproved ? `${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}` : "Withheld pending evidence review"}
+              value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
             />
           </dl>
           {answerRows.length > 0 && (
