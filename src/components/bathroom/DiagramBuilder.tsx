@@ -91,6 +91,7 @@ export function DiagramBuilder({
   const [msg, setMsg] = useState<string | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [showGrid, setShowGrid] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -346,9 +347,9 @@ export function DiagramBuilder({
     placeFixture(type, pt.x - (def?.w ?? 0) / 2, pt.y - (def?.d ?? 0) / 2);
   };
 
-  const save = async () => {
+  const save = async (quiet = false) => {
     setSaving(true);
-    setMsg(null);
+    if (!quiet) setMsg(null);
     try {
       const res = await fetch(`/api/bathroom-projects/${projectId}/layouts`, {
         method: "POST",
@@ -362,13 +363,23 @@ export function DiagramBuilder({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `Failed (${res.status})`);
-      setMsg("✓ Layout saved");
+      setMsg(quiet ? "Saved" : "Layout saved — continue whenever you’re ready.");
     } catch (e) {
-      setMsg(`✗ ${e instanceof Error ? e.message : "Unknown error"}`);
+      setMsg(`Couldn’t save: ${e instanceof Error ? e.message : "Unknown error"}`);
     } finally {
       setSaving(false);
     }
   };
+
+  // Auto-save sketches so users don’t hunt for a Save button
+  useEffect(() => {
+    if (!projectId || fixtures.length === 0) return;
+    const t = setTimeout(() => {
+      void save(true);
+    }, 2500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geometry, projectId]);
 
   const gridLines = useMemo(() => {
     if (!showGrid) return null;
@@ -418,7 +429,7 @@ export function DiagramBuilder({
           )}
           {compactHeader && (
             <p className="text-sm text-ink-70">
-              Editing {layoutType.toLowerCase()} — drag to move, handles to resize, R to rotate.
+              Approximate sketch only — drag fixtures to match your space. Exact measurements come later with a contractor.
             </p>
           )}
         </div>
@@ -680,47 +691,63 @@ export function DiagramBuilder({
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border p-4">
-          <p className="text-xs font-semibold uppercase text-muted">Calculated</p>
-          <dl className="mt-2 grid grid-cols-2 gap-1 text-sm">
-            <dt>Floor area</dt><dd>{calculations.floorAreaSqft} sq ft</dd>
-            <dt>Perimeter</dt><dd>{calculations.perimeterFt} ft</dd>
-            <dt>Paintable wall</dt><dd>{calculations.paintableWallAreaSqft} sq ft</dd>
-            <dt>Wet wall</dt><dd>{calculations.wetWallAreaSqft} sq ft</dd>
-            <dt>Tile area</dt><dd>{calculations.tileAreaSqft} sq ft</dd>
-            <dt>Baseboard</dt><dd>{calculations.baseboardLengthFt} ft</dd>
-            <dt>Doors</dt><dd>{calculations.doorCount}</dd>
-            <dt>Windows</dt><dd>{calculations.windowCount}</dd>
+      <div className="rounded-xl border border-ink-15 bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-ink-70">
+            {validationIssues.length === 0
+              ? "Sketch looks fine — continue when ready."
+              : summaryFriendly(validationIssues)}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowDetails((v) => !v)}
+            className="text-xs font-medium text-accent"
+          >
+            {showDetails ? "Hide details" : "Show area details"}
+          </button>
+        </div>
+        {validationIssues.length > 0 && (
+          <ul className="mt-2 space-y-1 text-sm text-ink-70">
+            {validationIssues.slice(0, 4).map((iss, i) => (
+              <li key={i}>
+                <span className="text-ink-40">•</span> {iss.message}
+              </li>
+            ))}
+          </ul>
+        )}
+        {showDetails && (
+          <dl className="mt-3 grid grid-cols-2 gap-1 border-t border-ink-15 pt-3 text-sm">
+            <dt className="text-ink-40">Floor area</dt>
+            <dd>{calculations.floorAreaSqft} sq ft</dd>
+            <dt className="text-ink-40">Perimeter</dt>
+            <dd>{calculations.perimeterFt} ft</dd>
+            <dt className="text-ink-40">Tile (est.)</dt>
+            <dd>{calculations.tileAreaSqft} sq ft</dd>
+            <dt className="text-ink-40">Fixtures</dt>
+            <dd>{calculations.fixtureCount}</dd>
           </dl>
-        </div>
-        <div className="rounded-xl border p-4">
-          <p className="text-xs font-semibold uppercase text-muted">Validation</p>
-          {validationIssues.length === 0 ? (
-            <p className="mt-2 text-sm text-green-700">No issues detected.</p>
-          ) : (
-            <ul className="mt-2 space-y-1 text-sm">
-              {validationIssues.map((iss, i) => (
-                <li key={i} className={iss.severity === "error" ? "text-red-700" : "text-amber-700"}>
-                  {iss.severity === "error" ? "⛔" : "⚠"} {iss.message}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 text-sm text-ink-40">
+        <span>{saving ? "Saving…" : msg ?? "Changes save automatically"}</span>
         <button
           type="button"
-          onClick={save}
+          onClick={() => void save(false)}
           disabled={saving}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="text-accent underline disabled:opacity-40"
         >
-          {saving ? "Saving…" : "Save layout"}
+          Save now
         </button>
-        {msg && <span className="text-sm text-ink-70">{msg}</span>}
       </div>
     </div>
   );
+}
+
+function summaryFriendly(
+  issues: { severity: string; message: string }[],
+): string {
+  const warnings = issues.filter((i) => i.severity === "warning").length;
+  if (warnings > 0) return `${warnings} tip${warnings === 1 ? "" : "s"} — still fine to continue.`;
+  return "A few notes — still fine to continue.";
 }

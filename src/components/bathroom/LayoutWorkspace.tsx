@@ -22,7 +22,7 @@ export function LayoutWorkspace({
   answers: PlannerAnswers;
   setAnswer: (key: string, value: string) => void;
 }) {
-  const showProposed = needsProposedLayout(answers) || answers.forceProposedLayout === "yes";
+  const wantsProposed = needsProposedLayout(answers);
   const [tab, setTab] = useState<LayoutTab>("EXISTING");
   const [existingGeo, setExistingGeo] = useState<LayoutGeometry | null>(null);
   const [proposedGeo, setProposedGeo] = useState<LayoutGeometry | null>(null);
@@ -33,33 +33,19 @@ export function LayoutWorkspace({
 
   const feet = useMemo(() => resolveRoomFeet(answers), [answers]);
 
-  // Load saved layouts once; bootstrap template if none
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const res = await fetch(`/api/bathroom-projects/${projectId}/layouts`);
-        if (!res.ok) {
-          if (!cancelled) {
-            const geo = buildExistingTemplate(answers);
-            setExistingGeo(geo);
-            setExistingKey((k) => k + 1);
-            if (needsProposedLayout(answers)) {
-              setProposedGeo(buildProposedFromExisting(geo, answers));
-              setProposedKey((k) => k + 1);
-            }
-            setNote("Started from a room template — adjust fixtures to match, then save.");
-          }
-          return;
-        }
-        const rows = (await res.json()) as Array<{
-          layoutType: string;
-          geometryJson: LayoutGeometry;
-          createdAt: string;
-        }>;
+        const rows = res.ok
+          ? ((await res.json()) as Array<{ layoutType: string; geometryJson: LayoutGeometry }>)
+          : [];
         if (cancelled) return;
+
         const existing = rows.find((r) => r.layoutType === "EXISTING");
         const proposed = rows.find((r) => r.layoutType === "PROPOSED");
+
         if (existing?.geometryJson) {
           setExistingGeo(existing.geometryJson);
           setExistingKey((k) => k + 1);
@@ -67,12 +53,13 @@ export function LayoutWorkspace({
           const geo = buildExistingTemplate(answers);
           setExistingGeo(geo);
           setExistingKey((k) => k + 1);
-          setNote("Started from a room template — adjust fixtures to match, then save.");
+          setNote("We placed a starting layout — nudge fixtures if something’s off, then continue.");
         }
+
         if (proposed?.geometryJson) {
           setProposedGeo(proposed.geometryJson);
           setProposedKey((k) => k + 1);
-        } else if (needsProposedLayout(answers)) {
+        } else if (wantsProposed) {
           const base = existing?.geometryJson ?? buildExistingTemplate(answers);
           setProposedGeo(buildProposedFromExisting(base, answers));
           setProposedKey((k) => k + 1);
@@ -84,15 +71,10 @@ export function LayoutWorkspace({
     return () => {
       cancelled = true;
     };
-    // Intentionally once per project — answers drive Generate / Reset buttons instead
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
-  useEffect(() => {
-    if (!showProposed && tab === "PROPOSED") setTab("EXISTING");
-  }, [showProposed, tab]);
-
-  const applyExistingTemplate = () => {
+  const resetTemplate = () => {
     const geo = buildExistingTemplate(answers);
     setExistingGeo(geo);
     setExistingKey((k) => k + 1);
@@ -100,7 +82,7 @@ export function LayoutWorkspace({
     setAnswer("width", String(feet.widthFt));
     setAnswer("ceilingHeight", String(feet.ceilingFt));
     setAnswer("has_diagram", "yes");
-    setNote("Template applied — drag fixtures to match your room, then save.");
+    setNote("Reset to a clean starting layout.");
     setTab("EXISTING");
   };
 
@@ -110,12 +92,11 @@ export function LayoutWorkspace({
       setExistingGeo(base);
       setExistingKey((k) => k + 1);
     }
-    const proposed = buildProposedFromExisting(base, answers);
-    setProposedGeo(proposed);
+    setProposedGeo(buildProposedFromExisting(base, answers));
     setProposedKey((k) => k + 1);
     setAnswer("forceProposedLayout", "yes");
     setAnswer("has_diagram", "yes");
-    setNote("Proposed layout generated from your goals — review and adjust.");
+    setNote("Proposed layout updated from your goals.");
     setTab("PROPOSED");
   };
 
@@ -123,72 +104,68 @@ export function LayoutWorkspace({
     return <p className="text-sm text-ink-70">Loading layout…</p>;
   }
 
+  const showProposedTab = wantsProposed || Boolean(proposedGeo) || answers.forceProposedLayout === "yes";
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-xl font-semibold text-ink-100">Room layout</h2>
         <p className="mt-1 text-sm text-ink-70">
-          Start from a template, then drag to match your space.
-          {showProposed
-            ? " Toggle Proposed to review the remodel plan."
-            : " Generate a proposed layout if you are changing the wet wall or footprint."}
+          Rough sketch for planning — not a construction drawing. Drag to adjust, or skip ahead if the template is close enough.
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setTab("EXISTING")}
-          className={`rounded-full border px-4 py-1.5 text-sm transition ${
-            tab === "EXISTING" ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70"
-          }`}
-        >
-          Existing
-        </button>
-        {(showProposed || proposedGeo) && (
-          <button
-            type="button"
-            onClick={() => setTab("PROPOSED")}
-            className={`rounded-full border px-4 py-1.5 text-sm transition ${
-              tab === "PROPOSED" ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70"
-            }`}
-          >
-            Proposed
-          </button>
+        {showProposedTab && (
+          <>
+            <button
+              type="button"
+              onClick={() => setTab("EXISTING")}
+              className={`rounded-full border px-4 py-1.5 text-sm transition ${
+                tab === "EXISTING" ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70"
+              }`}
+            >
+              Existing
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("PROPOSED")}
+              className={`rounded-full border px-4 py-1.5 text-sm transition ${
+                tab === "PROPOSED" ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70"
+              }`}
+            >
+              After remodel
+            </button>
+          </>
         )}
         <button
           type="button"
-          onClick={applyExistingTemplate}
+          onClick={resetTemplate}
           className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-70 hover:border-ink-40"
         >
-          {existingGeo ? "Reset to template" : "Apply room template"}
+          Reset layout
         </button>
-        <button
-          type="button"
-          onClick={generateProposed}
-          className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-70 hover:border-ink-40"
-        >
-          Generate proposed from goals
-        </button>
-      </div>
-
-      {note && <p className="text-sm text-green-800">{note}</p>}
-
-      {!existingGeo && tab === "EXISTING" && (
-        <div className="rounded-lg border border-dashed border-ink-15 bg-bone-0 p-6 text-center">
-          <p className="text-sm text-ink-70">
-            No layout yet. Apply a template sized from your description
-            {answers.roomSizeBand ? ` (${answers.roomSizeBand})` : ""}, then tweak fixtures.
-          </p>
+        {wantsProposed && (
           <button
             type="button"
-            onClick={applyExistingTemplate}
-            className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
+            onClick={generateProposed}
+            className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-70 hover:border-ink-40"
           >
-            Apply room template
+            Refresh after-remodel view
           </button>
-        </div>
-      )}
+        )}
+        {!wantsProposed && !proposedGeo && (
+          <button
+            type="button"
+            onClick={generateProposed}
+            className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-40 hover:border-ink-40"
+          >
+            Add after-remodel view
+          </button>
+        )}
+      </div>
+
+      {note && <p className="text-sm text-ink-70">{note}</p>}
 
       {tab === "EXISTING" && existingGeo && (
         <DiagramBuilder
@@ -212,13 +189,13 @@ export function LayoutWorkspace({
 
       {tab === "PROPOSED" && !proposedGeo && (
         <div className="rounded-lg border border-dashed border-ink-15 p-6 text-center">
-          <p className="text-sm text-ink-70">Generate a proposed layout from your goals, or draw from scratch after applying an existing template.</p>
+          <p className="text-sm text-ink-70">Optional — generate a simple after-remodel sketch from your goals.</p>
           <button
             type="button"
             onClick={generateProposed}
             className="mt-3 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white"
           >
-            Generate proposed
+            Generate after-remodel view
           </button>
         </div>
       )}

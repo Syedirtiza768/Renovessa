@@ -25,11 +25,12 @@ describe("layout-templates", () => {
     expect(g.walls).toHaveLength(4);
   });
 
-  it("builds guest template with tub + vanity + toilet", () => {
+  it("builds guest template with tub + vanity + toilet and no floor exhaust fan", () => {
     const g = buildExistingTemplate({ bathroomType: "guest", roomSizeBand: "small" });
     expect(g.fixtures.some((f) => f.type === "tub")).toBe(true);
     expect(g.fixtures.some((f) => f.type === "vanity")).toBe(true);
     expect(g.fixtures.some((f) => f.type === "toilet")).toBe(true);
+    expect(g.fixtures.some((f) => f.type === "exhaust_fan")).toBe(false);
   });
 
   it("converts tub to shower for tub_to_shower objective", () => {

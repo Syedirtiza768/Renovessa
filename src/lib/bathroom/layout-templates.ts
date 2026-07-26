@@ -1,6 +1,7 @@
 /**
  * Room layout templates and proposed-layout transforms.
  * Pure functions — no React / DB. Dimensions in inches.
+ * Fixture x/y are TOP-LEFT corners.
  */
 
 import type { FixturePlacement, LayoutGeometry, WallSegment } from "./geometry";
@@ -15,7 +16,7 @@ export const ROOM_SIZE_BANDS: {
   widthFt: number;
   ceilingFt: number;
 }[] = [
-  { id: "powder", label: "Powder", hint: "~3×5 ft", lengthFt: 5, widthFt: 3, ceilingFt: 8 },
+  { id: "powder", label: "Powder", hint: "~4×5 ft", lengthFt: 5, widthFt: 4, ceilingFt: 8 },
   { id: "small", label: "Small", hint: "~5×8 ft", lengthFt: 8, widthFt: 5, ceilingFt: 8 },
   { id: "medium", label: "Medium", hint: "~6×9 ft", lengthFt: 9, widthFt: 6, ceilingFt: 8 },
   { id: "large", label: "Large / primary", hint: "~8×12 ft", lengthFt: 12, widthFt: 8, ceilingFt: 9 },
@@ -57,17 +58,20 @@ function rectWalls(lengthIn: number, widthIn: number): WallSegment[] {
 }
 
 function clampFixture(f: FixturePlacement, lengthIn: number, widthIn: number): FixturePlacement {
+  const w = Math.min(Math.max(4, f.w), lengthIn);
+  const d = Math.min(Math.max(4, f.d), widthIn);
   return {
     ...f,
-    w: Math.max(4, f.w),
-    d: Math.max(4, f.d),
-    x: Math.max(0, Math.min(f.x, Math.max(0, lengthIn - f.w))),
-    y: Math.max(0, Math.min(f.y, Math.max(0, widthIn - f.d))),
+    w,
+    d,
+    x: Math.max(0, Math.min(f.x, Math.max(0, lengthIn - w))),
+    y: Math.max(0, Math.min(f.y, Math.max(0, widthIn - d))),
   };
 }
 
 /**
  * Bootstrap an existing layout from bathroom type + room size.
+ * Layouts are intentionally loose — avoid packing that triggers overlaps.
  */
 export function buildExistingTemplate(answers: Record<string, string>): LayoutGeometry {
   const { lengthFt, widthFt, ceilingFt } = resolveRoomFeet(answers);
@@ -77,33 +81,46 @@ export function buildExistingTemplate(answers: Record<string, string>): LayoutGe
 
   const fixtures: FixturePlacement[] = [];
 
-  // Door on short wall near origin
-  fixtures.push({ type: "door", x: 6, y: 0, w: 32, d: 4, rotation: 0 });
+  // Door centered on the near short wall (top edge)
+  const doorW = Math.min(32, L - 12);
+  fixtures.push({ type: "door", x: (L - doorW) / 2, y: 0, w: doorW, d: 4, rotation: 0 });
 
   if (type === "powder") {
-    fixtures.push({ type: "toilet", x: L - 34, y: W - 28, w: 28, d: 20, rotation: 0 });
-    fixtures.push({ type: "sink", x: 12, y: W - 22, w: 24, d: 18, rotation: 0 });
+    // Toilet on right wall, sink on left — leave aisle in middle
+    fixtures.push({ type: "toilet", x: L - 30, y: Math.max(8, W - 28), w: 28, d: 20, rotation: 0 });
+    fixtures.push({ type: "sink", x: 4, y: Math.max(8, W - 22), w: 22, d: 18, rotation: 0 });
   } else if (type === "accessible") {
-    fixtures.push({ type: "toilet", x: L - 36, y: W - 30, w: 30, d: 22, rotation: 0 });
-    fixtures.push({ type: "vanity", x: 12, y: W - 24, w: 36, d: 22, rotation: 0 });
-    fixtures.push({ type: "shower", x: 12, y: 12, w: Math.min(60, L - 24), d: Math.min(48, W - 40), rotation: 0 });
+    fixtures.push({ type: "toilet", x: L - 32, y: Math.max(10, W - 30), w: 30, d: 22, rotation: 0 });
+    fixtures.push({ type: "vanity", x: 4, y: Math.max(10, W - 24), w: Math.min(36, L / 2 - 8), d: 21, rotation: 0 });
+    const shW = Math.min(48, L - 16);
+    const shD = Math.min(36, Math.max(30, W - 48));
+    fixtures.push({ type: "shower", x: 4, y: 8, w: shW, d: shD, rotation: 0 });
   } else {
-    // guest / primary / basement / other — tub along far long wall, vanity + toilet opposite
-    const tubW = Math.min(60, L - 24);
-    fixtures.push({ type: "tub", x: (L - tubW) / 2, y: 6, w: tubW, d: 32, rotation: 0 });
-    fixtures.push({ type: "toilet", x: L - 34, y: W - 28, w: 30, d: 20, rotation: 0 });
-    const vanityW = type === "primary" ? 60 : 36;
+    // Tub along top wall (below door), vanity left-bottom, toilet right-bottom
+    const tubW = Math.min(60, L - 16);
+    const tubD = Math.min(30, Math.max(28, Math.floor(W * 0.35)));
+    fixtures.push({ type: "tub", x: (L - tubW) / 2, y: 8, w: tubW, d: tubD, rotation: 0 });
+
+    const vanityW = Math.min(type === "primary" ? 48 : 36, Math.floor(L * 0.4));
     fixtures.push({
       type: "vanity",
-      x: 12,
-      y: W - 24,
-      w: Math.min(vanityW, L - 50),
-      d: 22,
+      x: 4,
+      y: Math.max(tubD + 16, W - 22),
+      w: vanityW,
+      d: 21,
+      rotation: 0,
+    });
+    fixtures.push({
+      type: "toilet",
+      x: L - 30,
+      y: Math.max(tubD + 16, W - 26),
+      w: 28,
+      d: 20,
       rotation: 0,
     });
   }
 
-  fixtures.push({ type: "exhaust_fan", x: L / 2 - 6, y: W / 2 - 6, w: 12, d: 12, rotation: 0 });
+  // No exhaust fan on the floor plan — it caused false overlap noise
 
   return {
     walls: rectWalls(L, W),
@@ -115,7 +132,6 @@ export function buildExistingTemplate(answers: Record<string, string>): LayoutGe
 
 /**
  * Derive a proposed layout from an existing one + project goals.
- * Never invents prices or diagnoses — geometry only.
  */
 export function buildProposedFromExisting(
   existing: LayoutGeometry,
@@ -132,21 +148,24 @@ export function buildProposedFromExisting(
     const tubIdx = fixtures.findIndex((f) => f.type === "tub");
     if (tubIdx >= 0) {
       const tub = fixtures[tubIdx];
+      // Keep footprint size so layout stays conflict-free; widen only if room allows
+      const w = Math.min(Math.max(tub.w, 48), lengthIn - tub.x);
+      const d = Math.min(Math.max(tub.d, 32), widthIn - tub.y);
       fixtures[tubIdx] = {
         type: curbless ? "shower" : "shower_enclosure",
         x: tub.x,
         y: tub.y,
-        w: Math.max(tub.w, 48),
-        d: Math.max(tub.d, 36),
+        w,
+        d,
         rotation: tub.rotation ?? 0,
       };
     } else if (!fixtures.some((f) => f.type === "shower" || f.type === "shower_enclosure")) {
       fixtures.push({
         type: curbless ? "shower" : "shower_enclosure",
-        x: 12,
-        y: 12,
-        w: 48,
-        d: 36,
+        x: 8,
+        y: 8,
+        w: Math.min(48, lengthIn - 16),
+        d: Math.min(36, widthIn - 40),
         rotation: 0,
       });
     }
@@ -166,28 +185,30 @@ export function buildProposedFromExisting(
   }
 
   if (answers.vanity === "double_sink" || answers.vanity === "double_vanity") {
-    fixtures = fixtures.map((f) =>
-      f.type === "vanity" || f.type === "sink"
-        ? { ...f, type: "vanity", w: Math.min(72, Math.max(f.w, 60)) }
-        : f,
-    );
+    fixtures = fixtures.map((f) => {
+      if (f.type !== "vanity" && f.type !== "sink") return f;
+      const w = Math.min(60, lengthIn - f.x);
+      return { ...f, type: "vanity", w };
+    });
   }
 
   if (objective === "accessibility_upgrade" || answers.bathroomType === "accessible") {
     fixtures = fixtures.map((f) => {
-      if (f.type === "toilet") return { ...f, w: Math.max(f.w, 30), d: Math.max(f.d, 22) };
       if (f.type === "tub") {
-        return { type: "shower", x: f.x, y: f.y, w: Math.max(f.w, 60), d: Math.max(f.d, 36), rotation: f.rotation };
+        return {
+          type: "shower",
+          x: f.x,
+          y: f.y,
+          w: Math.min(Math.max(f.w, 48), lengthIn - f.x),
+          d: Math.min(Math.max(f.d, 36), widthIn - f.y),
+          rotation: f.rotation,
+        };
       }
       return f;
     });
     if (!fixtures.some((f) => f.type === "shower" || f.type === "shower_enclosure")) {
       replaceTubWithShower(true);
     }
-  }
-
-  if (objective === "cosmetic_refresh") {
-    // Keep footprint — proposed mirrors existing
   }
 
   return {
@@ -214,12 +235,10 @@ export function geometryFromFeet(
   };
 }
 
-/** Whether Quick mode can skip the Basics step. */
 export function hasBasicsFilled(answers: Record<string, string>): boolean {
   return Boolean(answers.bathroomType && (answers.propertyType || answers.zip || answers.city));
 }
 
-/** Whether Quick mode can skip Measurements. */
 export function hasSizeFilled(answers: Record<string, string>): boolean {
   return Boolean(
     (answers.length && answers.width) ||
@@ -228,12 +247,10 @@ export function hasSizeFilled(answers: Record<string, string>): boolean {
   );
 }
 
-/** Whether Quick mode can skip Scope. */
 export function hasScopeFilled(answers: Record<string, string>): boolean {
   return Boolean(answers.projectObjective || answers.showerTub || answers.vanity || answers.fixtureTier);
 }
 
-/** Whether Describe has enough content to proceed. */
 export function hasCaptureContent(answers: Record<string, string>): boolean {
   const prompt = (answers.requirementsPrompt ?? "").trim();
   return prompt.length >= 10 || Boolean(answers.bathroomType) || Boolean(answers.photo_count);
