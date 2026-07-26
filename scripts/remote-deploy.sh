@@ -27,6 +27,7 @@ ensure_flag BATHROOM_PERMIT_NAVIGATOR_ENABLED true
 ensure_flag BATHROOM_PROJECT_BRIEF_ENABLED true
 ensure_flag BATHROOM_CONTRACTOR_MATCHING_ENABLED false
 ensure_flag BATHROOM_PROPOSAL_COMPARISON_ENABLED false
+ensure_flag BATHROOM_CONTRACTOR_STUDIO_ENABLED true
 grep '^BATHROOM_' .env || true
 
 echo "=== docker rebuild ==="

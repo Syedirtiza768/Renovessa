@@ -200,6 +200,13 @@ model ContractorProfile {
   responseTimeHours       Int?
   googleBusinessUrl       String?
   internalNotes           String?
+  // White-label proposal letterhead (contractor studio)
+  letterheadPhone         String?
+  letterheadEmail         String?
+  letterheadAddress       String?
+  letterheadTagline       String?
+  letterheadLicenseText   String?
+  proposalFooterText      String?
   isDemo                  Boolean        @default(false)
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
@@ -213,6 +220,7 @@ model ContractorProfile {
   emailMessages           EmailMessage[]
   bathroomProposals       ContractorProposal[]
   bathroomContactReleases BathroomContactRelease[]
+  bathroomOwnedProjects   BathroomProject[]        @relation("ContractorOwnedBathroomProjects")
 }
 
 model CapacityCell {
@@ -720,10 +728,14 @@ enum BathroomProposalStatus {
 
 /// Top-level bathroom remodeling project. Linked to a homeowner User when
 /// authenticated; anonymous drafts carry a clientGeneratedId instead.
+/// Contractor-owned jobs (proposal studio) use contractorOwnerId and do not
+/// change the public homeowner planner flow.
 model BathroomProject {
   id                   String                @id @default(cuid())
   referenceNumber      String                @unique
   homeownerId          String?
+  /// Contractor who owns this job in the white-label proposal studio.
+  contractorOwnerId    String?
   // When the homeowner promotes this to a bid request, the resulting RFQ.
   projectRequestId     String?               @unique
   status               BathroomProjectStatus @default(DRAFT)
@@ -748,11 +760,17 @@ model BathroomProject {
   answersJson          Json?
   // Anonymous draft linkage (client-generated UUID persisted in localStorage).
   clientGeneratedId    String?
+  /// Contractor studio: their client's display name / contact (not Renovessa homeowner).
+  clientName           String?
+  clientEmail          String?
+  clientPhone          String?
+  jobTitle             String?
   isDemo               Boolean               @default(false)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
   homeowner         User?                    @relation("HomeownerBathroomProjects", fields: [homeownerId], references: [id], onDelete: Cascade)
+  contractorOwner   ContractorProfile?       @relation("ContractorOwnedBathroomProjects", fields: [contractorOwnerId], references: [id], onDelete: Cascade)
   projectRequest    ProjectRequest?          @relation(fields: [projectRequestId], references: [id], onDelete: SetNull)
   measurements      BathroomMeasurement[]
   layouts           BathroomLayout[]
@@ -767,6 +785,7 @@ model BathroomProject {
   media             BathroomMedia[]
 
   @@index([homeownerId])
+  @@index([contractorOwnerId])
   @@index([status])
   @@index([clientGeneratedId])
 }
@@ -1009,6 +1028,8 @@ model ContractorProposal {
   warranty            String?
   changeOrderProcess  String?
   optionalUpgrades    String?
+  /// Contractor-suggested scope/layout/price changes for the client to consider.
+  suggestedChanges    String?
   expirationDate      DateTime?
   proposalDocumentUrl String?
   createdAt           DateTime               @default(now())

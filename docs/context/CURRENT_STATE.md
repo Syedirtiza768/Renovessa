@@ -103,10 +103,12 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - **Tests** — vitest configured with `@/` path alias; 27 unit tests covering geometry, confidence, estimator, and advisor guardrails. Run with `npm test`.
 - **Requirements prompt + photo uploads (2026-07-27)** — planner opens on a Describe step (`RequirementsPromptStep`) with free-text requirements, heuristic/AI interpret into answers (`POST .../interpret`), and photo upload (`BathroomMedia` + local `UPLOAD_ROOT` / Docker volume). Photos also available on Conditions. Nginx `client_max_body_size 12m`.
 - **Quick path + unified layout (2026-07-27)** — default Quick mode is Capture → Layout → Results. Skips Basics/Size/Scope/Conditions when Capture already filled them. Single Layout workspace with Existing/Proposed toggle, room templates, and auto-generated proposed layouts. Permits folded into Results.
+- **Contractor Proposal Studio (2026-07-27)** — white-label tool at `/portal/contractor/proposal-studio`. `BathroomProject.contractorOwnerId`, letterhead fields on `ContractorProfile`, prompt-drafted proposals, contractor-letterhead PDF. Homeowner planner unchanged. Flag: `BATHROOM_CONTRACTOR_STUDIO_ENABLED`.
 
 ### Not Yet Implemented (Phase 3+)
 - Object storage migration (S3/R2) for uploads beyond local Docker volume
 - Vision-assisted fixture placement from photos
+- Logo upload for contractor letterhead
 - Background job processing
 - Production-grade rate limiting on bathroom endpoints
 - Search Console verification and privacy-safe organic conversion analytics for bathroom pages

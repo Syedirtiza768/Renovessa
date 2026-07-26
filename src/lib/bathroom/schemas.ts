@@ -168,8 +168,36 @@ export const proposalSchema = z.object({
   warranty: z.string().max(500).optional(),
   changeOrderProcess: z.string().max(500).optional(),
   optionalUpgrades: z.string().max(2000).optional(),
+  suggestedChanges: z.string().max(4000).optional(),
   expirationDate: z.string().datetime().optional(),
   proposalDocumentUrl: z.string().url().optional(),
+  status: z.enum(["SUBMITTED", "WITHDRAWN", "EXPIRED", "ACCEPTED", "DECLINED"]).optional(),
+});
+
+export const contractorStudioJobSchema = z.object({
+  jobTitle: z.string().max(160).optional(),
+  clientName: z.string().max(120).optional(),
+  clientEmail: z.string().email().max(160).optional().or(z.literal("")),
+  clientPhone: z.string().max(40).optional(),
+  bathroomType: z.string().max(40).optional(),
+  projectObjective: z.string().max(60).optional(),
+  answers: z.record(z.string(), z.string()).default({}),
+  requirementsPrompt: z.string().max(4000).optional(),
+});
+
+export const contractorLetterheadSchema = z.object({
+  letterheadPhone: z.string().max(40).optional().nullable(),
+  letterheadEmail: z.string().email().max(160).optional().nullable().or(z.literal("")),
+  letterheadAddress: z.string().max(300).optional().nullable(),
+  letterheadTagline: z.string().max(200).optional().nullable(),
+  letterheadLicenseText: z.string().max(200).optional().nullable(),
+  proposalFooterText: z.string().max(500).optional().nullable(),
+  contactPerson: z.string().max(120).optional().nullable(),
+});
+
+export const proposalDraftPromptSchema = z.object({
+  prompt: z.string().min(10).max(4000),
+  seedFromEstimate: z.boolean().optional().default(true),
 });
 
 export const estimatorConfigSchema = z.object({

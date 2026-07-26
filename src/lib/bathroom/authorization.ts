@@ -16,17 +16,21 @@ const ADMIN_ROLES = [
  * Allows:
  * - Admins
  * - Owning homeowner
- * - Anonymous access to drafts with no homeownerId (planner autosave / uploads)
+ * - Owning contractor (white-label proposal studio)
+ * - Anonymous access to drafts with no homeownerId and no contractorOwnerId
  */
 export async function assertBathroomProjectAccess(
   session: SessionUser | null,
   projectId: string,
 ) {
-  const project = await prisma.bathroomProject.findUnique({ where: { id: projectId } });
+  const project = await prisma.bathroomProject.findUnique({
+    where: { id: projectId },
+    include: { contractorOwner: { select: { id: true, userId: true } } },
+  });
   if (!project) throw new AuthError("Bathroom project not found", 404);
 
-  // Anonymous drafts are reachable by project id (cuid). Used by the public planner.
-  if (!project.homeownerId) {
+  // Anonymous public planner drafts (no homeowner, no contractor owner)
+  if (!project.homeownerId && !project.contractorOwnerId) {
     return project;
   }
 
@@ -34,12 +38,39 @@ export async function assertBathroomProjectAccess(
 
   const isAdmin = ADMIN_ROLES.includes(session.role);
   const isOwner = project.homeownerId === session.id;
+  const isContractorOwner =
+    session.role === "CONTRACTOR" &&
+    project.contractorOwner?.userId === session.id;
 
-  if (!isAdmin && !isOwner) {
+  if (!isAdmin && !isOwner && !isContractorOwner) {
     throw new AuthError("Not authorized to access this bathroom project");
   }
 
   return project;
+}
+
+/** Resolve the logged-in contractor's profile or throw. */
+export async function requireContractorProfile(session: SessionUser | null) {
+  if (!session || session.role !== "CONTRACTOR") {
+    throw new AuthError("Contractor access required", 403);
+  }
+  const profile = await prisma.contractorProfile.findUnique({ where: { userId: session.id } });
+  if (!profile) throw new AuthError("Contractor profile not found", 404);
+  return profile;
+}
+
+/** Assert the project is owned by this contractor profile. */
+export async function assertContractorOwnsBathroomProject(
+  session: SessionUser | null,
+  projectId: string,
+) {
+  const profile = await requireContractorProfile(session);
+  const project = await prisma.bathroomProject.findUnique({ where: { id: projectId } });
+  if (!project) throw new AuthError("Bathroom project not found", 404);
+  if (project.contractorOwnerId !== profile.id) {
+    throw new AuthError("Not authorized to access this job");
+  }
+  return { project, profile };
 }
 
 export async function assertBathroomProjectOwner(

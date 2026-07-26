@@ -5,6 +5,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 
 const navItems = [
   { href: "/portal/contractor", label: "Appointments" },
+  { href: "/portal/contractor/proposal-studio", label: "Proposal Studio" },
   { href: "/portal/contractor/billing", label: "Billing" },
   { href: "/portal/contractor/profile", label: "Profile" },
   { href: "/portal/contractor/settings", label: "Account" },

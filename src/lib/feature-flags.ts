@@ -22,6 +22,8 @@ export const BATHROOM_PERMIT_NAVIGATOR_ENABLED = flag("BATHROOM_PERMIT_NAVIGATOR
 export const BATHROOM_PROJECT_BRIEF_ENABLED = flag("BATHROOM_PROJECT_BRIEF_ENABLED");
 export const BATHROOM_CONTRACTOR_MATCHING_ENABLED = flag("BATHROOM_CONTRACTOR_MATCHING_ENABLED");
 export const BATHROOM_PROPOSAL_COMPARISON_ENABLED = flag("BATHROOM_PROPOSAL_COMPARISON_ENABLED");
+/** White-label contractor proposal studio (independent of homeowner planner). */
+export const BATHROOM_CONTRACTOR_STUDIO_ENABLED = flag("BATHROOM_CONTRACTOR_STUDIO_ENABLED");
 
 /**
  * Convenience: is the public Rockville landing reachable at all?
@@ -48,6 +50,11 @@ export function bathroomEstimatorEnabled(): boolean {
   return BATHROOM_ESTIMATOR_ENABLED || BATHROOM_DEMO_MODE;
 }
 
+/** Contractor white-label proposal studio. */
+export function bathroomContractorStudioEnabled(): boolean {
+  return BATHROOM_CONTRACTOR_STUDIO_ENABLED || BATHROOM_DEMO_MODE;
+}
+
 /**
  * Demo / dev convenience: when BATHROOM_DEMO_MODE=true, all flags are forced on
  * regardless of the individual env values. Used by the demo seed and local dev.
@@ -65,6 +72,7 @@ export function bathroomFlagSnapshot() {
     projectBrief: BATHROOM_PROJECT_BRIEF_ENABLED || BATHROOM_DEMO_MODE,
     contractorMatching: BATHROOM_CONTRACTOR_MATCHING_ENABLED,
     proposalComparison: BATHROOM_PROPOSAL_COMPARISON_ENABLED,
+    contractorStudio: BATHROOM_CONTRACTOR_STUDIO_ENABLED || BATHROOM_DEMO_MODE,
     demoMode: BATHROOM_DEMO_MODE,
   };
 }

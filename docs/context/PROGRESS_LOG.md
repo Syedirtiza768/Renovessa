@@ -1,4 +1,11 @@
 
+# 2026-07-27 — Contractor Proposal Studio (white-label)
+
+- Added `BathroomProject.contractorOwnerId`, client/job fields, `ContractorProposal.suggestedChanges`, and letterhead fields on `ContractorProfile`.
+- New contractor APIs under `/api/contractor/bathroom-jobs` + letterhead + prompt draft + letterhead PDF.
+- UI: `/portal/contractor/proposal-studio` (jobs, workspace, letterhead). Homeowner planner unchanged.
+- Flag `BATHROOM_CONTRACTOR_STUDIO_ENABLED`.
+
 # 2026-07-27 — Quick path + unified interactive layout
 
 - Default planner mode is **Quick**: Capture → Layout → Results; skips Basics/Size/Scope/Conditions when Capture already filled them. Detailed mode toggle restores the longer path.
