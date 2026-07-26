@@ -1,4 +1,12 @@
 
+# 2026-07-27 — Bathroom planner: requirements prompt + photo uploads
+
+- Planner opens on a **Describe** step: free-text requirements prompt, Save / Apply-to-answers (heuristic or OpenRouter when AI flag + key), and photo upload panel.
+- `BathroomMedia` model + local filesystem storage (`UPLOAD_ROOT`, Docker volume `bathroom_uploads`).
+- APIs: `POST/GET/DELETE .../media`, `GET .../media/[mediaId]`, `POST .../interpret`.
+- Photos also on Conditions step; nginx `client_max_body_size 12m`; anonymous draft access for uploads.
+- Docs updated: CURRENT_STATE, NEXT_STEPS.
+
 # 2026-07-26 — Bathroom Remodeling Experience Phase 2 implemented
 
 - Added audit event types: `BATHROOM_LAYOUT_SAVED`, `BATHROOM_PERMIT_ASSESSED`, `BATHROOM_SHARE_LINK_CREATED`, `BATHROOM_SHARE_LINK_REVOKED`, `BATHROOM_PHOTO_UPLOADED`, `BATHROOM_DIAGRAM_SAVED`. Wired anonymous project creation logging and permit/share-link audit events.

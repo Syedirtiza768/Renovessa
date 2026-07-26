@@ -764,10 +764,29 @@ model BathroomProject {
   proposals         ContractorProposal[]
   auditEvents       AuditEvent[]             @relation("BathroomProjectAudit")
   contactReleases   BathroomContactRelease[]
+  media             BathroomMedia[]
 
   @@index([homeownerId])
   @@index([status])
   @@index([clientGeneratedId])
+}
+
+/// Uploaded photo or sketch for a bathroom project (existing conditions, inspiration, plans).
+model BathroomMedia {
+  id           String   @id @default(cuid())
+  projectId    String
+  kind         String   @default("photo") // photo | sketch | plan | other
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  storagePath  String
+  caption      String?
+  wallLabel    String? // e.g. "north wall", "ceiling above shower"
+  createdAt    DateTime @default(now())
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model BathroomMeasurement {

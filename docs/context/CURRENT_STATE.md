@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-07-24
+> Last updated: 2026-07-27
 
 ## Phase
 
@@ -73,7 +73,7 @@ Password: `demo1234`
 - Calendar ICS generation
 - Production reset UI
 - HR, QA, CRM, Marketing modules (full)
-- File photo uploads to object storage
+- File photo uploads to object storage (bathroom planner uses local Docker volume for now)
 - Payment processing
 - First evidence-rich HVAC/Fairfax cost and permit articles beyond the foundational hubs
 - Search Console verification and privacy-safe organic conversion analytics
@@ -101,9 +101,10 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - **AI advisor with guardrails** — `src/lib/bathroom/advisor-prompt.ts` with strict system prompt (no prices, dimensions, permit determinations, diagnoses, contractor guarantees) and output sanitization (detects/replaces prohibited claims). `POST /api/bathroom-projects/[id]/advisor` endpoint with out-of-scope routing and audit logging. Gated by `BATHROOM_AI_INTERPRETATION_ENABLED`.
 - **Authority content templates** — `src/lib/bathroom/content-templates.ts` with full article bodies for cost, permits, planning-guide, tub-to-shower, accessible-bathrooms. Seed script at `scripts/seed-bathroom-content.ts` (`npm run bathroom:seed-content`).
 - **Tests** — vitest configured with `@/` path alias; 27 unit tests covering geometry, confidence, estimator, and advisor guardrails. Run with `npm test`.
+- **Requirements prompt + photo uploads (2026-07-27)** — planner opens on a Describe step (`RequirementsPromptStep`) with free-text requirements, heuristic/AI interpret into answers (`POST .../interpret`), and photo upload (`BathroomMedia` + local `UPLOAD_ROOT` / Docker volume). Photos also available on Conditions. Nginx `client_max_body_size 12m`.
 
 ### Not Yet Implemented (Phase 3+)
-- Photo upload + existing-condition assessment with object storage (requires S3-compatible storage)
+- Object storage migration (S3/R2) for uploads beyond local Docker volume
 - Background job processing
 - Production-grade rate limiting on bathroom endpoints
 - Search Console verification and privacy-safe organic conversion analytics for bathroom pages

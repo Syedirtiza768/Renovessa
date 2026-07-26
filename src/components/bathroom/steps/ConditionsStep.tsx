@@ -3,18 +3,24 @@
 import { Field } from "./IntroStep";
 import type { StepProps } from "../planner-types";
 import { CONDITION_CONCERNS, OUT_OF_SCOPE_INDICATORS } from "@/lib/bathroom/config";
+import { PhotoUploadPanel } from "./RequirementsPromptStep";
 
 function toOptions(list: readonly string[]): { id: string; label: string }[] {
   return list.map((id) => ({ id, label: id.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) }));
 }
 
-export function ConditionsStep({ answers, setAnswer }: StepProps) {
+export function ConditionsStep({ answers, setAnswer, projectId }: StepProps) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-ink-100">Existing conditions</h2>
         <p className="mt-1 text-sm text-ink-70">Known issues help the estimator apply the right contingency and help contractors prepare.</p>
       </div>
+
+      <PhotoUploadPanel
+        projectId={projectId}
+        onCountChange={(n) => setAnswer("photo_count", String(n))}
+      />
 
       <Field label="Known conditions (select all that apply)">
         <div className="grid gap-2 sm:grid-cols-2">

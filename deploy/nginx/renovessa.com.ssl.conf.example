@@ -23,6 +23,8 @@ server {
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
+    client_max_body_size 12m;
+
     location / {
         proxy_pass http://renovessa_app;
         proxy_http_version 1.1;

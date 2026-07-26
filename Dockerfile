@@ -31,6 +31,9 @@ COPY --from=builder /app/data/contractor_enrichment/rfq_pilot_15_campaign.json .
 COPY package.json package-lock.json ./
 COPY docker-entrypoint.sh ./
 
+# Persist bathroom photo uploads outside the image layer
+RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
+
 # Install full Prisma CLI tree (do NOT copy prisma/@prisma alone — misses "effect")
 RUN npm install --omit=dev --no-save prisma bcryptjs && \
     npm install --no-save --include=dev tsx && \
@@ -38,5 +41,6 @@ RUN npm install --omit=dev --no-save prisma bcryptjs && \
     chown -R nextjs:nodejs /app/node_modules /app/prisma /app/data docker-entrypoint.sh
 
 USER nextjs
+ENV UPLOAD_ROOT=/app/uploads
 EXPOSE 7090
 ENTRYPOINT ["./docker-entrypoint.sh"]

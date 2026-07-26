@@ -12,14 +12,25 @@ const ADMIN_ROLES = [
   "OPS_MANAGER", "QA_MANAGER", "CONTRACTOR_ACQUISITION",
 ];
 
+/**
+ * Allows:
+ * - Admins
+ * - Owning homeowner
+ * - Anonymous access to drafts with no homeownerId (planner autosave / uploads)
+ */
 export async function assertBathroomProjectAccess(
   session: SessionUser | null,
   projectId: string,
 ) {
-  if (!session) throw new AuthError("Authentication required");
-
   const project = await prisma.bathroomProject.findUnique({ where: { id: projectId } });
   if (!project) throw new AuthError("Bathroom project not found", 404);
+
+  // Anonymous drafts are reachable by project id (cuid). Used by the public planner.
+  if (!project.homeownerId) {
+    return project;
+  }
+
+  if (!session) throw new AuthError("Authentication required");
 
   const isAdmin = ADMIN_ROLES.includes(session.role);
   const isOwner = project.homeownerId === session.id;

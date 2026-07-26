@@ -10,14 +10,14 @@ import { ScopeStep } from "./steps/ScopeStep";
 import { ConditionsStep } from "./steps/ConditionsStep";
 import { PermitsStep } from "./steps/PermitsStep";
 import { EstimateStep } from "./steps/EstimateStep";
+import { RequirementsPromptStep } from "./steps/RequirementsPromptStep";
 import { DiagramBuilder } from "./DiagramBuilder";
 
 /**
- * Phase 1/2 step sequence. The full planner-steps module supports answers-based
- * branching and additional steps (budget_timeline, budget_scenarios, project_brief,
- * contractor_request) that are wired in later phases.
+ * Planner step sequence. Diagram steps appear when the diagramBuilder flag is on.
  */
 const ALL_STEPS = [
+  { id: "describe", label: "Describe" },
   { id: "location", label: "Basics" },
   { id: "measurements", label: "Measurements" },
   { id: "existing_layout", label: "Existing layout", requires: "diagramBuilder" as const },
@@ -35,7 +35,7 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
     projectId: null,
     referenceNumber: null,
     mode: "detailed",
-    currentStep: "location",
+    currentStep: "describe",
     answers: {},
     saving: false,
     lastSavedAt: null,
@@ -146,7 +146,7 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
       projectId: null,
       referenceNumber: null,
       mode: state.mode,
-      currentStep: "location",
+      currentStep: "describe",
       answers: {},
       saving: false,
       lastSavedAt: null,
@@ -202,20 +202,21 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
         </ol>
 
         <section className="rounded-xl border border-ink-15 bg-bone-1 p-6 sm:p-8">
+          {state.currentStep === "describe" && <RequirementsPromptStep {...stepProps} />}
           {state.currentStep === "location" && <IntroStep {...stepProps} />}
           {state.currentStep === "measurements" && <MeasurementsStep {...stepProps} />}
           {state.currentStep === "existing_layout" && state.projectId && (
             <DiagramBuilder layoutType="EXISTING" projectId={state.projectId} />
           )}
           {state.currentStep === "existing_layout" && !state.projectId && (
-            <p className="text-sm text-ink-70">Answer a few questions first to create your project, then return here to draw the layout.</p>
+            <p className="text-sm text-ink-70">Describe your project or answer a question first so we can create your draft, then return here to draw the layout.</p>
           )}
           {state.currentStep === "fixtures_finishes" && <ScopeStep {...stepProps} />}
           {state.currentStep === "proposed_layout" && state.projectId && (
             <DiagramBuilder layoutType="PROPOSED" projectId={state.projectId} />
           )}
           {state.currentStep === "proposed_layout" && !state.projectId && (
-            <p className="text-sm text-ink-70">Answer a few questions first to create your project, then return here to draw the layout.</p>
+            <p className="text-sm text-ink-70">Describe your project or answer a question first so we can create your draft, then return here to draw the layout.</p>
           )}
           {state.currentStep === "existing_conditions" && <ConditionsStep {...stepProps} />}
           {state.currentStep === "permit_guidance" && <PermitsStep {...stepProps} />}
