@@ -7,6 +7,7 @@ import {
   grossMarginPercent,
   applyMarkup,
   applyLineOverrides,
+  createManualLineItem,
 } from "@/lib/bathroom/contractor-pricing";
 import type { LineItem } from "@/lib/bathroom/estimator";
 
@@ -91,5 +92,15 @@ describe("contractor-pricing", () => {
     const priced = recalculatePricing(overridden, DEFAULT_STUDIO_PRICING);
     expect(priced.lineItems[0].costSource).toBe("contractor_override");
     expect(priced.lineItems[0].customerPrice).toBe(applyMarkup(40 * 10, 25));
+  });
+
+  it("creates a manual line item with markup applied", () => {
+    const line = createManualLineItem(DEFAULT_STUDIO_PRICING, {
+      description: "Custom vanity",
+      quantity: 1,
+      unitCost: 1000,
+    });
+    expect(line.costSource).toBe("manual");
+    expect(line.customerPrice).toBe(1250);
   });
 });

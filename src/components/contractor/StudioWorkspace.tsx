@@ -2,8 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { ContractorPricedLineItem, PricingTotals, StudioPricingSettings } from "@/lib/bathroom/contractor-pricing";
-import { DEFAULT_STUDIO_PRICING, recalculatePricing } from "@/lib/bathroom/contractor-pricing";
+import type {
+  ContractorPricedLineItem,
+  PricingTotals,
+  StudioPricingSettings,
+} from "@/lib/bathroom/contractor-pricing";
+import {
+  DEFAULT_STUDIO_PRICING,
+  createManualLineItem,
+  recalculatePricing,
+} from "@/lib/bathroom/contractor-pricing";
 
 type ProposalForm = {
   totalPrice: number;
@@ -37,6 +45,14 @@ const emptyProposal = (): ProposalForm => ({
   suggestedChanges: "",
 });
 
+const DEFAULT_SCOPE =
+  "Provide the bathroom remodel scope discussed with the client, including protection of adjacent finishes, daily cleanup, and haul-away of construction debris.";
+const DEFAULT_EXCLUSIONS = [
+  "Unforeseen structural, plumbing, or electrical corrections beyond normal remodel allowances.",
+  "Homeowner-furnished materials unless listed as contractor-supplied.",
+  "Mold remediation, asbestos abatement, or hazardous material handling (priced separately if discovered).",
+].join("\n");
+
 export function StudioWorkspace({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,13 +64,19 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
   const [proposalStatus, setProposalStatus] = useState<string>("DRAFT");
   const [form, setForm] = useState<ProposalForm>(emptyProposal());
   const [prompt, setPrompt] = useState("");
-  const [estimate, setEstimate] = useState<{ low: number; mid: number; high: number; estimateId?: string | null } | null>(null);
+  const [estimate, setEstimate] = useState<{
+    low: number;
+    mid: number;
+    high: number;
+    estimateId?: string | null;
+  } | null>(null);
   const [lineItems, setLineItems] = useState<ContractorPricedLineItem[]>([]);
   const [pricingSettings, setPricingSettings] = useState<StudioPricingSettings>(DEFAULT_STUDIO_PRICING);
   const [ackLowMargin, setAckLowMargin] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [shareExpiresAt, setShareExpiresAt] = useState<string | null>(null);
   const [viewCount, setViewCount] = useState(0);
+  const [showPreview, setShowPreview] = useState(true);
   const [clientMessages, setClientMessages] = useState<
     Array<{ id: string; kind: string; body: string; authorName: string | null; createdAt: string }>
   >([]);
@@ -73,6 +95,8 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     if (!lineItems.length) return null;
     return recalculatePricing(lineItems, pricingSettings).totals;
   }, [lineItems, pricingSettings]);
+
+  const customerTotal = liveTotals?.customerTotal ?? (Number(form.totalPrice) || 0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,16 +139,12 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           optionalUpgrades: latest.optionalUpgrades || "",
           suggestedChanges: latest.suggestedChanges || "",
         });
-        if (Array.isArray(latest.lineItemsJson)) {
-          setLineItems(latest.lineItemsJson);
-        }
+        if (Array.isArray(latest.lineItemsJson)) setLineItems(latest.lineItemsJson);
         setViewCount(latest.viewCount || 0);
         setShareExpiresAt(latest.shareExpiresAt || null);
-        if (latest.shareToken) {
-          setShareUrl(`${window.location.origin}/proposal/${latest.shareToken}`);
-        } else {
-          setShareUrl(null);
-        }
+        setShareUrl(
+          latest.shareToken ? `${window.location.origin}/proposal/${latest.shareToken}` : null,
+        );
         setClientMessages(
           (latest.clientMessages || []).map((m: any) => ({
             id: m.id,
@@ -159,14 +179,27 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
+  const markDirtyIfIssued = () => {
+    setProposalStatus((s) =>
+      s === "APPROVED" || s === "SENT" || s === "REVISION_REQUESTED" ? "DRAFT" : s,
+    );
+  };
+
   const updateLine = (key: string, patch: Partial<ContractorPricedLineItem>) => {
     setLineItems((items) =>
       items.map((li) => {
         if (li.key !== key) return li;
         const next = { ...li, ...patch };
-        if (patch.unitCost !== undefined || patch.quantity !== undefined || patch.markupPercent !== undefined) {
-          next.customerPriceLocked = patch.customerPrice !== undefined ? true : false;
-          next.costSource = "contractor_override";
+        if (
+          patch.unitCost !== undefined ||
+          patch.quantity !== undefined ||
+          patch.markupPercent !== undefined ||
+          patch.wastePercent !== undefined ||
+          patch.laborHours !== undefined ||
+          patch.otherDirectCost !== undefined
+        ) {
+          next.customerPriceLocked = false;
+          next.costSource = next.costSource === "renovessa_baseline" ? "contractor_override" : next.costSource;
         }
         if (patch.customerPrice !== undefined) {
           next.customerPriceLocked = true;
@@ -175,35 +208,58 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         return next;
       }),
     );
-    setProposalStatus((s) => (s === "APPROVED" || s === "SENT" ? "DRAFT" : s));
+    markDirtyIfIssued();
+  };
+
+  const addLine = () => {
+    setLineItems((items) => [
+      ...items,
+      createManualLineItem(pricingSettings, {
+        description: "New line item",
+        sortOrder: items.length,
+      }),
+    ]);
+    markDirtyIfIssued();
+    setMsg("Line added — edit description, qty, and cost.");
+  };
+
+  const removeLine = (key: string) => {
+    setLineItems((items) => items.filter((li) => li.key !== key));
+    markDirtyIfIssued();
+  };
+
+  const patchJobMeta = async () => {
+    const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientName: jobMeta.clientName,
+        jobTitle: jobMeta.jobTitle,
+        clientPhone: jobMeta.clientPhone,
+        clientEmail: jobMeta.clientEmail,
+        bathroomType: jobMeta.bathroomType || undefined,
+        projectObjective: jobMeta.projectObjective || undefined,
+        requirementsPrompt: prompt,
+        answers: {
+          length: jobMeta.length,
+          width: jobMeta.width,
+          requirementsPrompt: prompt,
+        },
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Save job failed");
+    setProject(data);
+    return data;
   };
 
   const saveJobMeta = async () => {
     setSaving(true);
     setMsg(null);
+    setError(null);
     try {
-      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientName: jobMeta.clientName,
-          jobTitle: jobMeta.jobTitle,
-          clientPhone: jobMeta.clientPhone,
-          clientEmail: jobMeta.clientEmail,
-          bathroomType: jobMeta.bathroomType || undefined,
-          projectObjective: jobMeta.projectObjective || undefined,
-          requirementsPrompt: prompt,
-          answers: {
-            length: jobMeta.length,
-            width: jobMeta.width,
-            requirementsPrompt: prompt,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      await patchJobMeta();
       setMsg("Job details saved.");
-      setProject(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -215,7 +271,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setSaving(true);
     setError(null);
     try {
-      await saveJobMeta();
+      await patchJobMeta();
       const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/estimate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -230,14 +286,14 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         estimateId: data.savedId,
       });
       if (data.pricingSettings) setPricingSettings(data.pricingSettings);
-      if (Array.isArray(data.pricedLineItems)) {
+      if (Array.isArray(data.pricedLineItems) && data.pricedLineItems.length) {
         setLineItems(data.pricedLineItems);
-        if (data.totals?.customerTotal) {
-          setField("totalPrice", data.totals.customerTotal);
-        }
+        if (data.totals?.customerTotal) setField("totalPrice", data.totals.customerTotal);
+      } else {
+        setLineItems([createManualLineItem(pricingSettings)]);
       }
-      setProposalStatus("DRAFT");
-      setMsg(data.note || "Estimate ready.");
+      markDirtyIfIssued();
+      setMsg(data.note || "Estimate ready — review line items below.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Estimate failed");
     } finally {
@@ -249,22 +305,20 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setSaving(true);
     setError(null);
     try {
-      await saveJobMeta();
+      await patchJobMeta();
       const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/draft-proposal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt || "Bathroom remodel proposal for this client.", seedFromEstimate: true }),
+        body: JSON.stringify({
+          prompt: prompt || "Bathroom remodel proposal for this client.",
+          seedFromEstimate: true,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Draft failed");
       const d = data.draft;
-      const nextTotal =
-        liveTotals?.customerTotal ||
-        d.suggestedTotalPrice ||
-        form.totalPrice ||
-        0;
       setForm({
-        totalPrice: nextTotal,
+        totalPrice: liveTotals?.customerTotal || d.suggestedTotalPrice || form.totalPrice || 0,
         includedScope: d.includedScope,
         exclusions: d.exclusions,
         materialAllowances: d.materialAllowances,
@@ -278,7 +332,9 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         optionalUpgrades: d.optionalUpgrades,
         suggestedChanges: d.suggestedChanges,
       });
-      setMsg(d.note);
+      markDirtyIfIssued();
+      setShowPreview(true);
+      setMsg(d.note || "Proposal language drafted — review the client preview.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Draft failed");
     } finally {
@@ -286,67 +342,73 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     }
   };
 
+  /** Ensure scope/exclusions exist so save never blocks on empty required fields. */
+  const formWithDefaults = useCallback((): ProposalForm => {
+    return {
+      ...form,
+      includedScope: form.includedScope.trim() || DEFAULT_SCOPE,
+      exclusions: form.exclusions.trim() || DEFAULT_EXCLUSIONS,
+      totalPrice: customerTotal || form.totalPrice || 0,
+    };
+  }, [form, customerTotal]);
+
+  const persistProposal = async (currentId: string | null): Promise<{ id: string; status: string; totalPrice: number; lineItemsJson?: ContractorPricedLineItem[] }> => {
+    const ready = formWithDefaults();
+    if (ready.includedScope !== form.includedScope || ready.exclusions !== form.exclusions) {
+      setForm(ready);
+    }
+    const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
+    const payload = {
+      ...ready,
+      totalPrice: priced?.totals.customerTotal ?? Math.round(Number(ready.totalPrice) || 0),
+      estimateId: estimate?.estimateId || null,
+      lineItems: priced?.lineItems,
+      recomputeFromLines: Boolean(priced),
+      pricingSettings,
+    };
+    const url = currentId
+      ? `/api/contractor/bathroom-jobs/${jobId}/proposals/${currentId}`
+      : `/api/contractor/bathroom-jobs/${jobId}/proposals`;
+    const res = await fetch(url, {
+      method: currentId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Save failed");
+    return data;
+  };
+
   const saveProposal = async () => {
     setSaving(true);
     setError(null);
     try {
-      const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
-      const payload = {
-        ...form,
-        totalPrice: priced?.totals.customerTotal ?? (Number(form.totalPrice) || 0),
-        estimateId: estimate?.estimateId || undefined,
-        lineItems: priced?.lineItems,
-        recomputeFromLines: Boolean(priced),
-        pricingSettings,
-      };
-      const url = proposalId
-        ? `/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}`
-        : `/api/contractor/bathroom-jobs/${jobId}/proposals`;
-      const res = await fetch(url, {
-        method: proposalId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Save failed");
+      const data = await persistProposal(proposalId);
       setProposalId(data.id);
       setProposalStatus(data.status || "DRAFT");
-      setForm((f) => ({ ...f, totalPrice: data.totalPrice }));
+      setForm((f) => ({ ...f, totalPrice: data.totalPrice, includedScope: f.includedScope || DEFAULT_SCOPE, exclusions: f.exclusions || DEFAULT_EXCLUSIONS }));
       if (Array.isArray(data.lineItemsJson)) setLineItems(data.lineItemsJson);
-      setMsg("Draft saved. Approve before downloading the client PDF.");
+      setMsg("Draft saved.");
+      return data;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
+      return null;
     } finally {
       setSaving(false);
     }
   };
 
   const approveProposal = async () => {
-    if (!proposalId) {
-      setError("Save the proposal first.");
-      return;
-    }
     setSaving(true);
     setError(null);
+    setMsg(null);
     try {
-      const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
-      const payload = {
-        ...form,
-        totalPrice: priced?.totals.customerTotal ?? (Number(form.totalPrice) || 0),
-        estimateId: estimate?.estimateId || undefined,
-        lineItems: priced?.lineItems,
-        recomputeFromLines: Boolean(priced),
-        pricingSettings,
-      };
-      const saveRes = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const saved = await saveRes.json();
-      if (!saveRes.ok) throw new Error(saved.error || "Save failed");
+      // Always persist first so Approve works even before an explicit Save.
+      const saved = await persistProposal(proposalId);
+      setProposalId(saved.id);
+      if (Array.isArray(saved.lineItemsJson)) setLineItems(saved.lineItemsJson);
 
-      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/approve`, {
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${saved.id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -357,14 +419,15 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const data = await res.json();
       if (!res.ok) {
         if (data.code === "BELOW_MINIMUM_MARGIN") {
-          setError(data.error);
+          setError(data.error + " Check the box under Internal profitability, then approve again.");
+          setAckLowMargin(false);
           return;
         }
         throw new Error(data.error || "Approve failed");
       }
       setProposalStatus(data.proposal.status);
       setForm((f) => ({ ...f, totalPrice: data.proposal.totalPrice ?? f.totalPrice }));
-      setMsg(data.note);
+      setMsg(data.note || "Approved — you can send the client link.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Approve failed");
     } finally {
@@ -373,17 +436,42 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
   };
 
   const sendToClient = async () => {
-    if (!proposalId) {
-      setError("Save and approve the proposal first.");
-      return;
-    }
     setSaving(true);
     setError(null);
+    setMsg(null);
     try {
-      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/send`, {
+      // Persist + approve if needed, then send — one click from draft.
+      let id = proposalId;
+      let status = proposalStatus;
+
+      if (status === "DRAFT" || status === "REVISION_REQUESTED" || !id) {
+        const saved = await persistProposal(id);
+        id = saved.id;
+        setProposalId(id);
+        const approveRes = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${id}/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            acknowledgeBelowMinimumMargin: ackLowMargin,
+            overrideReason: ackLowMargin ? "Contractor acknowledged below-minimum margin" : undefined,
+          }),
+        });
+        const approveData = await approveRes.json();
+        if (!approveRes.ok) {
+          if (approveData.code === "BELOW_MINIMUM_MARGIN") {
+            setError(approveData.error + " Check the margin override box, then try again.");
+            return;
+          }
+          throw new Error(approveData.error || "Approve failed");
+        }
+        status = approveData.proposal.status;
+        setProposalStatus(status);
+      }
+
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expiresDays: 30 }),
+        body: JSON.stringify({ expiresDays: 30, rotateToken: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Send failed");
@@ -393,9 +481,9 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       setMsg(data.note);
       try {
         await navigator.clipboard.writeText(data.shareUrl);
-        setMsg(`${data.note} Link copied to clipboard.`);
+        setMsg(`${data.note} Link copied.`);
       } catch {
-        /* clipboard may be blocked */
+        /* ignore */
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Send failed");
@@ -428,8 +516,8 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
   if (loading) return <p className="text-sm text-stone-600">Loading job…</p>;
   if (!project) return <p className="text-sm text-red-700">{error || "Job not found"}</p>;
 
-  const canSend = proposalStatus === "APPROVED" || proposalStatus === "SENT";
   const lockedAccepted = proposalStatus === "ACCEPTED";
+  const pricedLines = lineItems.length ? recalculatePricing(lineItems, pricingSettings).lineItems : [];
 
   return (
     <div className="space-y-6">
@@ -449,26 +537,27 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {proposalId && (
-            <>
-              <a
-                href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf?preview=1`}
-                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
-              >
-                Draft PDF preview
-              </a>
-              {(proposalStatus === "APPROVED" ||
-                proposalStatus === "SENT" ||
-                proposalStatus === "ACCEPTED" ||
-                proposalStatus === "REVISION_REQUESTED") && (
-                <a
-                  href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf`}
-                  className="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900"
-                >
-                  Download client PDF
-                </a>
-              )}
-            </>
+            <a
+              href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf?preview=1`}
+              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Draft PDF
+            </a>
           )}
+          {(proposalStatus === "APPROVED" ||
+            proposalStatus === "SENT" ||
+            proposalStatus === "ACCEPTED" ||
+            proposalStatus === "REVISION_REQUESTED") &&
+            proposalId && (
+              <a
+                href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf`}
+                className="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+              >
+                Client PDF
+              </a>
+            )}
           <Link
             href="/portal/contractor/proposal-studio/letterhead"
             className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
@@ -478,8 +567,29 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      {msg && <p className="text-sm text-emerald-800">{msg}</p>}
+      {/* Workflow guide */}
+      <ol className="grid gap-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm sm:grid-cols-4">
+        {[
+          ["1. Price", lineItems.length > 0 ? "done" : "Run estimate or add lines"],
+          ["2. Draft", form.includedScope.trim() ? "done" : "Draft language or type scope"],
+          ["3. Approve", proposalStatus === "APPROVED" || proposalStatus === "SENT" || proposalStatus === "ACCEPTED" ? "done" : "Approve for client"],
+          ["4. Send", proposalStatus === "SENT" || proposalStatus === "ACCEPTED" ? "done" : "Send client link"],
+        ].map(([label, state]) => (
+          <li key={label} className="rounded-xl bg-stone-50 px-3 py-2">
+            <p className="font-medium text-stone-900">{label}</p>
+            <p className={`text-xs ${state === "done" ? "text-emerald-700" : "text-stone-500"}`}>
+              {state === "done" ? "Ready" : state}
+            </p>
+          </li>
+        ))}
+      </ol>
+
+      {error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{error}</p>
+      )}
+      {msg && (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{msg}</p>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
@@ -510,57 +620,46 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           <label className="block text-sm">
             <span className="text-stone-500">Prompt / scope notes</span>
             <textarea
-              rows={5}
+              rows={4}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              placeholder="Describe the job — we draft proposal language; your pricing engine sets dollars."
+              placeholder="Describe the job — used to draft proposal language."
             />
           </label>
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={saveJobMeta}
-              disabled={saving}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40"
-            >
+            <button type="button" onClick={saveJobMeta} disabled={saving} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40">
               Save job
             </button>
-            <button
-              type="button"
-              onClick={runEstimate}
-              disabled={saving}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40"
-            >
-              Run estimate + price lines
+            <button type="button" onClick={runEstimate} disabled={saving} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40">
+              Run estimate + seed lines
             </button>
-            <button
-              type="button"
-              onClick={draftFromPrompt}
-              disabled={saving}
-              className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
-            >
+            <button type="button" onClick={draftFromPrompt} disabled={saving} className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40">
               Draft proposal language
             </button>
           </div>
           {estimate && (
             <div className="rounded-xl bg-stone-50 p-4 text-sm text-stone-700">
-              <p className="font-medium text-stone-900">Renovessa baseline planning range</p>
+              <p className="font-medium text-stone-900">Renovessa baseline range</p>
               <p className="mt-1 text-lg">
                 ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
               </p>
-              <p className="text-xs text-stone-500">
-                Mid ${estimate.mid.toLocaleString()} · reference only — your markup produces the client total
-              </p>
+              <p className="text-xs text-stone-500">Mid ${estimate.mid.toLocaleString()} · your markup sets the client total</p>
             </div>
           )}
         </section>
 
         <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
-          <h2 className="text-base font-semibold text-stone-900">Client proposal</h2>
-          <p className="text-xs text-stone-500">
-            Customer-facing copy. Internal costs stay on your side only.
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-stone-900">Client proposal</h2>
+            <button
+              type="button"
+              onClick={() => setShowPreview((v) => !v)}
+              className="text-xs text-stone-600 underline"
+            >
+              {showPreview ? "Hide preview" : "Show client preview"}
+            </button>
+          </div>
 
           {liveTotals && (
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
@@ -568,16 +667,14 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
                 <dt className="text-stone-500">Direct cost</dt>
                 <dd className="text-right tabular-nums">${liveTotals.directCostTotal.toLocaleString()}</dd>
-                <dt className="text-stone-500">Overhead</dt>
-                <dd className="text-right tabular-nums">${liveTotals.overheadAmount.toLocaleString()}</dd>
-                <dt className="text-stone-500">Contingency</dt>
-                <dd className="text-right tabular-nums">${liveTotals.contingencyAmount.toLocaleString()}</dd>
+                <dt className="text-stone-500">Overhead + contingency</dt>
+                <dd className="text-right tabular-nums">
+                  ${(liveTotals.overheadAmount + liveTotals.contingencyAmount).toLocaleString()}
+                </dd>
                 <dt className="text-stone-500">Profit</dt>
                 <dd className="text-right tabular-nums">${liveTotals.profitAmount.toLocaleString()}</dd>
-                <dt className="text-stone-500">Markup on cost</dt>
-                <dd className="text-right tabular-nums">{liveTotals.markupPercent}%</dd>
                 <dt className="text-stone-500">Gross margin</dt>
-                <dd className={`text-right tabular-nums ${liveTotals.belowMinimumMargin ? "text-amber-700 font-semibold" : ""}`}>
+                <dd className={`text-right tabular-nums ${liveTotals.belowMinimumMargin ? "font-semibold text-amber-700" : ""}`}>
                   {liveTotals.grossMarginPercent.toFixed(1)}%
                 </dd>
                 <dt className="font-medium text-stone-800">Customer total</dt>
@@ -594,8 +691,8 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
                     className="mt-0.5"
                   />
                   <span>
-                    Margin is below your minimum ({liveTotals.minimumGrossMarginPercent}%). I acknowledge
-                    and want to approve anyway.
+                    Margin is below your minimum ({liveTotals.minimumGrossMarginPercent}%). I acknowledge and want to
+                    approve anyway.
                   </span>
                 </label>
               )}
@@ -616,9 +713,9 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
 
           {(
             [
-              ["includedScope", "Included scope", 6],
-              ["exclusions", "Exclusions", 4],
-              ["suggestedChanges", "Suggested changes / recommendations", 3],
+              ["includedScope", "Included scope", 5],
+              ["exclusions", "Exclusions", 3],
+              ["suggestedChanges", "Suggested changes", 2],
               ["materialAllowances", "Material allowances", 2],
               ["fixtureAllowances", "Fixture allowances", 2],
               ["permitHandling", "Permits", 2],
@@ -635,49 +732,58 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
               {rows === 1 ? (
                 <input
                   value={form[key]}
-                  onChange={(e) => setField(key, e.target.value)}
+                  onChange={(e) => {
+                    setField(key, e.target.value);
+                    markDirtyIfIssued();
+                  }}
                   className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
                 />
               ) : (
                 <textarea
                   rows={rows}
                   value={form[key]}
-                  onChange={(e) => setField(key, e.target.value)}
+                  onChange={(e) => {
+                    setField(key, e.target.value);
+                    markDirtyIfIssued();
+                  }}
                   className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
                 />
               )}
             </label>
           ))}
 
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="flex flex-wrap gap-2 border-t border-stone-100 pt-4">
             <button
               type="button"
-              onClick={saveProposal}
-              disabled={saving || lockedAccepted || !form.includedScope || !form.exclusions}
+              onClick={() => void saveProposal()}
+              disabled={saving || lockedAccepted}
               className="rounded-lg border border-stone-300 px-4 py-2 text-sm disabled:opacity-40"
             >
-              {proposalId ? "Save draft" : "Create draft"}
+              Save draft
             </button>
             <button
               type="button"
-              onClick={approveProposal}
-              disabled={saving || !proposalId || lockedAccepted || proposalStatus === "APPROVED" || proposalStatus === "SENT"}
+              onClick={() => void approveProposal()}
+              disabled={saving || lockedAccepted || proposalStatus === "APPROVED" || proposalStatus === "SENT"}
               className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
               {proposalStatus === "APPROVED" || proposalStatus === "SENT" ? "Approved" : "Approve for client"}
             </button>
             <button
               type="button"
-              onClick={sendToClient}
-              disabled={saving || !proposalId || !canSend || lockedAccepted}
+              onClick={() => void sendToClient()}
+              disabled={saving || lockedAccepted}
               className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
               {proposalStatus === "SENT" ? "Re-send client link" : "Send client link"}
             </button>
           </div>
+          <p className="text-xs text-stone-500">
+            Send will auto-save and approve if needed, then create the share link. You do not need to click Save first.
+          </p>
 
           {shareUrl && (
-            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm">
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm">
               <p className="font-medium text-stone-900">Client share link</p>
               <p className="mt-1 break-all text-xs text-stone-600">{shareUrl}</p>
               <p className="mt-1 text-xs text-stone-500">
@@ -693,24 +799,14 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
                     setMsg("Link copied.");
                   }}
                 >
-                  Copy link
+                  Copy
                 </button>
-                <a
-                  href={shareUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded border border-stone-300 px-2 py-1 text-xs"
-                >
+                <a href={shareUrl} target="_blank" rel="noreferrer" className="rounded border border-stone-300 px-2 py-1 text-xs">
                   Open
                 </a>
                 {!lockedAccepted && (
-                  <button
-                    type="button"
-                    onClick={revokeShare}
-                    disabled={saving}
-                    className="rounded border border-stone-300 px-2 py-1 text-xs text-red-800 disabled:opacity-40"
-                  >
-                    Revoke link
+                  <button type="button" onClick={revokeShare} disabled={saving} className="rounded border border-stone-300 px-2 py-1 text-xs text-red-800 disabled:opacity-40">
+                    Revoke
                   </button>
                 )}
               </div>
@@ -718,7 +814,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           )}
 
           {clientMessages.length > 0 && (
-            <div className="mt-3 space-y-2">
+            <div className="space-y-2">
               <p className="text-sm font-medium text-stone-900">Client messages</p>
               {clientMessages.map((m) => (
                 <div key={m.id} className="rounded-lg border border-stone-200 p-2 text-xs text-stone-700">
@@ -734,75 +830,159 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
         </section>
       </div>
 
-      {lineItems.length > 0 && (
-        <section className="rounded-2xl border border-stone-200 bg-white p-5">
-          <h2 className="text-base font-semibold text-stone-900">Line items (internal)</h2>
-          <p className="mt-1 text-xs text-stone-500">
-            Seeded from Renovessa baseline, then your markup. Edit qty / unit cost / markup — customer never sees this table.
-          </p>
+      {/* Client-facing preview of what will be sent */}
+      {showPreview && (
+        <section className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-base font-semibold text-stone-900">Client draft preview</h2>
+            <p className="text-xs text-stone-500">What the homeowner sees on the share page / PDF (no costs or margins)</p>
+          </div>
+          <div className="mt-4 rounded-xl border border-stone-200 bg-white p-5">
+            <p className="text-xs uppercase tracking-[0.2em] text-stone-400">{companyName}</p>
+            <p className="mt-1 text-sm text-stone-500">Prepared for {jobMeta.clientName || "your client"}</p>
+            {jobMeta.jobTitle && <p className="font-medium text-stone-800">{jobMeta.jobTitle}</p>}
+            <p className="mt-4 font-serif text-4xl text-stone-900">${customerTotal.toLocaleString()}</p>
+            <div className="mt-6 space-y-4 text-sm text-stone-800">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Included scope</p>
+                <p className="mt-1 whitespace-pre-wrap">{form.includedScope.trim() || DEFAULT_SCOPE}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Exclusions</p>
+                <p className="mt-1 whitespace-pre-wrap">{form.exclusions.trim() || DEFAULT_EXCLUSIONS}</p>
+              </div>
+              {form.paymentSchedule && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Payment</p>
+                  <p className="mt-1 whitespace-pre-wrap">{form.paymentSchedule}</p>
+                </div>
+              )}
+              {(form.estimatedStartDate || form.estimatedDuration) && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">Schedule</p>
+                  <p className="mt-1">
+                    Start: {form.estimatedStartDate || "—"} · Duration: {form.estimatedDuration || "—"}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Line items — always visible */}
+      <section className="rounded-2xl border border-stone-200 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-stone-900">Line items (internal)</h2>
+            <p className="mt-1 text-xs text-stone-500">
+              Seed from estimate or add your own. Customer never sees this table — only the total above.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={addLine}
+            disabled={lockedAccepted}
+            className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
+          >
+            + Add line
+          </button>
+        </div>
+
+        {pricedLines.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-dashed border-stone-300 bg-stone-50 p-6 text-center text-sm text-stone-600">
+            <p>No line items yet.</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={runEstimate} disabled={saving} className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40">
+                Run estimate + seed lines
+              </button>
+              <button type="button" onClick={addLine} className="rounded-lg border border-stone-300 px-3 py-2 text-sm">
+                Add a blank line
+              </button>
+            </div>
+          </div>
+        ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500">
                 <tr>
-                  <th className="py-2 pr-3">Include</th>
-                  <th className="py-2 pr-3">Description</th>
-                  <th className="py-2 pr-3">Qty</th>
-                  <th className="py-2 pr-3">Unit cost</th>
-                  <th className="py-2 pr-3">Markup %</th>
-                  <th className="py-2 pr-3 text-right">Customer $</th>
-                  <th className="py-2 pl-3">Source</th>
+                  <th className="py-2 pr-2">On</th>
+                  <th className="py-2 pr-2">Description</th>
+                  <th className="py-2 pr-2">Qty</th>
+                  <th className="py-2 pr-2">Unit cost</th>
+                  <th className="py-2 pr-2">Markup %</th>
+                  <th className="py-2 pr-2 text-right">Customer $</th>
+                  <th className="py-2 pl-2" />
                 </tr>
               </thead>
               <tbody>
-                {lineItems.map((li) => (
+                {pricedLines.map((li) => (
                   <tr key={li.key} className="border-b border-stone-100 align-top">
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-2">
                       <input
                         type="checkbox"
                         checked={li.included}
+                        disabled={lockedAccepted}
                         onChange={(e) => updateLine(li.key, { included: e.target.checked })}
                       />
                     </td>
-                    <td className="py-2 pr-3">
-                      <div className="font-medium text-stone-800">{li.description}</div>
-                      <div className="text-xs text-stone-400">{li.category}</div>
+                    <td className="py-2 pr-2">
+                      <input
+                        value={li.description}
+                        disabled={lockedAccepted}
+                        onChange={(e) => updateLine(li.key, { description: e.target.value })}
+                        className="w-full min-w-[10rem] rounded border border-stone-300 px-2 py-1 font-medium"
+                      />
+                      <div className="text-xs text-stone-400">{li.category} · {li.costSource.replace(/_/g, " ")}</div>
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-2">
                       <input
                         type="number"
                         value={li.quantity}
+                        disabled={lockedAccepted}
                         onChange={(e) => updateLine(li.key, { quantity: Number(e.target.value) })}
                         className="w-20 rounded border border-stone-300 px-2 py-1"
                       />
                       <div className="text-xs text-stone-400">{li.unit}</div>
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-2">
                       <input
                         type="number"
                         value={li.unitCost}
+                        disabled={lockedAccepted}
                         onChange={(e) => updateLine(li.key, { unitCost: Number(e.target.value) })}
                         className="w-24 rounded border border-stone-300 px-2 py-1"
                       />
                     </td>
-                    <td className="py-2 pr-3">
+                    <td className="py-2 pr-2">
                       <input
                         type="number"
                         value={li.markupPercent}
+                        disabled={lockedAccepted}
                         onChange={(e) => updateLine(li.key, { markupPercent: Number(e.target.value) })}
                         className="w-20 rounded border border-stone-300 px-2 py-1"
                       />
                     </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      ${(li.included ? recalculatePricing([li], pricingSettings).lineItems[0].customerPrice : 0).toLocaleString()}
+                    <td className="py-2 pr-2 text-right tabular-nums">
+                      ${li.included ? li.customerPrice.toLocaleString() : "0"}
                     </td>
-                    <td className="py-2 pl-3 text-xs text-stone-500">{li.costSource.replace(/_/g, " ")}</td>
+                    <td className="py-2 pl-2">
+                      <button
+                        type="button"
+                        disabled={lockedAccepted}
+                        onClick={() => removeLine(li.key)}
+                        className="text-xs text-red-700 disabled:opacity-40"
+                      >
+                        Remove
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

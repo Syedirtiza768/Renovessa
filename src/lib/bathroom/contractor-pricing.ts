@@ -264,6 +264,36 @@ export function applyLineOverrides(
   });
 }
 
+export function createManualLineItem(
+  settings: StudioPricingSettings = DEFAULT_STUDIO_PRICING,
+  partial?: Partial<ContractorPricedLineItem>,
+): ContractorPricedLineItem {
+  const quantity = partial?.quantity ?? 1;
+  const unitCost = partial?.unitCost ?? 0;
+  const markupPercent = partial?.markupPercent ?? settings.markupPercent;
+  const laborRate = partial?.laborRate ?? settings.defaultLaborRate;
+  const base: ContractorPricedLineItem = {
+    key: partial?.key ?? `manual-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    category: partial?.category ?? "custom",
+    description: partial?.description ?? "Custom line item",
+    quantity,
+    unit: partial?.unit ?? "each",
+    unitCost,
+    wastePercent: partial?.wastePercent ?? 0,
+    laborHours: partial?.laborHours ?? 0,
+    laborRate,
+    otherDirectCost: partial?.otherDirectCost ?? 0,
+    markupPercent,
+    customerPrice: 0,
+    customerPriceLocked: false,
+    included: partial?.included ?? true,
+    costSource: "manual",
+    calculationReference: partial?.calculationReference,
+    sortOrder: partial?.sortOrder ?? 999,
+  };
+  return recomputeLineItem(base, settings);
+}
+
 function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }

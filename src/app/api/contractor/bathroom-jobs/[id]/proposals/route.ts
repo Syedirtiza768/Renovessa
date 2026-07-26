@@ -137,7 +137,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json(proposal, { status: 201 });
   } catch (e: any) {
     if (e?.name === "ZodError") {
-      return NextResponse.json({ error: e.errors?.[0]?.message ?? "Invalid input" }, { status: 400 });
+      const issue = e.errors?.[0];
+      const path = issue?.path?.join(".") || "input";
+      return NextResponse.json(
+        { error: issue?.message ? `${path}: ${issue.message}` : "Invalid input" },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ error: e?.message || "Failed" }, { status: e?.status || 500 });
   }
