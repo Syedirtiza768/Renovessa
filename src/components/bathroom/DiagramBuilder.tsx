@@ -59,28 +59,32 @@ function labelFor(type: string) {
   return FIXTURE_TYPES.find((f) => f.type === type)?.label ?? type.replace(/_/g, " ");
 }
 
+function feetFromGeometry(geo?: LayoutGeometry): { lengthFt: number; widthFt: number; ceilingFt: number } {
+  if (!geo?.walls?.length) return { lengthFt: 8, widthFt: 5, ceilingFt: 8 };
+  const xs = geo.walls.flatMap((w) => [w.x1, w.x2]);
+  const ys = geo.walls.flatMap((w) => [w.y1, w.y2]);
+  const lengthFt = Math.max(3, Math.round((Math.max(...xs) - Math.min(...xs)) / 12));
+  const widthFt = Math.max(3, Math.round((Math.max(...ys) - Math.min(...ys)) / 12));
+  const ceilingFt = geo.ceilingHeight ? Math.round(geo.ceilingHeight / 12) : 8;
+  return { lengthFt, widthFt, ceilingFt };
+}
+
 export function DiagramBuilder({
   layoutType,
   projectId,
   initialGeometry,
+  compactHeader = false,
 }: {
   layoutType: "EXISTING" | "PROPOSED";
   projectId: string;
   initialGeometry?: LayoutGeometry;
+  /** When true, omit the big step title (parent LayoutWorkspace provides it). */
+  compactHeader?: boolean;
 }) {
-  const [lengthFt, setLengthFt] = useState(
-    initialGeometry?.walls?.length
-      ? Math.round(Math.abs(initialGeometry.walls[0].x2 - initialGeometry.walls[0].x1) / 12)
-      : 8,
-  );
-  const [widthFt, setWidthFt] = useState(
-    initialGeometry?.walls?.length
-      ? Math.round(Math.abs(initialGeometry.walls[1]?.y2 - initialGeometry.walls[1]?.y1 || 60) / 12)
-      : 5,
-  );
-  const [ceilingFt, setCeilingFt] = useState(
-    initialGeometry?.ceilingHeight ? Math.round(initialGeometry.ceilingHeight / 12) : 8,
-  );
+  const initialFeet = feetFromGeometry(initialGeometry);
+  const [lengthFt, setLengthFt] = useState(initialFeet.lengthFt);
+  const [widthFt, setWidthFt] = useState(initialFeet.widthFt);
+  const [ceilingFt, setCeilingFt] = useState(initialFeet.ceilingFt);
   const [fixtures, setFixtures] = useState<FixturePlacement[]>(initialGeometry?.fixtures ?? []);
   const [selected, setSelected] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -404,10 +408,19 @@ export function DiagramBuilder({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold capitalize">{layoutType.toLowerCase()} layout</h3>
-          <p className="mt-1 text-sm text-ink-70">
-            Drag fixtures onto the floor plan. Drag to move, use corner handles to resize, R to rotate, arrows to nudge.
-          </p>
+          {!compactHeader && (
+            <>
+              <h3 className="text-lg font-semibold capitalize">{layoutType.toLowerCase()} layout</h3>
+              <p className="mt-1 text-sm text-ink-70">
+                Drag fixtures onto the floor plan. Drag to move, use corner handles to resize, R to rotate, arrows to nudge.
+              </p>
+            </>
+          )}
+          {compactHeader && (
+            <p className="text-sm text-ink-70">
+              Editing {layoutType.toLowerCase()} — drag to move, handles to resize, R to rotate.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
           <label>

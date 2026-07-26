@@ -11,6 +11,7 @@
 
 ## Bathroom Remodeling Experience — Recently shipped
 
+- **Quick path + unified layout (2026-07-27)** — Capture → Layout → Results; templates + proposed generation
 - **Requirements prompt + photo uploads (2026-07-27)** — Describe step, interpret API, `BathroomMedia`, Docker upload volume
 - **Interactive diagram builder** — drag/drop, resize, rotate fixtures on existing/proposed layouts
 

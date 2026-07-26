@@ -8,33 +8,63 @@ import { IntroStep } from "./steps/IntroStep";
 import { MeasurementsStep } from "./steps/MeasurementsStep";
 import { ScopeStep } from "./steps/ScopeStep";
 import { ConditionsStep } from "./steps/ConditionsStep";
-import { PermitsStep } from "./steps/PermitsStep";
 import { EstimateStep } from "./steps/EstimateStep";
 import { RequirementsPromptStep } from "./steps/RequirementsPromptStep";
-import { DiagramBuilder } from "./DiagramBuilder";
+import { LayoutWorkspace } from "./LayoutWorkspace";
+import {
+  hasBasicsFilled,
+  hasCaptureContent,
+  hasScopeFilled,
+  hasSizeFilled,
+} from "@/lib/bathroom/layout-templates";
+
+type StepDef = {
+  id: string;
+  label: string;
+  requires?: "diagramBuilder";
+  /** Return false to hide this step for the current answers/mode. */
+  when?: (ctx: { mode: "quick" | "detailed"; answers: PlannerAnswers; flags: BathroomFlags }) => boolean;
+};
 
 /**
- * Planner step sequence. Diagram steps appear when the diagramBuilder flag is on.
+ * Quick (default): Capture → Layout → Results
+ * Detailed: also Basics / Measurements / Scope / Conditions when useful
  */
-const ALL_STEPS = [
-  { id: "describe", label: "Describe" },
-  { id: "location", label: "Basics" },
-  { id: "measurements", label: "Measurements" },
-  { id: "existing_layout", label: "Existing layout", requires: "diagramBuilder" as const },
-  { id: "fixtures_finishes", label: "Scope" },
-  { id: "proposed_layout", label: "Proposed layout", requires: "diagramBuilder" as const },
-  { id: "existing_conditions", label: "Conditions" },
-  { id: "permit_guidance", label: "Permits" },
-  { id: "estimate", label: "Estimate" },
-] as const;
-
-type StepId = (typeof ALL_STEPS)[number]["id"];
+const ALL_STEPS: StepDef[] = [
+  { id: "describe", label: "Capture" },
+  {
+    id: "location",
+    label: "Basics",
+    when: ({ mode, answers }) => mode === "detailed" || !hasBasicsFilled(answers),
+  },
+  {
+    id: "measurements",
+    label: "Size",
+    when: ({ mode, answers }) => mode === "detailed" || !hasSizeFilled(answers),
+  },
+  {
+    id: "layout",
+    label: "Layout",
+    requires: "diagramBuilder",
+  },
+  {
+    id: "fixtures_finishes",
+    label: "Scope",
+    when: ({ mode, answers }) => mode === "detailed" || !hasScopeFilled(answers),
+  },
+  {
+    id: "existing_conditions",
+    label: "Conditions",
+    when: ({ mode }) => mode === "detailed",
+  },
+  { id: "estimate", label: "Results" },
+];
 
 export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
   const [state, setState] = useState<PlannerState>({
     projectId: null,
     referenceNumber: null,
-    mode: "detailed",
+    mode: "quick",
     currentStep: "describe",
     answers: {},
     saving: false,
@@ -46,7 +76,18 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
   useEffect(() => {
     const draft = loadDraft();
     if (draft) {
-      setState((prev) => ({ ...prev, ...draft, saving: false, error: null }));
+      // Migrate old step ids
+      let currentStep = draft.currentStep ?? "describe";
+      if (currentStep === "existing_layout" || currentStep === "proposed_layout") currentStep = "layout";
+      if (currentStep === "permit_guidance") currentStep = "estimate";
+      setState((prev) => ({
+        ...prev,
+        ...draft,
+        mode: draft.mode ?? "quick",
+        currentStep,
+        saving: false,
+        error: null,
+      }));
     }
     setHydrated(true);
   }, []);
@@ -55,21 +96,35 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const mode = params.get("mode");
-    if (mode === "quick") {
+    if (mode === "detailed") {
+      setState((prev) => ({ ...prev, mode: "detailed" }));
+    } else if (mode === "quick") {
       setState((prev) => ({ ...prev, mode: "quick" }));
     }
   }, []);
 
-  const steps = useMemo(
-    () => ALL_STEPS.filter((s) => !("requires" in s) || flags[s.requires]),
-    [flags],
-  );
+  const steps = useMemo(() => {
+    return ALL_STEPS.filter((s) => {
+      if (s.requires && !flags[s.requires]) return false;
+      if (s.when && !s.when({ mode: state.mode, answers: state.answers, flags })) return false;
+      return true;
+    });
+  }, [flags, state.mode, state.answers]);
+
+  // If current step was filtered out, snap to nearest remaining step
+  useEffect(() => {
+    if (!hydrated || steps.length === 0) return;
+    if (!steps.some((s) => s.id === state.currentStep)) {
+      setState((prev) => ({ ...prev, currentStep: steps[0].id }));
+    }
+  }, [steps, state.currentStep, hydrated]);
+
   const current = useMemo(() => {
     const idx = steps.findIndex((s) => s.id === state.currentStep);
     return idx === -1 ? 0 : idx;
   }, [steps, state.currentStep]);
   const progress = useMemo(
-    () => Math.round(((current + 1) / steps.length) * 100),
+    () => Math.round(((current + 1) / Math.max(steps.length, 1)) * 100),
     [current, steps.length],
   );
 
@@ -90,6 +145,7 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
             body: JSON.stringify({
               currentStep: state.currentStep,
               answers: state.answers,
+              plannerMode: state.mode,
             }),
           });
           setState((prev) => ({ ...prev, saving: false, lastSavedAt: Date.now() }));
@@ -120,23 +176,31 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
         const data = (await res.json()) as { id: string; referenceNumber: string };
         setState((prev) => ({ ...prev, projectId: data.id, referenceNumber: data.referenceNumber }));
       } catch {
-        // ignore — local draft still works
+        // ignore
       }
     })();
   }, [state.answers, state.mode, state.projectId, hydrated]);
 
   const goNext = () => {
+    if (state.currentStep === "describe" && !hasCaptureContent(state.answers)) {
+      setState((prev) => ({
+        ...prev,
+        error: "Add a short description, pick a room size, or upload a photo to continue.",
+      }));
+      return;
+    }
+    setState((prev) => ({ ...prev, error: null }));
     if (current < steps.length - 1) {
       setState((prev) => ({ ...prev, currentStep: steps[current + 1].id }));
     }
   };
   const goPrev = () => {
     if (current > 0) {
-      setState((prev) => ({ ...prev, currentStep: steps[current - 1].id }));
+      setState((prev) => ({ ...prev, currentStep: steps[current - 1].id, error: null }));
     }
   };
-  const goTo = (id: StepId) => {
-    setState((prev) => ({ ...prev, currentStep: id }));
+  const goTo = (id: string) => {
+    setState((prev) => ({ ...prev, currentStep: id, error: null }));
   };
 
   const reset = () => {
@@ -154,25 +218,49 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
     });
   };
 
-  const stepProps = { answers: state.answers, setAnswer, flags, projectId: state.projectId, referenceNumber: state.referenceNumber };
+  const stepProps = {
+    answers: state.answers,
+    setAnswer,
+    flags,
+    projectId: state.projectId,
+    referenceNumber: state.referenceNumber,
+  };
 
   return (
     <div className="min-h-screen bg-bone-0">
       <header className="border-b border-ink-15 bg-bone-1">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-4">
           <Link href="/bathroom-remodeling/rockville-md" className="text-sm font-medium text-ink-70 hover:text-ink-100">
             ← Back to landing
           </Link>
-          <div className="text-xs text-ink-40">
-            {state.referenceNumber ? `Ref: ${state.referenceNumber}` : "Draft (unsaved)"}
-            {state.saving ? " · saving…" : state.lastSavedAt ? " · saved" : ""}
+          <div className="flex items-center gap-3">
+            <div className="flex rounded-full border border-ink-15 text-xs">
+              <button
+                type="button"
+                onClick={() => setState((prev) => ({ ...prev, mode: "quick" }))}
+                className={`rounded-full px-3 py-1 ${state.mode === "quick" ? "bg-accent text-bone-0" : "text-ink-70"}`}
+              >
+                Quick
+              </button>
+              <button
+                type="button"
+                onClick={() => setState((prev) => ({ ...prev, mode: "detailed" }))}
+                className={`rounded-full px-3 py-1 ${state.mode === "detailed" ? "bg-accent text-bone-0" : "text-ink-70"}`}
+              >
+                Detailed
+              </button>
+            </div>
+            <div className="text-xs text-ink-40">
+              {state.referenceNumber ? `Ref: ${state.referenceNumber}` : "Draft"}
+              {state.saving ? " · saving…" : state.lastSavedAt ? " · saved" : ""}
+            </div>
           </div>
         </div>
         <div className="mx-auto max-w-4xl px-4 pb-4">
           <div className="h-1 w-full overflow-hidden rounded-full bg-ink-15">
             <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <p className="mt-1 text-xs text-ink-40">{progress}% complete</p>
+          <p className="mt-1 text-xs text-ink-40">{progress}% complete · {state.mode} path</p>
         </div>
       </header>
 
@@ -205,23 +293,20 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
           {state.currentStep === "describe" && <RequirementsPromptStep {...stepProps} />}
           {state.currentStep === "location" && <IntroStep {...stepProps} />}
           {state.currentStep === "measurements" && <MeasurementsStep {...stepProps} />}
-          {state.currentStep === "existing_layout" && state.projectId && (
-            <DiagramBuilder layoutType="EXISTING" projectId={state.projectId} />
+          {state.currentStep === "layout" && state.projectId && (
+            <LayoutWorkspace projectId={state.projectId} answers={state.answers} setAnswer={setAnswer} />
           )}
-          {state.currentStep === "existing_layout" && !state.projectId && (
-            <p className="text-sm text-ink-70">Describe your project or answer a question first so we can create your draft, then return here to draw the layout.</p>
+          {state.currentStep === "layout" && !state.projectId && (
+            <p className="text-sm text-ink-70">
+              Add a short description or room size on Capture so we can create your draft, then open Layout.
+            </p>
           )}
           {state.currentStep === "fixtures_finishes" && <ScopeStep {...stepProps} />}
-          {state.currentStep === "proposed_layout" && state.projectId && (
-            <DiagramBuilder layoutType="PROPOSED" projectId={state.projectId} />
-          )}
-          {state.currentStep === "proposed_layout" && !state.projectId && (
-            <p className="text-sm text-ink-70">Describe your project or answer a question first so we can create your draft, then return here to draw the layout.</p>
-          )}
           {state.currentStep === "existing_conditions" && <ConditionsStep {...stepProps} />}
-          {state.currentStep === "permit_guidance" && <PermitsStep {...stepProps} />}
           {state.currentStep === "estimate" && <EstimateStep {...stepProps} />}
         </section>
+
+        {state.error && <p className="mt-3 text-sm text-red-700">{state.error}</p>}
 
         <nav className="mt-6 flex items-center justify-between">
           <button

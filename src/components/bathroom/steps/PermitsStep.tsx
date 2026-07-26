@@ -10,9 +10,9 @@ export function PermitsStep({ answers, setAnswer }: StepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-ink-100">Permit questions</h2>
+        <h3 className="text-base font-semibold text-ink-100">Permit questions</h3>
         <p className="mt-1 text-sm text-ink-70">
-          These answers help the planner flag likely permit categories. This is not a legal determination — your
+          These answers help flag likely permit categories. This is not a legal determination — your
           contractor and the City of Rockville / Montgomery County will confirm.
         </p>
       </div>

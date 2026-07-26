@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { StepProps } from "../planner-types";
+import { BATHROOM_TYPES, PROJECT_OBJECTIVES } from "@/lib/bathroom/config";
+import { ROOM_SIZE_BANDS, resolveRoomFeet } from "@/lib/bathroom/layout-templates";
 
 type MediaItem = {
   id: string;
@@ -237,17 +239,85 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-ink-100">Describe your bathroom remodel</h2>
+        <h2 className="text-xl font-semibold text-ink-100">Capture your remodel</h2>
         <p className="mt-1 text-sm text-ink-70">
-          Write what you want in your own words — bathroom type, goals, finishes, problems, timeline.
-          Upload photos of the space. We&apos;ll suggest planner answers for you to review. This is not a quote or diagnosis.
+          Describe what you want, pick an approximate room size, and add photos.
+          We&apos;ll fill the rest — review on Layout and Results. Not a quote or diagnosis.
         </p>
       </div>
+
+      <div>
+        <p className="text-sm font-medium text-ink-100">Approximate room size</p>
+        <p className="mt-0.5 text-xs text-ink-40">Optional — unlocks a layout template without exact measurements.</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {ROOM_SIZE_BANDS.map((b) => {
+            const selected = answers.roomSizeBand === b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => {
+                  setAnswer("roomSizeBand", b.id);
+                  const feet = resolveRoomFeet({ roomSizeBand: b.id });
+                  setAnswer("length", String(feet.lengthFt));
+                  setAnswer("width", String(feet.widthFt));
+                  setAnswer("ceilingHeight", String(feet.ceilingFt));
+                  setAnswer("measurement_method", "simple");
+                }}
+                className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                  selected ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70 hover:border-ink-40"
+                }`}
+              >
+                {b.label}
+                <span className={`ml-1 text-xs ${selected ? "text-bone-0/80" : "text-ink-40"}`}>{b.hint}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {!answers.bathroomType && (
+        <div>
+          <p className="text-sm font-medium text-ink-100">Bathroom type</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {BATHROOM_TYPES.filter((t) => t.id !== "other" && t.id !== "new_addition").map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setAnswer("bathroomType", t.id)}
+                className="rounded-full border border-ink-15 px-3 py-1.5 text-sm text-ink-70 hover:border-ink-40"
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!answers.projectObjective && (
+        <div>
+          <p className="text-sm font-medium text-ink-100">Main goal</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PROJECT_OBJECTIVES.filter((o) =>
+              ["tub_to_shower", "remodel_same_layout", "cosmetic_refresh", "curbless_shower", "full_gut", "accessibility_upgrade"].includes(o.id),
+            ).map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => setAnswer("projectObjective", o.id)}
+                className="rounded-full border border-ink-15 px-3 py-1.5 text-sm text-ink-70 hover:border-ink-40"
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
-        rows={7}
+        rows={6}
         className="w-full rounded-xl border border-ink-15 p-4 text-sm leading-relaxed"
         placeholder="Example: Primary bathroom in our Rockville condo. Want to remove the tub and add a curbless tiled shower with a bench, keep the toilet location, replace the double vanity, and fix soft flooring near the tub. Prefer mid-range finishes. Occupied during construction."
       />
@@ -259,21 +329,21 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
           disabled={busy}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
-          {busy ? "Interpreting…" : "Apply to planner answers"}
+          {busy ? "Interpreting…" : "Apply description"}
         </button>
         <button
           type="button"
           onClick={() => {
             setAnswer("requirementsPrompt", prompt);
-            setNote("Saved your description. Continue to review or edit the structured answers.");
+            setNote("Saved. Continue to Layout when ready.");
           }}
           className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 hover:border-ink-40"
         >
-          Save description only
+          Save & continue later
         </button>
         {projectId ? (
           <span className="text-xs text-ink-40">Draft ready — you can upload photos</span>
-        ) : prompt.trim() ? (
+        ) : prompt.trim() || answers.roomSizeBand ? (
           <span className="text-xs text-ink-40">Creating draft…</span>
         ) : null}
       </div>

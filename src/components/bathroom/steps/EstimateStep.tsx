@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { StepProps } from "../planner-types";
+import { PermitsStep } from "./PermitsStep";
 
 type EstimateResult = {
   low: number;
@@ -13,10 +14,11 @@ type EstimateResult = {
   scenarios?: { id: string; label: string; total: number; compromises: string[]; benefits: string[] }[];
 };
 
-export function EstimateStep({ answers, flags, projectId }: StepProps) {
+export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNumber }: StepProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPermits, setShowPermits] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,8 +64,8 @@ export function EstimateStep({ answers, flags, projectId }: StepProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-ink-100">Your planning range</h2>
-        <p className="mt-1 text-sm text-ink-70">Illustrative planning range only — not a contractor quote.</p>
+        <h2 className="text-xl font-semibold text-ink-100">Your planning results</h2>
+        <p className="mt-1 text-sm text-ink-70">Illustrative planning range only — not a contractor quote. Permit questions are optional below.</p>
       </div>
 
       <div className="rounded-xl border border-ink-15 bg-bone-1 p-5">
@@ -144,6 +146,35 @@ export function EstimateStep({ answers, flags, projectId }: StepProps) {
       {flags.projectBrief && projectId && (
         <BriefActions projectId={projectId} />
       )}
+
+      <div className="rounded-lg border border-ink-15 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold text-ink-100">Permit guidance</h3>
+            <p className="mt-0.5 text-xs text-ink-40">
+              Optional — flags likely categories for Rockville / Montgomery County. Not a legal determination.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowPermits((v) => !v)}
+            className="text-sm font-medium text-accent"
+          >
+            {showPermits ? "Hide questions" : "Answer permit questions"}
+          </button>
+        </div>
+        {showPermits && (
+          <div className="mt-4 border-t border-ink-15 pt-4">
+            <PermitsStep
+              answers={answers}
+              setAnswer={setAnswer}
+              flags={flags}
+              projectId={projectId}
+              referenceNumber={referenceNumber}
+            />
+          </div>
+        )}
+      </div>
 
       {flags.contractorMatching && (
         <div className="rounded-lg border border-accent bg-accent/5 p-4">

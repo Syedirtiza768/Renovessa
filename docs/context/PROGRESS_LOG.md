@@ -1,4 +1,11 @@
 
+# 2026-07-27 — Quick path + unified interactive layout
+
+- Default planner mode is **Quick**: Capture → Layout → Results; skips Basics/Size/Scope/Conditions when Capture already filled them. Detailed mode toggle restores the longer path.
+- Unified `LayoutWorkspace` with Existing/Proposed toggle; `layout-templates.ts` bootstraps room templates and generates proposed layouts (e.g. tub→shower) from goals.
+- Capture step adds room-size bands + gap chips; permits folded into Results as optional accordion.
+- 6 new unit tests for layout templates (33 bathroom tests total).
+
 # 2026-07-27 — Bathroom planner: requirements prompt + photo uploads
 
 - Planner opens on a **Describe** step: free-text requirements prompt, Save / Apply-to-answers (heuristic or OpenRouter when AI flag + key), and photo upload panel.
