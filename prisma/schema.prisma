@@ -124,6 +124,13 @@ enum AuditEventType {
   BATHROOM_BRIEF_GENERATED
   BATHROOM_CONTACT_RELEASED
   BATHROOM_PROPOSAL_SUBMITTED
+  BATHROOM_PROPOSAL_APPROVED
+  BATHROOM_PROPOSAL_REVISED
+  BATHROOM_PROPOSAL_SENT
+  BATHROOM_PROPOSAL_VIEWED
+  BATHROOM_PROPOSAL_ACCEPTED
+  BATHROOM_PROPOSAL_DECLINED
+  BATHROOM_PROPOSAL_QUESTION
   BATHROOM_LAYOUT_SAVED
   BATHROOM_PERMIT_ASSESSED
   BATHROOM_PHOTO_UPLOADED
@@ -207,6 +214,8 @@ model ContractorProfile {
   letterheadTagline       String?
   letterheadLicenseText   String?
   proposalFooterText      String?
+  /// Studio pricing defaults (markup, overhead, contingency, min margin, labor rate).
+  studioPricingJson       Json?
   isDemo                  Boolean        @default(false)
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
@@ -719,6 +728,10 @@ enum PermitLikelihood {
 }
 
 enum BathroomProposalStatus {
+  DRAFT
+  APPROVED
+  SENT
+  REVISION_REQUESTED
   SUBMITTED
   WITHDRAWN
   EXPIRED
@@ -950,6 +963,7 @@ model BathroomEstimate {
   project       BathroomProject            @relation(fields: [projectId], references: [id], onDelete: Cascade)
   configuration EstimatorConfiguration     @relation(fields: [configurationId], references: [id])
   lineItems     BathroomEstimateLineItem[]
+  proposals     ContractorProposal[]
 
   @@index([projectId])
   @@index([configurationId])
@@ -1015,8 +1029,27 @@ model ContractorProposal {
   projectId           String
   contractorId        String
   appointmentId       String?
+  /// Optional link to the BathroomEstimate that seeded line items.
+  estimateId          String?
   status              BathroomProposalStatus @default(SUBMITTED)
+  /// Studio version number; increments when a revised draft is created from an approved proposal.
+  version             Int                    @default(1)
+  /// quick | detailed | site_verified
+  mode                String                 @default("detailed")
   totalPrice          Int
+  /// Internal direct cost total (materials + labor + other) before profit.
+  directCostTotal     Int?
+  overheadAmount      Int?
+  contingencyAmount   Int?
+  profitAmount        Int?
+  /// Gross margin as percent of customer price (0–100).
+  grossMarginPercent  Float?
+  /// Markup applied as percent of direct cost (0–100).
+  markupPercent       Float?
+  /// Editable contractor-priced line items (JSON array). Internal only.
+  lineItemsJson       Json?
+  /// Snapshot of studio pricing settings at last recalc / approval.
+  pricingSnapshotJson Json?
   includedScope       String
   exclusions          String
   materialAllowances  String?
@@ -1032,15 +1065,51 @@ model ContractorProposal {
   suggestedChanges    String?
   expirationDate      DateTime?
   proposalDocumentUrl String?
+  approvedAt          DateTime?
+  approvedByUserId    String?
+  /// Secure homeowner share link (tokenized; no account required).
+  shareToken          String?                @unique
+  shareExpiresAt      DateTime?
+  sentAt              DateTime?
+  firstViewedAt       DateTime?
+  lastViewedAt        DateTime?
+  viewCount           Int                    @default(0)
+  acceptedAt          DateTime?
+  declinedAt          DateTime?
+  acceptanceName      String?
+  acceptanceEmail     String?
+  acceptanceIp        String?
+  /// Immutable customer-facing snapshot at acceptance time.
+  acceptanceSnapshotJson Json?
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
 
   project     BathroomProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   contractor  ContractorProfile @relation(fields: [contractorId], references: [id])
   appointment Appointment?      @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  estimate    BathroomEstimate? @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+  clientMessages ContractorProposalMessage[]
 
   @@index([projectId])
   @@index([contractorId])
+  @@index([estimateId])
+  @@index([status])
+}
+
+/// Homeowner questions / revision requests against a shared proposal.
+model ContractorProposalMessage {
+  id           String   @id @default(cuid())
+  proposalId   String
+  kind         String   // question | revision_request | decline_note | contractor_reply
+  body         String   @db.Text
+  authorName   String?
+  authorEmail  String?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  proposal ContractorProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId])
 }
 
 /// Audit record for every contact release to a contractor.

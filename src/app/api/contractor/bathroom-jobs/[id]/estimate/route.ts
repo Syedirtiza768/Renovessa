@@ -7,6 +7,11 @@ import { assertContractorOwnsBathroomProject } from "@/lib/bathroom/authorizatio
 import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/bathroom/config";
 import { generateEstimate, type EstimateInputs } from "@/lib/bathroom/estimator";
 import { scoreConfidence, type ConfidenceInput } from "@/lib/bathroom/confidence";
+import {
+  normalizeStudioPricing,
+  seedContractorLineItems,
+  recalculatePricing,
+} from "@/lib/bathroom/contractor-pricing";
 
 export const runtime = "nodejs";
 
@@ -17,7 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await getSession();
   try {
     const { id } = await params;
-    const { project } = await assertContractorOwnsBathroomProject(session, id);
+    const { project, profile } = await assertContractorOwnsBathroomProject(session, id);
     const body = await req.json().catch(() => ({}));
     const a = {
       ...((project.answersJson as Record<string, string>) || {}),
@@ -63,6 +68,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     };
 
     const estimate = generateEstimate(inputs, DEFAULT_ESTIMATOR_CONFIG, confidence);
+    const settings = normalizeStudioPricing(profile.studioPricingJson);
+    const seeded = seedContractorLineItems(estimate.lineItems, settings);
+    const priced = recalculatePricing(seeded, settings);
 
     const config = await prisma.estimatorConfiguration.findFirst({
       where: { status: "PUBLISHED" },
@@ -110,7 +118,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       description: `Contractor studio estimate for ${project.referenceNumber}`,
       actorId: session?.id,
       bathroomProjectId: id,
-      metadata: { mid: estimate.expectedLowAmount, confidence: confidence.level },
+      metadata: {
+        mid: estimate.expectedLowAmount,
+        confidence: confidence.level,
+        contractorCustomerTotal: priced.totals.customerTotal,
+      },
     });
 
     return NextResponse.json({
@@ -122,15 +134,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         reasons: confidence.reasons,
         suggestions: confidence.improvements,
       },
-      lineItems: estimate.lineItems.map((li) => ({
+      baselineLineItems: estimate.lineItems.map((li) => ({
         category: li.category,
         description: li.description,
         low: li.lowAmount,
         mid: Math.round((li.lowAmount + li.highAmount) / 2),
         high: li.highAmount,
       })),
+      pricedLineItems: priced.lineItems,
+      totals: priced.totals,
+      pricingSettings: settings,
       savedId: saved?.id ?? null,
-      note: "Internal planning range — set your client proposal price separately.",
+      note: "Baseline planning range priced with your markup. Edit line items, then approve before downloading the client PDF.",
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Failed" }, { status: e?.status || 500 });

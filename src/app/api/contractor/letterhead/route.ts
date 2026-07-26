@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { bathroomContractorStudioEnabled } from "@/lib/feature-flags";
 import { requireContractorProfile } from "@/lib/bathroom/authorization";
 import { contractorLetterheadSchema } from "@/lib/bathroom/schemas";
+import { normalizeStudioPricing } from "@/lib/bathroom/contractor-pricing";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,7 @@ export async function GET() {
       letterheadTagline: profile.letterheadTagline,
       letterheadLicenseText: profile.letterheadLicenseText,
       proposalFooterText: profile.proposalFooterText,
+      studioPricing: normalizeStudioPricing(profile.studioPricingJson),
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Failed" }, { status: e?.status || 500 });
@@ -37,6 +39,13 @@ export async function PATCH(req: NextRequest) {
   try {
     const profile = await requireContractorProfile(session);
     const body = contractorLetterheadSchema.parse(await req.json());
+    const nextPricing = body.studioPricing
+      ? normalizeStudioPricing({
+          ...normalizeStudioPricing(profile.studioPricingJson),
+          ...body.studioPricing,
+        })
+      : undefined;
+
     const updated = await prisma.contractorProfile.update({
       where: { id: profile.id },
       data: {
@@ -54,6 +63,7 @@ export async function PATCH(req: NextRequest) {
           body.letterheadLicenseText === undefined ? undefined : body.letterheadLicenseText,
         proposalFooterText:
           body.proposalFooterText === undefined ? undefined : body.proposalFooterText,
+        studioPricingJson: nextPricing === undefined ? undefined : (nextPricing as any),
       },
     });
     return NextResponse.json({
@@ -65,6 +75,7 @@ export async function PATCH(req: NextRequest) {
       letterheadTagline: updated.letterheadTagline,
       letterheadLicenseText: updated.letterheadLicenseText,
       proposalFooterText: updated.proposalFooterText,
+      studioPricing: normalizeStudioPricing(updated.studioPricingJson),
     });
   } catch (e: any) {
     if (e?.name === "ZodError") {

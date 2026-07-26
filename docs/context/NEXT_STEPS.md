@@ -1,16 +1,26 @@
 # Next Steps
 
+## Proposal Studio — immediate follow-up
+
+1. **Push schema** when Postgres is available: `npx prisma db push`
+2. **Change orders** — separate ledger against accepted proposals
+3. **Notifications** — email contractor on view / question / accept / decline
+4. **Contractor AI intake** — structured facts / clarification questions with source tags (reuse `requirements-interpret`)
+5. **Price book** — CSV import, assemblies, ZIP adjustments
+6. **RFQ → Studio import** — prefill contractor-owned job from Renovessa opportunity without exposing margins
+
 ## Bathroom Remodeling Experience — Phase 3
 
 - **Migrate photo storage to S3/R2** — local `UPLOAD_ROOT` / Docker volume is live; move to object storage for multi-instance durability
 - **Background job processing** — move brief generation, PDF rendering, and email notifications to a job queue
 - **Production-grade rate limiting** — replace in-memory rate limiting with a shared store (Redis) for multi-instance deployments
 - **Search Console verification** — submit bathroom sitemap, track organic conversions for bathroom pages
-- **Contractor proposal submission UI** — allow contractors to submit proposals via the contractor portal
-- **Share link public view** — render the brief via share token for contractors without accounts
+- **Logo upload for contractor letterhead**
 
 ## Bathroom Remodeling Experience — Recently shipped
 
+- **Proposal Studio share + acceptance (2026-07-27)** — `/proposal/[token]`, accept/decline/questions, version lock
+- **Proposal Studio commercial layer (2026-07-27)** — priced line items, markup vs margin, approve-before-PDF
 - **Quick path + unified layout (2026-07-27)** — Capture → Layout → Results; templates + proposed generation
 - **Requirements prompt + photo uploads (2026-07-27)** — Describe step, interpret API, `BathroomMedia`, Docker upload volume
 - **Interactive diagram builder** — drag/drop, resize, rotate fixtures on existing/proposed layouts

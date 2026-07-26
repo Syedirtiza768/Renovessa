@@ -155,6 +155,34 @@ export const rfqPromotionSchema = z.object({
   notes: z.string().max(4000).optional(),
 });
 
+export const studioPricingSettingsSchema = z.object({
+  markupPercent: z.number().min(0).max(200).optional(),
+  overheadPercent: z.number().min(0).max(100).optional(),
+  contingencyPercent: z.number().min(0).max(100).optional(),
+  minimumGrossMarginPercent: z.number().min(0).max(90).optional(),
+  defaultLaborRate: z.number().min(0).max(500).optional(),
+});
+
+export const contractorLineItemSchema = z.object({
+  key: z.string().min(1).max(120),
+  category: z.string().max(80),
+  description: z.string().max(500),
+  quantity: z.number().nonnegative().max(100_000),
+  unit: z.string().max(40),
+  unitCost: z.number().nonnegative().max(1_000_000),
+  wastePercent: z.number().min(0).max(100).default(0),
+  laborHours: z.number().min(0).max(10_000).default(0),
+  laborRate: z.number().min(0).max(500).default(0),
+  otherDirectCost: z.number().min(0).max(1_000_000).default(0),
+  markupPercent: z.number().min(0).max(200),
+  customerPrice: z.number().int().nonnegative().max(1_000_000),
+  customerPriceLocked: z.boolean().default(false),
+  included: z.boolean().default(true),
+  costSource: z.enum(["renovessa_baseline", "contractor_override", "manual"]).default("renovessa_baseline"),
+  calculationReference: z.string().max(200).optional(),
+  sortOrder: z.number().int().min(0).max(10_000).default(0),
+});
+
 export const proposalSchema = z.object({
   totalPrice: z.number().int().nonnegative().max(1_000_000),
   includedScope: z.string().max(8000),
@@ -171,7 +199,57 @@ export const proposalSchema = z.object({
   suggestedChanges: z.string().max(4000).optional(),
   expirationDate: z.string().datetime().optional(),
   proposalDocumentUrl: z.string().url().optional(),
-  status: z.enum(["SUBMITTED", "WITHDRAWN", "EXPIRED", "ACCEPTED", "DECLINED"]).optional(),
+  status: z
+    .enum([
+      "DRAFT",
+      "APPROVED",
+      "SENT",
+      "REVISION_REQUESTED",
+      "SUBMITTED",
+      "WITHDRAWN",
+      "EXPIRED",
+      "ACCEPTED",
+      "DECLINED",
+    ])
+    .optional(),
+  estimateId: z.string().cuid().optional().nullable(),
+  mode: z.enum(["quick", "detailed", "site_verified"]).optional(),
+  lineItems: z.array(contractorLineItemSchema).max(200).optional(),
+  pricingSettings: studioPricingSettingsSchema.optional(),
+  /** When true, recompute totals from line items server-side. */
+  recomputeFromLines: z.boolean().optional(),
+});
+
+export const proposalApproveSchema = z.object({
+  acknowledgeBelowMinimumMargin: z.boolean().optional().default(false),
+  overrideReason: z.string().max(500).optional(),
+});
+
+export const proposalSendSchema = z.object({
+  expiresDays: z.number().int().min(1).max(180).optional().default(30),
+  /** Rotate share token even if one already exists. */
+  rotateToken: z.boolean().optional().default(false),
+});
+
+export const proposalAcceptSchema = z.object({
+  fullName: z.string().min(2).max(120),
+  email: z.string().email().max(160),
+  phone: z.string().max(40).optional(),
+  acceptedTerms: z.literal(true),
+  notes: z.string().max(2000).optional(),
+});
+
+export const proposalDeclineSchema = z.object({
+  fullName: z.string().min(1).max(120).optional(),
+  email: z.string().email().max(160).optional().or(z.literal("")),
+  reason: z.string().min(3).max(2000),
+});
+
+export const proposalQuestionSchema = z.object({
+  fullName: z.string().min(1).max(120).optional(),
+  email: z.string().email().max(160).optional().or(z.literal("")),
+  body: z.string().min(3).max(4000),
+  kind: z.enum(["question", "revision_request"]).default("question"),
 });
 
 export const contractorStudioJobSchema = z.object({
@@ -193,6 +271,7 @@ export const contractorLetterheadSchema = z.object({
   letterheadLicenseText: z.string().max(200).optional().nullable(),
   proposalFooterText: z.string().max(500).optional().nullable(),
   contactPerson: z.string().max(120).optional().nullable(),
+  studioPricing: studioPricingSettingsSchema.optional(),
 });
 
 export const proposalDraftPromptSchema = z.object({

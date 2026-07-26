@@ -37,7 +37,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       answers: (project.answersJson as Record<string, string>) || {},
     });
 
-    return NextResponse.json({ draft });
+    return NextResponse.json({
+      draft: {
+        ...draft,
+        // Back-compat for older clients: totalPrice only when estimate-seeded.
+        totalPrice: draft.suggestedTotalPrice ?? 0,
+      },
+    });
   } catch (e: any) {
     if (e?.name === "ZodError") {
       return NextResponse.json({ error: e.errors?.[0]?.message ?? "Invalid input" }, { status: 400 });

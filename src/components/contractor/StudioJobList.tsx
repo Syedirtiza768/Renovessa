@@ -82,7 +82,7 @@ export function StudioJobList() {
         </p>
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           <Link href="/portal/contractor/proposal-studio/letterhead" className="text-stone-800 underline">
-            Edit letterhead
+            Letterhead & pricing
           </Link>
         </div>
       </header>

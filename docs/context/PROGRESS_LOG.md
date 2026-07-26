@@ -1,4 +1,21 @@
 
+# 2026-07-27 — Proposal Studio share + acceptance (Phase B)
+
+- Tokenized public proposal page `/proposal/[token]` with accept / decline / question / revision request
+- Contractor send/revoke share link; view tracking; acceptance snapshot locks the version
+- `ContractorProposalMessage` + share/acceptance fields on `ContractorProposal`
+- Public payload strips internal cost/margin data; robots disallows `/proposal/`
+- Tests: 48 bathroom unit tests passing
+
+# 2026-07-27 — Proposal Studio commercial layer (Phase A)
+
+- Contractor pricing engine (`contractor-pricing.ts`): seed line items from baseline estimate, apply markup/overhead/contingency, distinguish markup vs gross margin
+- Schema: `studioPricingJson` on `ContractorProfile`; proposal fields for estimate link, version, mode, cost/margin totals, `lineItemsJson`, approval audit; statuses `DRAFT` / `APPROVED` / `SENT`
+- APIs: estimate returns priced lines; proposal create as DRAFT; approve endpoint with min-margin override; client PDF gated on approval (`?preview=1` for draft watermark)
+- UI: line-item editor, internal profitability panel, approve-before-PDF; letterhead page includes pricing defaults
+- Prompt draft no longer invents `$` totals from text — seeds only from estimate mid
+- Tests: 44 bathroom unit tests passing (including pricing + draft guardrails)
+
 # 2026-07-27 — Contractor Proposal Studio (white-label)
 
 - Added `BathroomProject.contractorOwnerId`, client/job fields, `ContractorProposal.suggestedChanges`, and letterhead fields on `ContractorProfile`.

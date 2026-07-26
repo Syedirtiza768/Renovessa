@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { bathroomContractorStudioEnabled } from "@/lib/feature-flags";
 import { assertContractorOwnsBathroomProject } from "@/lib/bathroom/authorization";
 import { contractorStudioJobSchema } from "@/lib/bathroom/schemas";
+import { normalizeStudioPricing } from "@/lib/bathroom/contractor-pricing";
 
 export const runtime = "nodejs";
 
@@ -18,13 +19,20 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const full = await prisma.bathroomProject.findUnique({
       where: { id: project.id },
       include: {
-        proposals: { orderBy: { updatedAt: "desc" } },
+        proposals: {
+          orderBy: { updatedAt: "desc" },
+          include: { clientMessages: { orderBy: { createdAt: "desc" }, take: 20 } },
+        },
         estimates: { orderBy: { createdAt: "desc" }, take: 3 },
         media: { orderBy: { createdAt: "desc" }, take: 20 },
         layouts: { orderBy: { createdAt: "desc" }, take: 4 },
       },
     });
-    return NextResponse.json({ project: full, profile });
+    return NextResponse.json({
+      project: full,
+      profile,
+      pricingSettings: normalizeStudioPricing(profile.studioPricingJson),
+    });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Failed" }, { status: e?.status || 500 });
   }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import type { ContractorPricedLineItem, PricingTotals, StudioPricingSettings } from "@/lib/bathroom/contractor-pricing";
+import { DEFAULT_STUDIO_PRICING, recalculatePricing } from "@/lib/bathroom/contractor-pricing";
 
 type ProposalForm = {
   totalPrice: number;
@@ -43,9 +45,19 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
   const [companyName, setCompanyName] = useState("");
   const [project, setProject] = useState<any>(null);
   const [proposalId, setProposalId] = useState<string | null>(null);
+  const [proposalStatus, setProposalStatus] = useState<string>("DRAFT");
   const [form, setForm] = useState<ProposalForm>(emptyProposal());
   const [prompt, setPrompt] = useState("");
-  const [estimate, setEstimate] = useState<{ low: number; mid: number; high: number } | null>(null);
+  const [estimate, setEstimate] = useState<{ low: number; mid: number; high: number; estimateId?: string | null } | null>(null);
+  const [lineItems, setLineItems] = useState<ContractorPricedLineItem[]>([]);
+  const [pricingSettings, setPricingSettings] = useState<StudioPricingSettings>(DEFAULT_STUDIO_PRICING);
+  const [ackLowMargin, setAckLowMargin] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareExpiresAt, setShareExpiresAt] = useState<string | null>(null);
+  const [viewCount, setViewCount] = useState(0);
+  const [clientMessages, setClientMessages] = useState<
+    Array<{ id: string; kind: string; body: string; authorName: string | null; createdAt: string }>
+  >([]);
   const [jobMeta, setJobMeta] = useState({
     clientName: "",
     jobTitle: "",
@@ -57,6 +69,11 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     width: "",
   });
 
+  const liveTotals: PricingTotals | null = useMemo(() => {
+    if (!lineItems.length) return null;
+    return recalculatePricing(lineItems, pricingSettings).totals;
+  }, [lineItems, pricingSettings]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -66,6 +83,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       if (!res.ok) throw new Error(data.error || "Failed to load");
       setProject(data.project);
       setCompanyName(data.profile.companyName);
+      if (data.pricingSettings) setPricingSettings(data.pricingSettings);
       const answers = (data.project.answersJson || {}) as Record<string, string>;
       setJobMeta({
         clientName: data.project.clientName || "",
@@ -81,6 +99,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const latest = data.project.proposals?.[0];
       if (latest) {
         setProposalId(latest.id);
+        setProposalStatus(latest.status || "DRAFT");
         setForm({
           totalPrice: latest.totalPrice,
           includedScope: latest.includedScope || "",
@@ -96,6 +115,25 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           optionalUpgrades: latest.optionalUpgrades || "",
           suggestedChanges: latest.suggestedChanges || "",
         });
+        if (Array.isArray(latest.lineItemsJson)) {
+          setLineItems(latest.lineItemsJson);
+        }
+        setViewCount(latest.viewCount || 0);
+        setShareExpiresAt(latest.shareExpiresAt || null);
+        if (latest.shareToken) {
+          setShareUrl(`${window.location.origin}/proposal/${latest.shareToken}`);
+        } else {
+          setShareUrl(null);
+        }
+        setClientMessages(
+          (latest.clientMessages || []).map((m: any) => ({
+            id: m.id,
+            kind: m.kind,
+            body: m.body,
+            authorName: m.authorName,
+            createdAt: m.createdAt,
+          })),
+        );
       }
       const est = data.project.estimates?.[0];
       if (est) {
@@ -103,6 +141,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           low: est.lowAmount,
           mid: est.expectedLowAmount,
           high: est.highComplexityAmount,
+          estimateId: est.id,
         });
       }
     } catch (e) {
@@ -118,6 +157,25 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
 
   const setField = <K extends keyof ProposalForm>(key: K, value: ProposalForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
+  };
+
+  const updateLine = (key: string, patch: Partial<ContractorPricedLineItem>) => {
+    setLineItems((items) =>
+      items.map((li) => {
+        if (li.key !== key) return li;
+        const next = { ...li, ...patch };
+        if (patch.unitCost !== undefined || patch.quantity !== undefined || patch.markupPercent !== undefined) {
+          next.customerPriceLocked = patch.customerPrice !== undefined ? true : false;
+          next.costSource = "contractor_override";
+        }
+        if (patch.customerPrice !== undefined) {
+          next.customerPriceLocked = true;
+          next.costSource = "contractor_override";
+        }
+        return next;
+      }),
+    );
+    setProposalStatus((s) => (s === "APPROVED" || s === "SENT" ? "DRAFT" : s));
   };
 
   const saveJobMeta = async () => {
@@ -165,8 +223,20 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Estimate failed");
-      setEstimate({ low: data.low, mid: data.mid, high: data.high });
-      if (!form.totalPrice) setField("totalPrice", data.mid);
+      setEstimate({
+        low: data.low,
+        mid: data.mid,
+        high: data.high,
+        estimateId: data.savedId,
+      });
+      if (data.pricingSettings) setPricingSettings(data.pricingSettings);
+      if (Array.isArray(data.pricedLineItems)) {
+        setLineItems(data.pricedLineItems);
+        if (data.totals?.customerTotal) {
+          setField("totalPrice", data.totals.customerTotal);
+        }
+      }
+      setProposalStatus("DRAFT");
       setMsg(data.note || "Estimate ready.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Estimate failed");
@@ -188,8 +258,13 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Draft failed");
       const d = data.draft;
+      const nextTotal =
+        liveTotals?.customerTotal ||
+        d.suggestedTotalPrice ||
+        form.totalPrice ||
+        0;
       setForm({
-        totalPrice: d.totalPrice,
+        totalPrice: nextTotal,
         includedScope: d.includedScope,
         exclusions: d.exclusions,
         materialAllowances: d.materialAllowances,
@@ -215,7 +290,15 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...form, totalPrice: Number(form.totalPrice) || 0 };
+      const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
+      const payload = {
+        ...form,
+        totalPrice: priced?.totals.customerTotal ?? Number(form.totalPrice) || 0,
+        estimateId: estimate?.estimateId || undefined,
+        lineItems: priced?.lineItems,
+        recomputeFromLines: Boolean(priced),
+        pricingSettings,
+      };
       const url = proposalId
         ? `/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}`
         : `/api/contractor/bathroom-jobs/${jobId}/proposals`;
@@ -227,7 +310,10 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
       setProposalId(data.id);
-      setMsg("Proposal saved — download PDF when ready.");
+      setProposalStatus(data.status || "DRAFT");
+      setForm((f) => ({ ...f, totalPrice: data.totalPrice }));
+      if (Array.isArray(data.lineItemsJson)) setLineItems(data.lineItemsJson);
+      setMsg("Draft saved. Approve before downloading the client PDF.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
     } finally {
@@ -235,8 +321,115 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     }
   };
 
+  const approveProposal = async () => {
+    if (!proposalId) {
+      setError("Save the proposal first.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
+      const payload = {
+        ...form,
+        totalPrice: priced?.totals.customerTotal ?? Number(form.totalPrice) || 0,
+        estimateId: estimate?.estimateId || undefined,
+        lineItems: priced?.lineItems,
+        recomputeFromLines: Boolean(priced),
+        pricingSettings,
+      };
+      const saveRes = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const saved = await saveRes.json();
+      if (!saveRes.ok) throw new Error(saved.error || "Save failed");
+
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acknowledgeBelowMinimumMargin: ackLowMargin,
+          overrideReason: ackLowMargin ? "Contractor acknowledged below-minimum margin" : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (data.code === "BELOW_MINIMUM_MARGIN") {
+          setError(data.error);
+          return;
+        }
+        throw new Error(data.error || "Approve failed");
+      }
+      setProposalStatus(data.proposal.status);
+      setForm((f) => ({ ...f, totalPrice: data.proposal.totalPrice ?? f.totalPrice }));
+      setMsg(data.note);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Approve failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sendToClient = async () => {
+    if (!proposalId) {
+      setError("Save and approve the proposal first.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresDays: 30 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Send failed");
+      setProposalStatus(data.proposal.status);
+      setShareUrl(data.shareUrl);
+      setShareExpiresAt(data.shareExpiresAt);
+      setMsg(data.note);
+      try {
+        await navigator.clipboard.writeText(data.shareUrl);
+        setMsg(`${data.note} Link copied to clipboard.`);
+      } catch {
+        /* clipboard may be blocked */
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Send failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const revokeShare = async () => {
+    if (!proposalId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/send`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Revoke failed");
+      setProposalStatus(data.proposal.status);
+      setShareUrl(null);
+      setShareExpiresAt(null);
+      setMsg("Client link revoked.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Revoke failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <p className="text-sm text-stone-600">Loading job…</p>;
   if (!project) return <p className="text-sm text-red-700">{error || "Job not found"}</p>;
+
+  const canSend = proposalStatus === "APPROVED" || proposalStatus === "SENT";
+  const lockedAccepted = proposalStatus === "ACCEPTED";
 
   return (
     <div className="space-y-6">
@@ -247,22 +440,40 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
           </Link>
           <p className="mt-2 text-xs uppercase tracking-[0.2em] text-stone-500">{companyName}</p>
           <h1 className="font-serif text-3xl text-stone-900">{project.jobTitle || project.clientName}</h1>
-          <p className="text-sm text-stone-500">{project.referenceNumber}</p>
+          <p className="text-sm text-stone-500">
+            {project.referenceNumber}
+            <span className="ml-2 rounded-full bg-stone-100 px-2 py-0.5 text-xs uppercase tracking-wide text-stone-600">
+              {proposalStatus.replace(/_/g, " ")}
+            </span>
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {proposalId && (
-            <a
-              href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf`}
-              className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
-            >
-              Download PDF
-            </a>
+            <>
+              <a
+                href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf?preview=1`}
+                className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
+              >
+                Draft PDF preview
+              </a>
+              {(proposalStatus === "APPROVED" ||
+                proposalStatus === "SENT" ||
+                proposalStatus === "ACCEPTED" ||
+                proposalStatus === "REVISION_REQUESTED") && (
+                <a
+                  href={`/api/contractor/bathroom-jobs/${jobId}/proposals/${proposalId}/pdf`}
+                  className="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-900"
+                >
+                  Download client PDF
+                </a>
+              )}
+            </>
           )}
           <Link
             href="/portal/contractor/proposal-studio/letterhead"
             className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-800 hover:bg-stone-50"
           >
-            Letterhead
+            Letterhead & pricing
           </Link>
         </div>
       </div>
@@ -270,7 +481,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       {error && <p className="text-sm text-red-700">{error}</p>}
       {msg && <p className="text-sm text-emerald-800">{msg}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-stone-200 bg-white p-5">
           <h2 className="text-base font-semibold text-stone-900">Job intake</h2>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -303,7 +514,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              placeholder="Describe what you’ll bid — AI will draft proposal fields you can edit."
+              placeholder="Describe the job — we draft proposal language; your pricing engine sets dollars."
             />
           </label>
           <div className="flex flex-wrap gap-2">
@@ -321,7 +532,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
               disabled={saving}
               className="rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40"
             >
-              Run planning estimate
+              Run estimate + price lines
             </button>
             <button
               type="button"
@@ -329,33 +540,79 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
               disabled={saving}
               className="rounded-lg bg-stone-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-40"
             >
-              Draft proposal from prompt
+              Draft proposal language
             </button>
           </div>
           {estimate && (
             <div className="rounded-xl bg-stone-50 p-4 text-sm text-stone-700">
-              <p className="font-medium text-stone-900">Internal planning range</p>
+              <p className="font-medium text-stone-900">Renovessa baseline planning range</p>
               <p className="mt-1 text-lg">
                 ${estimate.low.toLocaleString()} – ${estimate.high.toLocaleString()}
               </p>
-              <p className="text-xs text-stone-500">Mid ${estimate.mid.toLocaleString()} · not shown as your client price unless you choose it</p>
+              <p className="text-xs text-stone-500">
+                Mid ${estimate.mid.toLocaleString()} · reference only — your markup produces the client total
+              </p>
             </div>
           )}
         </section>
 
         <section className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
           <h2 className="text-base font-semibold text-stone-900">Client proposal</h2>
-          <p className="text-xs text-stone-500">Fully editable. Your letterhead appears on the PDF.</p>
+          <p className="text-xs text-stone-500">
+            Customer-facing copy. Internal costs stay on your side only.
+          </p>
 
-          <label className="block text-sm">
-            <span className="text-stone-500">Total price ($)</span>
-            <input
-              type="number"
-              value={form.totalPrice || ""}
-              onChange={(e) => setField("totalPrice", Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-lg font-semibold"
-            />
-          </label>
+          {liveTotals && (
+            <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
+              <p className="font-medium text-stone-900">Internal profitability</p>
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                <dt className="text-stone-500">Direct cost</dt>
+                <dd className="text-right tabular-nums">${liveTotals.directCostTotal.toLocaleString()}</dd>
+                <dt className="text-stone-500">Overhead</dt>
+                <dd className="text-right tabular-nums">${liveTotals.overheadAmount.toLocaleString()}</dd>
+                <dt className="text-stone-500">Contingency</dt>
+                <dd className="text-right tabular-nums">${liveTotals.contingencyAmount.toLocaleString()}</dd>
+                <dt className="text-stone-500">Profit</dt>
+                <dd className="text-right tabular-nums">${liveTotals.profitAmount.toLocaleString()}</dd>
+                <dt className="text-stone-500">Markup on cost</dt>
+                <dd className="text-right tabular-nums">{liveTotals.markupPercent}%</dd>
+                <dt className="text-stone-500">Gross margin</dt>
+                <dd className={`text-right tabular-nums ${liveTotals.belowMinimumMargin ? "text-amber-700 font-semibold" : ""}`}>
+                  {liveTotals.grossMarginPercent.toFixed(1)}%
+                </dd>
+                <dt className="font-medium text-stone-800">Customer total</dt>
+                <dd className="text-right text-base font-semibold tabular-nums">
+                  ${liveTotals.customerTotal.toLocaleString()}
+                </dd>
+              </dl>
+              {liveTotals.belowMinimumMargin && (
+                <label className="mt-3 flex items-start gap-2 text-xs text-amber-900">
+                  <input
+                    type="checkbox"
+                    checked={ackLowMargin}
+                    onChange={(e) => setAckLowMargin(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  <span>
+                    Margin is below your minimum ({liveTotals.minimumGrossMarginPercent}%). I acknowledge
+                    and want to approve anyway.
+                  </span>
+                </label>
+              )}
+            </div>
+          )}
+
+          {!liveTotals && (
+            <label className="block text-sm">
+              <span className="text-stone-500">Total price ($)</span>
+              <input
+                type="number"
+                value={form.totalPrice || ""}
+                onChange={(e) => setField("totalPrice", Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-lg font-semibold"
+              />
+            </label>
+          )}
 
           {(
             [
@@ -392,16 +649,160 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
             </label>
           ))}
 
-          <button
-            type="button"
-            onClick={saveProposal}
-            disabled={saving || !form.includedScope || !form.exclusions}
-            className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-          >
-            {proposalId ? "Update proposal" : "Save proposal"}
-          </button>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button
+              type="button"
+              onClick={saveProposal}
+              disabled={saving || lockedAccepted || !form.includedScope || !form.exclusions}
+              className="rounded-lg border border-stone-300 px-4 py-2 text-sm disabled:opacity-40"
+            >
+              {proposalId ? "Save draft" : "Create draft"}
+            </button>
+            <button
+              type="button"
+              onClick={approveProposal}
+              disabled={saving || !proposalId || lockedAccepted || proposalStatus === "APPROVED" || proposalStatus === "SENT"}
+              className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {proposalStatus === "APPROVED" || proposalStatus === "SENT" ? "Approved" : "Approve for client"}
+            </button>
+            <button
+              type="button"
+              onClick={sendToClient}
+              disabled={saving || !proposalId || !canSend || lockedAccepted}
+              className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            >
+              {proposalStatus === "SENT" ? "Re-send client link" : "Send client link"}
+            </button>
+          </div>
+
+          {shareUrl && (
+            <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm">
+              <p className="font-medium text-stone-900">Client share link</p>
+              <p className="mt-1 break-all text-xs text-stone-600">{shareUrl}</p>
+              <p className="mt-1 text-xs text-stone-500">
+                Views: {viewCount}
+                {shareExpiresAt ? ` · expires ${new Date(shareExpiresAt).toLocaleDateString()}` : ""}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="rounded border border-stone-300 px-2 py-1 text-xs"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(shareUrl);
+                    setMsg("Link copied.");
+                  }}
+                >
+                  Copy link
+                </button>
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded border border-stone-300 px-2 py-1 text-xs"
+                >
+                  Open
+                </a>
+                {!lockedAccepted && (
+                  <button
+                    type="button"
+                    onClick={revokeShare}
+                    disabled={saving}
+                    className="rounded border border-stone-300 px-2 py-1 text-xs text-red-800 disabled:opacity-40"
+                  >
+                    Revoke link
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {clientMessages.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-sm font-medium text-stone-900">Client messages</p>
+              {clientMessages.map((m) => (
+                <div key={m.id} className="rounded-lg border border-stone-200 p-2 text-xs text-stone-700">
+                  <p className="uppercase tracking-wide text-stone-400">
+                    {m.kind.replace(/_/g, " ")}
+                    {m.authorName ? ` · ${m.authorName}` : ""}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap">{m.body}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
+
+      {lineItems.length > 0 && (
+        <section className="rounded-2xl border border-stone-200 bg-white p-5">
+          <h2 className="text-base font-semibold text-stone-900">Line items (internal)</h2>
+          <p className="mt-1 text-xs text-stone-500">
+            Seeded from Renovessa baseline, then your markup. Edit qty / unit cost / markup — customer never sees this table.
+          </p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="border-b border-stone-200 text-xs uppercase tracking-wide text-stone-500">
+                <tr>
+                  <th className="py-2 pr-3">Include</th>
+                  <th className="py-2 pr-3">Description</th>
+                  <th className="py-2 pr-3">Qty</th>
+                  <th className="py-2 pr-3">Unit cost</th>
+                  <th className="py-2 pr-3">Markup %</th>
+                  <th className="py-2 pr-3 text-right">Customer $</th>
+                  <th className="py-2 pl-3">Source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.map((li) => (
+                  <tr key={li.key} className="border-b border-stone-100 align-top">
+                    <td className="py-2 pr-3">
+                      <input
+                        type="checkbox"
+                        checked={li.included}
+                        onChange={(e) => updateLine(li.key, { included: e.target.checked })}
+                      />
+                    </td>
+                    <td className="py-2 pr-3">
+                      <div className="font-medium text-stone-800">{li.description}</div>
+                      <div className="text-xs text-stone-400">{li.category}</div>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="number"
+                        value={li.quantity}
+                        onChange={(e) => updateLine(li.key, { quantity: Number(e.target.value) })}
+                        className="w-20 rounded border border-stone-300 px-2 py-1"
+                      />
+                      <div className="text-xs text-stone-400">{li.unit}</div>
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="number"
+                        value={li.unitCost}
+                        onChange={(e) => updateLine(li.key, { unitCost: Number(e.target.value) })}
+                        className="w-24 rounded border border-stone-300 px-2 py-1"
+                      />
+                    </td>
+                    <td className="py-2 pr-3">
+                      <input
+                        type="number"
+                        value={li.markupPercent}
+                        onChange={(e) => updateLine(li.key, { markupPercent: Number(e.target.value) })}
+                        className="w-20 rounded border border-stone-300 px-2 py-1"
+                      />
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      ${(li.included ? recalculatePricing([li], pricingSettings).lineItems[0].customerPrice : 0).toLocaleString()}
+                    </td>
+                    <td className="py-2 pl-3 text-xs text-stone-500">{li.costSource.replace(/_/g, " ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

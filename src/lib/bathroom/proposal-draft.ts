@@ -1,11 +1,13 @@
 /**
  * Prompt-assisted proposal draft for contractors.
  * Seeds editable fields — contractor always reviews/overrides.
- * Unlike homeowner advisor, contractors may include their own pricing intent.
+ * Pricing comes from the deterministic estimate / contractor pricing layer only.
+ * Unlike homeowner advisor, contractors may include their own scope intent.
  */
 
 export type ProposalDraft = {
-  totalPrice: number;
+  /** Suggested customer total from estimate mid — never from AI price invention. */
+  suggestedTotalPrice: number | null;
   includedScope: string;
   exclusions: string;
   materialAllowances: string;
@@ -21,14 +23,6 @@ export type ProposalDraft = {
   note: string;
 };
 
-function moneyFromPrompt(prompt: string, fallback: number): number {
-  const withK = prompt.match(/\$\s?([\d,.]+)\s*k\b/i) || prompt.match(/([\d.]+)\s*k\b/i);
-  if (withK) return Math.round(Number(withK[1].replace(/,/g, "")) * 1000);
-  const m = prompt.match(/\$\s?([\d,]+)/);
-  if (m) return Number(m[1].replace(/,/g, ""));
-  return fallback;
-}
-
 export function draftProposalFromPrompt(params: {
   prompt: string;
   companyName: string;
@@ -40,8 +34,6 @@ export function draftProposalFromPrompt(params: {
 }): ProposalDraft {
   const { prompt, companyName, clientName, bathroomType, projectObjective, estimateMid, answers } = params;
   const lower = prompt.toLowerCase();
-  const seed = estimateMid && estimateMid > 0 ? estimateMid : 18500;
-  const totalPrice = moneyFromPrompt(prompt, seed);
 
   const objective = projectObjective || answers?.projectObjective || "";
   const type = bathroomType || answers?.bathroomType || "bathroom";
@@ -81,8 +73,11 @@ export function draftProposalFromPrompt(params: {
     suggested.push("After demolition, verify substrate and plumbing locations before final material orders.");
   }
 
+  const suggestedTotalPrice =
+    estimateMid && estimateMid > 0 ? Math.round(estimateMid) : null;
+
   return {
-    totalPrice,
+    suggestedTotalPrice,
     includedScope: scopeBits.join("\n\n"),
     exclusions,
     materialAllowances: answers?.fixtureTier === "premium"
@@ -99,7 +94,9 @@ export function draftProposalFromPrompt(params: {
     changeOrderProcess: "Any scope change requires written approval (email acceptable) with price and schedule impact before work proceeds.",
     optionalUpgrades: "Frameless glass · niche · bench · comfort-height toilet · exhaust fan upgrade · lighting package",
     suggestedChanges: suggested.join("\n"),
-    note: "Draft generated from your prompt and job details. Edit freely before sending to your client — this is your proposal, not a platform quote.",
+    note: suggestedTotalPrice
+      ? "Draft language from your prompt. Customer price is seeded from your priced estimate — edit line items and approve before sending."
+      : "Draft language from your prompt. Run a planning estimate and apply your markup before setting the customer total.",
   };
 }
 

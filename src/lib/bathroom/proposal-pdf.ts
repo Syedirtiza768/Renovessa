@@ -47,8 +47,12 @@ export type ProposalPdfInput = {
     optionalUpgrades?: string | null;
     suggestedChanges?: string | null;
     expirationDate?: Date | string | null;
+    version?: number | null;
+    approvedAt?: Date | string | null;
   };
   generatedAt?: Date;
+  /** Watermark as draft — not a client-ready document. */
+  draftPreview?: boolean;
 };
 
 export function renderContractorProposalPdf(input: ProposalPdfInput): PdfDoc {
@@ -84,9 +88,16 @@ export function renderContractorProposalPdf(input: ProposalPdfInput): PdfDoc {
   doc.fontSize(16).font("Helvetica-Bold").fillColor("#111").text("Bathroom Remodel Proposal");
   doc.moveDown(0.25);
   doc.fontSize(10).font("Helvetica").fillColor("#555");
-  doc.text(`Proposal # ${job.referenceNumber}`);
+  doc.text(`Proposal # ${job.referenceNumber}${p.version ? ` · v${p.version}` : ""}`);
   doc.text(`Date: ${when.toLocaleDateString()}`);
+  if (p.approvedAt) {
+    doc.text(`Approved: ${new Date(p.approvedAt).toLocaleDateString()}`);
+  }
   if (job.jobTitle) doc.text(`Project: ${job.jobTitle}`);
+  if (input.draftPreview) {
+    doc.moveDown(0.35);
+    doc.fontSize(12).font("Helvetica-Bold").fillColor("#b45309").text("DRAFT PREVIEW — NOT APPROVED FOR CLIENT");
+  }
   doc.moveDown(0.6);
 
   section(doc, "Prepared for");
