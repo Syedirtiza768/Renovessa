@@ -293,7 +293,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
       const payload = {
         ...form,
-        totalPrice: priced?.totals.customerTotal ?? Number(form.totalPrice) || 0,
+        totalPrice: priced?.totals.customerTotal ?? (Number(form.totalPrice) || 0),
         estimateId: estimate?.estimateId || undefined,
         lineItems: priced?.lineItems,
         recomputeFromLines: Boolean(priced),
@@ -332,7 +332,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
       const payload = {
         ...form,
-        totalPrice: priced?.totals.customerTotal ?? Number(form.totalPrice) || 0,
+        totalPrice: priced?.totals.customerTotal ?? (Number(form.totalPrice) || 0),
         estimateId: estimate?.estimateId || undefined,
         lineItems: priced?.lineItems,
         recomputeFromLines: Boolean(priced),
