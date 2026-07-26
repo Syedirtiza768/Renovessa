@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { logAuditEvent } from "@/lib/audit";
@@ -64,7 +65,7 @@ export async function POST(
         // Clear prior decline if re-sending a revised proposal
         declinedAt: null,
         acceptedAt: null,
-        acceptanceSnapshotJson: null,
+        acceptanceSnapshotJson: Prisma.DbNull,
         acceptanceName: null,
         acceptanceEmail: null,
         acceptanceIp: null,
