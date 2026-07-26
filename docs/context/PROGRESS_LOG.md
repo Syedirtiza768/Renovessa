@@ -1,4 +1,29 @@
 
+# 2026-07-26 — Bathroom Remodeling Experience Phase 2 implemented
+
+- Added audit event types: `BATHROOM_LAYOUT_SAVED`, `BATHROOM_PERMIT_ASSESSED`, `BATHROOM_SHARE_LINK_CREATED`, `BATHROOM_SHARE_LINK_REVOKED`, `BATHROOM_PHOTO_UPLOADED`, `BATHROOM_DIAGRAM_SAVED`. Wired anonymous project creation logging and permit/share-link audit events.
+- Enhanced `/api/bathroom-estimator/analytics` with bathroom type distribution and recent audit events.
+- Installed `pdfkit`; added `src/lib/bathroom/brief-pdf.ts` and `GET /api/bathroom-projects/[id]/brief/pdf` endpoint. Added "Generate brief + Download PDF" to planner estimate step.
+- Added admin screens under `/portal/admin/bathroom/`: projects list, estimator config (publish/retire/clone/seed), content version CRUD, analytics dashboard. Nav items gated by `bathroomRockvilleEnabled()`.
+- Built `src/components/bathroom/DiagramBuilder.tsx` — 2D SVG diagram builder with fixture palette, position editing, live geometry calculations, validation issues, save to layouts API. Integrated as existing/proposed layout steps in planner (gated by `diagramBuilder` flag).
+- Added homeowner portal pages: `/portal/homeowner/bathroom-projects` (list) and `/[id]` (detail with proposal comparison table, price spread, credential badges). Updated homeowner nav.
+- Added `src/lib/bathroom/advisor-prompt.ts` with strict bathroom advisor system prompt and output sanitization (detects/replaces price, dimension, and permit-determination claims). Added `POST /api/bathroom-projects/[id]/advisor` endpoint with out-of-scope routing and audit logging. Gated by `BATHROOM_AI_INTERPRETATION_ENABLED`.
+- Added `src/lib/bathroom/content-templates.ts` with full article bodies for cost, permits, planning-guide, tub-to-shower, accessible-bathrooms. Added seed script `scripts/seed-bathroom-content.ts` (`npm run bathroom:seed-content`).
+- Installed `vitest`; added `vitest.config.ts` with `@/` path alias. Added 27 unit tests covering geometry, confidence, estimator, and advisor guardrails. Run with `npm test`.
+- Updated `docs/context/CURRENT_STATE.md` with Phase 2 status.
+
+# 2026-07-26 — Bathroom Remodeling Experience Phase 1 implemented
+
+- Wrote pre-implementation note (`docs/planning/BATHROOM_REMODELING_IMPLEMENTATION_NOTE.md`) covering reused modules, extensions, new modules, DB changes, API/UI routes, integration/migration/security risks, and recommended order.
+- Added Prisma models and enums for the full bathroom experience; regenerated Prisma client. Added `answersJson` to `BathroomProject` for autosave.
+- Added `src/lib/feature-flags.ts` with env-driven `BATHROOM_*` flags + `BATHROOM_DEMO_MODE`; defaults OFF in production.
+- Added pure-function core in `src/lib/bathroom/`: config, planner-steps, geometry, validation, confidence, estimator, budget-scenarios, permits, project-brief, schemas, authorization.
+- Added APIs: `POST/GET /api/bathroom-projects`, `GET/PATCH /api/bathroom-projects/[id]`, layouts, estimates, permits, brief, RFQ promotion; `GET/POST /api/bathroom-estimator/configurations[/[id]]`, content, projects, analytics, and live `POST /api/bathroom-estimator/preview`.
+- Added public routes under `/bathroom-remodeling/rockville-md` (landing + cost, permits, planning-guide, tub-to-shower, walk-in-showers, primary-bathrooms, small-bathrooms, accessible-bathrooms, contractors) reusing `PublicPage` shell.
+- Added planner UI at `/bathroom-remodeling/rockville-md/planner` with step state machine, localStorage + server autosave, intro/measurements/scope/conditions/permits/estimate steps, live estimate preview with confidence and Essential/Balanced/Premium scenarios.
+- Updated `src/app/sitemap.ts` to include bathroom routes when the landing flag is on.
+- Updated `docs/context/CURRENT_STATE.md` with bathroom experience status.
+
 # 2026-07-23 — RFQ Pilot 15 sent
 
 - Pushed and deployed commit `d6736b3` (fail-closed Pilot 15 tooling) to production

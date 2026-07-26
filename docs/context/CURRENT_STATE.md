@@ -79,6 +79,35 @@ Password: `demo1234`
 - Search Console verification and privacy-safe organic conversion analytics
 - Production-grade user-initiated password-recovery email flow, privacy-request UI, MFA, and public-endpoint rate limiting
 
+## Bathroom Remodeling Experience (Phase 1 + Phase 2 — Implemented 2026-07-26)
+
+A specialized Rockville, MD bathroom remodeling planner layered on the existing Renovessa stack. Gated behind environment feature flags (`BATHROOM_*`); defaults OFF in production. See `docs/planning/BATHROOM_REMODELING_IMPLEMENTATION_NOTE.md` for the full pre-implementation note.
+
+### Implemented (Phase 1)
+- **Prisma schema** — `BathroomProject`, `BathroomMeasurement`, `BathroomLayout`, `BathroomFixture`, `BathroomCondition`, `BathroomSelection`, `EstimatorConfiguration`, `BathroomEstimate`, `BathroomEstimateLineItem`, `PermitAssessment`, `ProjectBrief`, `ContractorProposal`, `BathroomContactRelease`, `BathroomContentVersion` + new enums. `answersJson` blob on `BathroomProject` for autosave.
+- **Feature flags** — `src/lib/feature-flags.ts` with `bathroomRockvilleEnabled`, `bathroomPlannerUsable`, `bathroomEstimatorEnabled`, `bathroomFlagSnapshot`, and `BATHROOM_DEMO_MODE`.
+- **Core logic (pure functions)** — `src/lib/bathroom/`: config, planner-steps, geometry, validation, confidence, estimator, budget-scenarios, permits, project-brief, schemas, authorization.
+- **APIs** — `POST/GET /api/bathroom-projects`, `GET/PATCH /api/bathroom-projects/[id]`, layouts, estimates, permits, brief, RFQ promotion; `GET/POST /api/bathroom-estimator/configurations`, `GET/POST /api/bathroom-estimator/content`, `GET /api/bathroom-estimator/projects`, `GET /api/bathroom-estimator/analytics`, `POST /api/bathroom-estimator/preview` (live planner estimate).
+- **Public routes** — `/bathroom-remodeling/rockville-md` (landing) + sub-routes: `/cost`, `/permits`, `/planning-guide`, `/tub-to-shower`, `/walk-in-showers`, `/primary-bathrooms`, `/small-bathrooms`, `/accessible-bathrooms`, `/contractors`. All reuse `PublicPage` shell and `pageMetadata`.
+- **Planner UI** — `/bathroom-remodeling/rockville-md/planner` with step state machine, autosave to localStorage + server, intro/measurements/scope/conditions/permits/estimate steps, live estimate preview with confidence and budget scenarios.
+- **Sitemap** — bathroom routes added conditionally when `BATHROOM_ROCKVILLE_LANDING_ENABLED` is on.
+
+### Implemented (Phase 2)
+- **Analytics + audit logging** — anonymous project creation logged; `BATHROOM_LAYOUT_SAVED`, `BATHROOM_PERMIT_ASSESSED`, `BATHROOM_SHARE_LINK_CREATED`, `BATHROOM_SHARE_LINK_REVOKED`, `BATHROOM_PHOTO_UPLOADED`, `BATHROOM_DIAGRAM_SAVED` event types added; enhanced analytics endpoint with bathroom type distribution and recent audit events.
+- **Project brief PDF** — `src/lib/bathroom/brief-pdf.ts` renders structured brief to PDF via `pdfkit`; `GET /api/bathroom-projects/[id]/brief/pdf` endpoint; "Generate brief + Download PDF" in planner estimate step.
+- **Admin screens** — `/portal/admin/bathroom/projects` (project list), `/portal/admin/bathroom/estimator-config` (publish/retire/clone/seed), `/portal/admin/bathroom/content` (content version CRUD), `/portal/admin/bathroom/analytics` (funnel + distributions + audit events). Nav items gated by feature flag.
+- **2D diagram builder** — `src/components/bathroom/DiagramBuilder.tsx` with SVG preview, fixture palette, position editing, live geometry calculations, validation issues, save to layouts API. Integrated as existing/proposed layout steps in planner (gated by `diagramBuilder` flag).
+- **Contractor proposal comparison** — `/portal/homeowner/bathroom-projects` (list) + `/[id]` (detail with proposal table, price spread, credential badges). Homeowner nav updated.
+- **AI advisor with guardrails** — `src/lib/bathroom/advisor-prompt.ts` with strict system prompt (no prices, dimensions, permit determinations, diagnoses, contractor guarantees) and output sanitization (detects/replaces prohibited claims). `POST /api/bathroom-projects/[id]/advisor` endpoint with out-of-scope routing and audit logging. Gated by `BATHROOM_AI_INTERPRETATION_ENABLED`.
+- **Authority content templates** — `src/lib/bathroom/content-templates.ts` with full article bodies for cost, permits, planning-guide, tub-to-shower, accessible-bathrooms. Seed script at `scripts/seed-bathroom-content.ts` (`npm run bathroom:seed-content`).
+- **Tests** — vitest configured with `@/` path alias; 27 unit tests covering geometry, confidence, estimator, and advisor guardrails. Run with `npm test`.
+
+### Not Yet Implemented (Phase 3+)
+- Photo upload + existing-condition assessment with object storage (requires S3-compatible storage)
+- Background job processing
+- Production-grade rate limiting on bathroom endpoints
+- Search Console verification and privacy-safe organic conversion analytics for bathroom pages
+
 ## Run
 
 ```bash

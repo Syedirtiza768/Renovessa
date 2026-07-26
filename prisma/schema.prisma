@@ -119,6 +119,17 @@ enum AuditEventType {
   EMAIL_SENT
   EMAIL_REPLIED
   CAMPAIGN_SENT
+  BATHROOM_PROJECT_CREATED
+  BATHROOM_ESTIMATE_GENERATED
+  BATHROOM_BRIEF_GENERATED
+  BATHROOM_CONTACT_RELEASED
+  BATHROOM_PROPOSAL_SUBMITTED
+  BATHROOM_LAYOUT_SAVED
+  BATHROOM_PERMIT_ASSESSED
+  BATHROOM_PHOTO_UPLOADED
+  BATHROOM_DIAGRAM_SAVED
+  BATHROOM_SHARE_LINK_CREATED
+  BATHROOM_SHARE_LINK_REVOKED
 }
 
 enum ConsentEventAction {
@@ -149,18 +160,20 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  contractorProfile  ContractorProfile?
-  projectRequests    ProjectRequest[]           @relation("HomeownerProjects")
-  assignedLeads      ProjectRequest[]           @relation("AssignedAgent")
-  auditEvents        AuditEvent[]               @relation("AuditActor")
-  notifications      Notification[]
-  approvedInvoices   Invoice[]                  @relation("ApprovedBy")
-  twilioPhoneNumbers TwilioPhoneNumber[]        @relation("AssignedAgentNumbers")
-  callLogs           CallLog[]                  @relation("AgentCalls")
-  emailMessages      EmailMessage[]             @relation("AgentEmails")
-  emailCampaigns     EmailCampaign[]            @relation("CampaignOwner")
-  consentEvents      ConsentEvent[]
-  suppressions       CommunicationSuppression[]
+  contractorProfile       ContractorProfile?
+  projectRequests         ProjectRequest[]           @relation("HomeownerProjects")
+  assignedLeads           ProjectRequest[]           @relation("AssignedAgent")
+  auditEvents             AuditEvent[]               @relation("AuditActor")
+  notifications           Notification[]
+  approvedInvoices        Invoice[]                  @relation("ApprovedBy")
+  twilioPhoneNumbers      TwilioPhoneNumber[]        @relation("AssignedAgentNumbers")
+  callLogs                CallLog[]                  @relation("AgentCalls")
+  emailMessages           EmailMessage[]             @relation("AgentEmails")
+  emailCampaigns          EmailCampaign[]            @relation("CampaignOwner")
+  consentEvents           ConsentEvent[]
+  suppressions            CommunicationSuppression[]
+  bathroomProjects        BathroomProject[]          @relation("HomeownerBathroomProjects")
+  bathroomContactReleases BathroomContactRelease[]   @relation("BathroomContactReleaser")
 }
 
 model ContractorProfile {
@@ -191,13 +204,15 @@ model ContractorProfile {
   createdAt               DateTime       @default(now())
   updatedAt               DateTime       @updatedAt
 
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  appointments  Appointment[]
-  capacityCells CapacityCell[] @relation("CellContractors")
-  invoices      Invoice[]
-  disputes      Dispute[]
-  callLogs      CallLog[]
-  emailMessages EmailMessage[]
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointments            Appointment[]
+  capacityCells           CapacityCell[]           @relation("CellContractors")
+  invoices                Invoice[]
+  disputes                Dispute[]
+  callLogs                CallLog[]
+  emailMessages           EmailMessage[]
+  bathroomProposals       ContractorProposal[]
+  bathroomContactReleases BathroomContactRelease[]
 }
 
 model CapacityCell {
@@ -256,16 +271,17 @@ model ProjectRequest {
   createdAt                   DateTime   @default(now())
   updatedAt                   DateTime   @updatedAt
 
-  homeowner     User?                      @relation("HomeownerProjects", fields: [homeownerId], references: [id])
-  assignedAgent User?                      @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
-  appointment   Appointment?
-  auditEvents   AuditEvent[]
-  dispute       Dispute?
-  caseStudy     CaseStudy?
-  callLogs      CallLog[]
-  emailMessages EmailMessage[]
-  consentEvents ConsentEvent[]
-  suppressions  CommunicationSuppression[]
+  homeowner       User?                      @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  assignedAgent   User?                      @relation("AssignedAgent", fields: [assignedAgentId], references: [id])
+  appointment     Appointment?
+  auditEvents     AuditEvent[]
+  dispute         Dispute?
+  caseStudy       CaseStudy?
+  callLogs        CallLog[]
+  emailMessages   EmailMessage[]
+  consentEvents   ConsentEvent[]
+  suppressions    CommunicationSuppression[]
+  bathroomProject BathroomProject?
 }
 
 model Appointment {
@@ -295,11 +311,12 @@ model Appointment {
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 
-  projectRequest ProjectRequest    @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
-  contractor     ContractorProfile @relation(fields: [contractorId], references: [id])
-  invoice        Invoice?
-  auditEvents    AuditEvent[]
-  feedbacks      Feedback[]
+  projectRequest    ProjectRequest       @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  contractor        ContractorProfile    @relation(fields: [contractorId], references: [id])
+  invoice           Invoice?
+  auditEvents       AuditEvent[]
+  feedbacks         Feedback[]
+  bathroomProposals ContractorProposal[]
 }
 
 model AuditEvent {
@@ -312,9 +329,12 @@ model AuditEvent {
   appointmentId    String?
   createdAt        DateTime       @default(now())
 
-  actor          User?           @relation("AuditActor", fields: [actorId], references: [id])
-  projectRequest ProjectRequest? @relation(fields: [projectRequestId], references: [id])
-  appointment    Appointment?    @relation(fields: [appointmentId], references: [id])
+  actor           User?            @relation("AuditActor", fields: [actorId], references: [id])
+  projectRequest  ProjectRequest?  @relation(fields: [projectRequestId], references: [id])
+  appointment     Appointment?     @relation(fields: [appointmentId], references: [id])
+  bathroomProject BathroomProject? @relation("BathroomProjectAudit", fields: [bathroomProjectId], references: [id], onDelete: SetNull)
+
+  bathroomProjectId String?
 }
 
 model Dispute {
@@ -641,4 +661,387 @@ model EmailTemplate {
   campaigns EmailCampaign[]
 
   @@index([audience])
+}
+
+// ===========================================================================
+// Bathroom Remodeling Experience
+// See docs/planning/BATHROOM_REMODELING_IMPLEMENTATION_NOTE.md
+// All models are additive; no existing model is altered.
+// ===========================================================================
+
+enum BathroomProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  BRIEF_READY
+  RFQ_SUBMITTED
+  MATCHING
+  CONTRACTOR_INVITED
+  CONTACT_RELEASED
+  PROPOSAL_RECEIVED
+  CLOSED
+  WITHDRAWN
+}
+
+enum BathroomLayoutType {
+  EXISTING
+  PROPOSED
+  ESSENTIAL
+  BALANCED
+  PREMIUM
+}
+
+enum EstimatorConfigStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum ConfidenceLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum PermitLikelihood {
+  LIKELY_REQUIRED
+  MAY_BE_REQUIRED
+  CONTRACTOR_VERIFICATION_NEEDED
+  JURISDICTION_REVIEW_NEEDED
+  UNLIKELY
+}
+
+enum BathroomProposalStatus {
+  SUBMITTED
+  WITHDRAWN
+  EXPIRED
+  ACCEPTED
+  DECLINED
+}
+
+/// Top-level bathroom remodeling project. Linked to a homeowner User when
+/// authenticated; anonymous drafts carry a clientGeneratedId instead.
+model BathroomProject {
+  id                   String                @id @default(cuid())
+  referenceNumber      String                @unique
+  homeownerId          String?
+  // When the homeowner promotes this to a bid request, the resulting RFQ.
+  projectRequestId     String?               @unique
+  status               BathroomProjectStatus @default(DRAFT)
+  plannerMode          String                @default("detailed") // "quick" | "detailed"
+  bathroomType         String?
+  projectObjective     String?
+  propertyType         String?
+  ownershipStatus      String?
+  occupancyStatus      String?
+  jurisdictionStatus   String?
+  budgetMinimum        Int?
+  budgetMaximum        Int?
+  desiredStartDate     String?
+  timelineCategory     String?
+  qualificationGrade   String?
+  confidenceScore      String? // stores ConfidenceLevel
+  currentStep          String?
+  completionPercentage Int                   @default(0)
+  // Freeform planner answers blob (Phase 1 autosave). Structured fields above
+  // remain the canonical source for reporting; this captures the full answer
+  // set including measurements, finishes, conditions, and permit answers.
+  answersJson          Json?
+  // Anonymous draft linkage (client-generated UUID persisted in localStorage).
+  clientGeneratedId    String?
+  isDemo               Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  homeowner         User?                    @relation("HomeownerBathroomProjects", fields: [homeownerId], references: [id], onDelete: Cascade)
+  projectRequest    ProjectRequest?          @relation(fields: [projectRequestId], references: [id], onDelete: SetNull)
+  measurements      BathroomMeasurement[]
+  layouts           BathroomLayout[]
+  conditions        BathroomCondition[]
+  selections        BathroomSelection[]
+  estimates         BathroomEstimate[]
+  permitAssessments PermitAssessment[]
+  briefs            ProjectBrief[]
+  proposals         ContractorProposal[]
+  auditEvents       AuditEvent[]             @relation("BathroomProjectAudit")
+  contactReleases   BathroomContactRelease[]
+
+  @@index([homeownerId])
+  @@index([status])
+  @@index([clientGeneratedId])
+}
+
+model BathroomMeasurement {
+  id                String    @id @default(cuid())
+  projectId         String
+  measurementMethod String // "simple" | "guided" | "manual" | "upload"
+  unitSystem        String    @default("imperial")
+  ceilingHeight     Float?
+  isConfirmed       Boolean   @default(false)
+  confirmedAt       DateTime?
+  source            String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model BathroomLayout {
+  id              String             @id @default(cuid())
+  projectId       String
+  layoutType      BathroomLayoutType
+  version         Int                @default(1)
+  name            String?
+  geometryJson    Json
+  calculationJson Json?
+  validationJson  Json?
+  isActive        Boolean            @default(true)
+  isConfirmed     Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  project  BathroomProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fixtures BathroomFixture[]
+
+  @@index([projectId, layoutType])
+}
+
+model BathroomFixture {
+  id             String   @id @default(cuid())
+  layoutId       String
+  fixtureType    String
+  positionX      Float
+  positionY      Float
+  width          Float?
+  depth          Float?
+  rotation       Float    @default(0)
+  existingStatus String?
+  proposedAction String?
+  qualityTier    String?
+  brand          String?
+  model          String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  layout BathroomLayout @relation(fields: [layoutId], references: [id], onDelete: Cascade)
+
+  @@index([layoutId])
+}
+
+model BathroomCondition {
+  id                 String   @id @default(cuid())
+  projectId          String
+  conditionType      String
+  severity           String?
+  homeownerReported  Boolean  @default(true)
+  inspectionRequired Boolean  @default(false)
+  notes              String?
+  mediaIds           String[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model BathroomSelection {
+  id            String   @id @default(cuid())
+  projectId     String
+  category      String
+  selectionType String?
+  qualityTier   String?
+  brand         String?
+  model         String?
+  quantity      Float?
+  unit          String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, category])
+}
+
+/// Versioned, dated, status-controlled estimator configuration. Every
+/// generated BathroomEstimate references the exact configuration version used.
+model EstimatorConfiguration {
+  id                String                @id @default(cuid())
+  name              String
+  version           String                @unique
+  locationId        String?
+  tradeId           String?
+  validFrom         DateTime
+  validTo           DateTime?
+  status            EstimatorConfigStatus @default(DRAFT)
+  configurationJson Json
+  methodology       String?
+  createdBy         String?
+  approvedBy        String?
+  createdAt         DateTime              @default(now())
+  publishedAt       DateTime?
+
+  estimates BathroomEstimate[]
+
+  @@index([status])
+  @@index([version])
+}
+
+model BathroomEstimate {
+  id                   String          @id @default(cuid())
+  projectId            String
+  configurationId      String
+  version              Int             @default(1)
+  lowAmount            Int
+  expectedLowAmount    Int
+  expectedHighAmount   Int
+  highComplexityAmount Int
+  contingencyAmount    Int
+  confidenceLevel      ConfidenceLevel
+  assumptionsJson      Json
+  unknownsJson         Json
+  exclusionsJson       Json
+  costDriversJson      Json
+  inputSnapshotJson    Json
+  createdAt            DateTime        @default(now())
+
+  project       BathroomProject            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  configuration EstimatorConfiguration     @relation(fields: [configurationId], references: [id])
+  lineItems     BathroomEstimateLineItem[]
+
+  @@index([projectId])
+  @@index([configurationId])
+}
+
+model BathroomEstimateLineItem {
+  id                   String  @id @default(cuid())
+  estimateId           String
+  category             String
+  description          String
+  quantity             Float
+  unit                 String
+  unitRate             Float
+  lowAmount            Int
+  highAmount           Int
+  multiplier           Float   @default(1)
+  calculationReference String?
+  sortOrder            Int     @default(0)
+
+  estimate BathroomEstimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+
+  @@index([estimateId])
+}
+
+model PermitAssessment {
+  id                         String           @id @default(cuid())
+  projectId                  String
+  jurisdiction               String
+  buildingPermitLikelihood   PermitLikelihood
+  plumbingPermitLikelihood   PermitLikelihood
+  electricalPermitLikelihood PermitLikelihood
+  mechanicalPermitLikelihood PermitLikelihood
+  hoaReviewLikelihood        PermitLikelihood
+  reviewRequired             Boolean          @default(false)
+  assumptionsJson            Json
+  sourceVersion              String
+  createdAt                  DateTime         @default(now())
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ProjectBrief {
+  id             String    @id @default(cuid())
+  projectId      String
+  version        Int       @default(1)
+  briefJson      Json
+  pdfUrl         String?
+  shareToken     String?   @unique
+  shareExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+/// Structured contractor proposal for a bathroom project. Does not duplicate
+/// Appointment; linked to it when an appointment is scheduled.
+model ContractorProposal {
+  id                  String                 @id @default(cuid())
+  projectId           String
+  contractorId        String
+  appointmentId       String?
+  status              BathroomProposalStatus @default(SUBMITTED)
+  totalPrice          Int
+  includedScope       String
+  exclusions          String
+  materialAllowances  String?
+  fixtureAllowances   String?
+  permitHandling      String?
+  estimatedStartDate  String?
+  estimatedDuration   String?
+  paymentSchedule     String?
+  warranty            String?
+  changeOrderProcess  String?
+  optionalUpgrades    String?
+  expirationDate      DateTime?
+  proposalDocumentUrl String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  project     BathroomProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractor  ContractorProfile @relation(fields: [contractorId], references: [id])
+  appointment Appointment?      @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([contractorId])
+}
+
+/// Audit record for every contact release to a contractor.
+model BathroomContactRelease {
+  id           String   @id @default(cuid())
+  projectId    String
+  contractorId String
+  releasedBy   String
+  reason       String
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  project    BathroomProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractor ContractorProfile @relation(fields: [contractorId], references: [id])
+  releaser   User              @relation("BathroomContactReleaser", fields: [releasedBy], references: [id])
+
+  @@index([projectId])
+  @@index([contractorId])
+}
+
+/// Admin-managed authority content blocks (cost guide, permit guide, FAQ, etc.).
+model BathroomContentVersion {
+  id                 String    @id @default(cuid())
+  slug               String    @unique
+  title              String
+  bodyHtml           String    @db.Text
+  bodyText           String    @db.Text
+  author             String?
+  reviewer           String?
+  methodology        String?
+  sourceLinks        String[]
+  editorialNotes     String?
+  applicableLocation String?
+  applicableTrade    String?
+  status             String    @default("draft") // draft | published | retired
+  changeHistory      Json?
+  lastReviewedAt     DateTime?
+  lastUpdatedAt      DateTime  @default(now())
+  createdAt          DateTime  @default(now())
+
+  @@index([slug])
+  @@index([status])
 }

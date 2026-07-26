@@ -1,5 +1,25 @@
 # Next Steps
 
+## Bathroom Remodeling Experience — Phase 3
+
+- **Photo upload + existing-condition assessment** — requires S3-compatible object storage; integrate with `BathroomCondition` and `BathroomLayout` models; wire `BATHROOM_PHOTO_UPLOADED` audit event
+- **Background job processing** — move brief generation, PDF rendering, and email notifications to a job queue
+- **Production-grade rate limiting** — replace in-memory rate limiting with a shared store (Redis) for multi-instance deployments
+- **Search Console verification** — submit bathroom sitemap, track organic conversions for bathroom pages
+- **Contractor proposal submission UI** — allow contractors to submit proposals via the contractor portal
+- **Share link public view** — render the brief via share token for contractors without accounts
+
+## Bathroom Remodeling Experience — Phase 2 (Completed 2026-07-26)
+
+- **Diagram builder** — 2D existing/proposed layout editor with walls, doors, fixtures, plumbing/electrical reference points; geometry engine already exists in `src/lib/bathroom/geometry.ts`
+- **Photo upload + existing-condition assessment** — requires S3-compatible object storage; integrate with `BathroomCondition` and `BathroomLayout` models
+- **Project brief PDF** — render `buildProjectBrief` output to a downloadable PDF for the contractor-ready brief
+- **Admin estimator config + content screens** — UI for `EstimatorConfiguration` publish/retire/clone and `BathroomContentVersion` management
+- **Authority content templates** — full article bodies for the bathroom sub-routes (currently shells reusing `PublicPage`)
+- **Analytics events + audit logging** — wire `BATHROOM_*` audit event types through the planner flow
+- **Contractor proposal comparison UI** — surface `ContractorProposal` rows to homeowners
+- **AI interpretation guardrails** — OpenRouter advisor integration with validation
+
 ## SEO next phase
 
 - **Connect measurement** - verify Search Console, submit `/sitemap.xml`, and add privacy-safe organic estimate/RFQ/qualified-RFQ attribution

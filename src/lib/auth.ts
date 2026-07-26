@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { UserRole } from "@prisma/client";
+import { bathroomRockvilleEnabled } from "./feature-flags";
 
 const COOKIE_NAME = "renovessa_session";
 
@@ -108,6 +109,16 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
   if (canManageTeam(role)) {
     items.splice(6, 0, { href: "/portal/admin/team", label: "Team" });
     items.splice(7, 0, { href: "/portal/admin/phone-numbers", label: "Phone Numbers" });
+  }
+
+  // Bathroom experience admin screens (gated by feature flags)
+  if (bathroomRockvilleEnabled()) {
+    items.push(
+      { href: "/portal/admin/bathroom/projects", label: "Bathroom Projects" },
+      { href: "/portal/admin/bathroom/estimator-config", label: "Estimator Config" },
+      { href: "/portal/admin/bathroom/content", label: "Bathroom Content" },
+      { href: "/portal/admin/bathroom/analytics", label: "Bathroom Analytics" },
+    );
   }
 
   return items;

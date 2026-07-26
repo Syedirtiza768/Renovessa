@@ -7,6 +7,7 @@ export async function logAuditEvent(params: {
   actorId?: string;
   projectRequestId?: string;
   appointmentId?: string;
+  bathroomProjectId?: string;
   metadata?: Prisma.InputJsonValue;
 }) {
   return prisma.auditEvent.create({
@@ -16,6 +17,7 @@ export async function logAuditEvent(params: {
       actorId: params.actorId,
       projectRequestId: params.projectRequestId,
       appointmentId: params.appointmentId,
+      bathroomProjectId: params.bathroomProjectId,
       metadata: params.metadata,
     },
   });

@@ -9,6 +9,7 @@ export default async function HomeownerLayout({ children }: { children: React.Re
 
   const navItems = [
     { href: "/portal/homeowner", label: "My Projects" },
+    { href: "/portal/homeowner/bathroom-projects", label: "Bathroom Plans" },
     { href: "/portal/homeowner/submit", label: "Submit RFQ" },
     { href: "/portal/homeowner/settings", label: "Account" },
   ];

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
+import { bathroomRockvilleEnabled } from "@/lib/feature-flags";
 
 const routes = [
   "/",
@@ -26,11 +27,32 @@ const routes = [
   "/tcpa",
 ];
 
+const bathroomRoutes = [
+  "/bathroom-remodeling/rockville-md",
+  "/bathroom-remodeling/rockville-md/cost",
+  "/bathroom-remodeling/rockville-md/permits",
+  "/bathroom-remodeling/rockville-md/planning-guide",
+  "/bathroom-remodeling/rockville-md/tub-to-shower",
+  "/bathroom-remodeling/rockville-md/walk-in-showers",
+  "/bathroom-remodeling/rockville-md/primary-bathrooms",
+  "/bathroom-remodeling/rockville-md/small-bathrooms",
+  "/bathroom-remodeling/rockville-md/accessible-bathrooms",
+  "/bathroom-remodeling/rockville-md/contractors",
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  return routes.map((route) => ({
+  const allRoutes = bathroomRockvilleEnabled() ? [...routes, ...bathroomRoutes] : routes;
+  return allRoutes.map((route) => ({
     url: absoluteUrl(route),
-    lastModified: new Date("2026-07-23"),
+    lastModified: new Date("2026-07-26"),
     changeFrequency: route === "/" ? "weekly" : "monthly",
-    priority: route === "/" ? 1 : route === "/estimate" ? 0.9 : 0.7,
+    priority:
+      route === "/"
+        ? 1
+        : route === "/estimate"
+        ? 0.9
+        : route.startsWith("/bathroom-remodeling/rockville-md")
+        ? 0.85
+        : 0.7,
   }));
 }
