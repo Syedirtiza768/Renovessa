@@ -4,7 +4,7 @@ set -e
 echo "Waiting for database..."
 attempt=0
 max_attempts=30
-until npx prisma db push --skip-generate; do
+until npx prisma db push --skip-generate --accept-data-loss; do
   attempt=$((attempt + 1))
   if [ "$attempt" -ge "$max_attempts" ]; then
     echo "Database schema push failed after ${max_attempts} attempts."
