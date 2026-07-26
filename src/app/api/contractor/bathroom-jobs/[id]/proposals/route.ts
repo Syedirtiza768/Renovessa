@@ -5,50 +5,10 @@ import { logAuditEvent } from "@/lib/audit";
 import { bathroomContractorStudioEnabled } from "@/lib/feature-flags";
 import { assertContractorOwnsBathroomProject } from "@/lib/bathroom/authorization";
 import { proposalSchema } from "@/lib/bathroom/schemas";
-import {
-  normalizeStudioPricing,
-  recalculatePricing,
-  type ContractorPricedLineItem,
-} from "@/lib/bathroom/contractor-pricing";
+import { normalizeStudioPricing } from "@/lib/bathroom/contractor-pricing";
+import { buildCommercialFields, resolveValidEstimateId } from "@/lib/bathroom/proposal-ops";
 
 export const runtime = "nodejs";
-
-function buildCommercialFields(
-  data: ReturnType<typeof proposalSchema.parse>,
-  profilePricing: unknown,
-) {
-  const settings = normalizeStudioPricing({
-    ...normalizeStudioPricing(profilePricing),
-    ...(data.pricingSettings || {}),
-  });
-
-  if (data.lineItems?.length && (data.recomputeFromLines || data.lineItems)) {
-    const priced = recalculatePricing(data.lineItems as ContractorPricedLineItem[], settings);
-    return {
-      totalPrice: priced.totals.customerTotal,
-      directCostTotal: priced.totals.directCostTotal,
-      overheadAmount: priced.totals.overheadAmount,
-      contingencyAmount: priced.totals.contingencyAmount,
-      profitAmount: priced.totals.profitAmount,
-      grossMarginPercent: priced.totals.grossMarginPercent,
-      markupPercent: priced.totals.markupPercent,
-      lineItemsJson: priced.lineItems,
-      pricingSnapshotJson: settings,
-    };
-  }
-
-  return {
-    totalPrice: data.totalPrice,
-    directCostTotal: null as number | null,
-    overheadAmount: null as number | null,
-    contingencyAmount: null as number | null,
-    profitAmount: null as number | null,
-    grossMarginPercent: null as number | null,
-    markupPercent: settings.markupPercent,
-    lineItemsJson: data.lineItems ?? undefined,
-    pricingSnapshotJson: settings,
-  };
-}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!bathroomContractorStudioEnabled()) {
@@ -81,6 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { project, profile } = await assertContractorOwnsBathroomProject(session, id);
     const data = proposalSchema.parse(await req.json());
     const commercial = buildCommercialFields(data, profile.studioPricingJson);
+    const estimateId = await resolveValidEstimateId(id, data.estimateId);
 
     const proposal = await prisma.contractorProposal.create({
       data: {
@@ -89,16 +50,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         status: "DRAFT",
         version: 1,
         mode: data.mode ?? "detailed",
-        estimateId: data.estimateId ?? null,
-        totalPrice: commercial.totalPrice,
+        estimateId,
+        totalPrice: commercial.totalPrice ?? 0,
         directCostTotal: commercial.directCostTotal,
         overheadAmount: commercial.overheadAmount,
         contingencyAmount: commercial.contingencyAmount,
         profitAmount: commercial.profitAmount,
         grossMarginPercent: commercial.grossMarginPercent,
         markupPercent: commercial.markupPercent,
-        lineItemsJson: commercial.lineItemsJson as any,
-        pricingSnapshotJson: commercial.pricingSnapshotJson as any,
+        lineItemsJson: commercial.lineItemsJson as object | undefined,
+        pricingSnapshotJson: commercial.pricingSnapshotJson as object,
         includedScope: data.includedScope,
         exclusions: data.exclusions,
         materialAllowances: data.materialAllowances ?? null,

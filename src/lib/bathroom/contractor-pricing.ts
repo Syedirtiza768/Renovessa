@@ -193,6 +193,35 @@ export function recalculatePricing(
   );
 
   const included = recomputed.filter((li) => li.included);
+  const packageOnly =
+    included.length > 0 &&
+    included.every((li) => li.category === "package" && li.customerPriceLocked);
+
+  // Quick package quote: customer pays exactly the locked line total(s).
+  // Overhead/contingency are treated as already embedded in the package price.
+  if (packageOnly) {
+    const directCostTotal = included.reduce((s, li) => s + lineDirectCost(li), 0);
+    const customerTotal = included.reduce((s, li) => s + li.customerPrice, 0);
+    const profitAmount = customerTotal - directCostTotal;
+    const margin = grossMarginPercent(customerTotal, directCostTotal);
+    return {
+      lineItems: recomputed,
+      settings,
+      totals: {
+        directCostTotal,
+        overheadAmount: 0,
+        contingencyAmount: 0,
+        costBeforeProfit: directCostTotal,
+        profitAmount,
+        customerTotal,
+        markupPercent: settings.markupPercent,
+        grossMarginPercent: margin,
+        belowMinimumMargin: margin < settings.minimumGrossMarginPercent && customerTotal > 0,
+        minimumGrossMarginPercent: settings.minimumGrossMarginPercent,
+      },
+    };
+  }
+
   const directCostTotal = included.reduce((s, li) => s + lineDirectCost(li), 0);
   const overheadAmount = Math.round(directCostTotal * (settings.overheadPercent / 100));
   const contingencyAmount = Math.round(directCostTotal * (settings.contingencyPercent / 100));
@@ -284,14 +313,88 @@ export function createManualLineItem(
     laborRate,
     otherDirectCost: partial?.otherDirectCost ?? 0,
     markupPercent,
-    customerPrice: 0,
-    customerPriceLocked: false,
+    customerPrice: partial?.customerPrice ?? 0,
+    customerPriceLocked: partial?.customerPriceLocked ?? false,
     included: partial?.included ?? true,
-    costSource: "manual",
+    costSource: partial?.costSource ?? "manual",
     calculationReference: partial?.calculationReference,
     sortOrder: partial?.sortOrder ?? 999,
   };
   return recomputeLineItem(base, settings);
+}
+
+/**
+ * Single locked package price for quick quotes (no detailed lines).
+ * Direct cost is reverse-engineered from markup so margin math stays coherent.
+ * Overhead/contingency are NOT stacked on top — customer pays exactly `customerTotal`.
+ */
+export function createPackageLineItem(
+  customerTotal: number,
+  settings: StudioPricingSettings = DEFAULT_STUDIO_PRICING,
+  description = "Bathroom remodel package",
+): ContractorPricedLineItem {
+  const total = Math.max(0, Math.round(customerTotal));
+  const markup = settings.markupPercent / 100;
+  const unitCost = markup > 0 ? Math.round(total / (1 + markup)) : total;
+  return {
+    key: `package-${Date.now()}`,
+    category: "package",
+    description,
+    quantity: 1,
+    unit: "job",
+    unitCost,
+    wastePercent: 0,
+    laborHours: 0,
+    laborRate: settings.defaultLaborRate,
+    otherDirectCost: 0,
+    markupPercent: settings.markupPercent,
+    customerPrice: total,
+    customerPriceLocked: true,
+    included: true,
+    costSource: "manual",
+    sortOrder: 0,
+  };
+}
+
+/** Ensure we can approve: priced lines, or a package line from an explicit total. */
+export function ensureCustomerPricing(
+  lineItems: ContractorPricedLineItem[],
+  fallbackTotal: number,
+  settings: StudioPricingSettings,
+): { lineItems: ContractorPricedLineItem[]; totals: PricingTotals; usedPackage: boolean } {
+  if (lineItems.length) {
+    const priced = recalculatePricing(lineItems, settings);
+    if (priced.totals.customerTotal > 0) {
+      return { lineItems: priced.lineItems, totals: priced.totals, usedPackage: false };
+    }
+  }
+  const total = Math.round(Number(fallbackTotal) || 0);
+  if (total <= 0) {
+    const priced = recalculatePricing(lineItems, settings);
+    return { lineItems: priced.lineItems, totals: priced.totals, usedPackage: false };
+  }
+  // Package mode: customer total is exact — zero out OH/contingency stacking by
+  // pricing a single locked line and reporting totals without add-on markup.
+  const pkg = createPackageLineItem(total, settings);
+  const direct = lineDirectCost(pkg);
+  const profitAmount = total - direct;
+  const margin = grossMarginPercent(total, direct);
+  return {
+    lineItems: [pkg],
+    usedPackage: true,
+    totals: {
+      directCostTotal: direct,
+      overheadAmount: 0,
+      contingencyAmount: 0,
+      costBeforeProfit: direct,
+      profitAmount,
+      customerTotal: total,
+      markupPercent: settings.markupPercent,
+      grossMarginPercent: margin,
+      belowMinimumMargin: margin < settings.minimumGrossMarginPercent && total > 0,
+      minimumGrossMarginPercent: settings.minimumGrossMarginPercent,
+    },
+  };
 }
 
 function clamp(n: number, min: number, max: number) {

@@ -10,6 +10,7 @@ import type {
 import {
   DEFAULT_STUDIO_PRICING,
   createManualLineItem,
+  ensureCustomerPricing,
   recalculatePricing,
 } from "@/lib/bathroom/contractor-pricing";
 
@@ -96,7 +97,10 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     return recalculatePricing(lineItems, pricingSettings).totals;
   }, [lineItems, pricingSettings]);
 
-  const customerTotal = liveTotals?.customerTotal ?? (Number(form.totalPrice) || 0);
+  const linesTotal = liveTotals?.customerTotal ?? 0;
+  const customerTotal = linesTotal > 0 ? linesTotal : Number(form.totalPrice) || 0;
+  const needsPackageTotal = linesTotal <= 0;
+  const readyToApprove = customerTotal > 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -216,6 +220,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       ...items,
       createManualLineItem(pricingSettings, {
         description: "New line item",
+        unitCost: 500,
         sortOrder: items.length,
       }),
     ]);
@@ -352,20 +357,45 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     };
   }, [form, customerTotal]);
 
-  const persistProposal = async (currentId: string | null): Promise<{ id: string; status: string; totalPrice: number; lineItemsJson?: ContractorPricedLineItem[] }> => {
+  const buildProposalPayload = (opts?: { requirePrice?: boolean }) => {
     const ready = formWithDefaults();
-    if (ready.includedScope !== form.includedScope || ready.exclusions !== form.exclusions) {
-      setForm(ready);
+    const ensured = ensureCustomerPricing(lineItems, ready.totalPrice, pricingSettings);
+    if (opts?.requirePrice && ensured.totals.customerTotal <= 0) {
+      throw new Error(
+        "Customer total is $0. Run an estimate, add priced line items, or enter a package total below.",
+      );
     }
-    const priced = lineItems.length ? recalculatePricing(lineItems, pricingSettings) : null;
-    const payload = {
+    return {
       ...ready,
-      totalPrice: priced?.totals.customerTotal ?? Math.round(Number(ready.totalPrice) || 0),
+      totalPrice: ensured.totals.customerTotal || Math.round(Number(ready.totalPrice) || 0),
       estimateId: estimate?.estimateId || null,
-      lineItems: priced?.lineItems,
-      recomputeFromLines: Boolean(priced),
+      lineItems: ensured.lineItems.length ? ensured.lineItems : lineItems,
+      recomputeFromLines: Boolean(ensured.lineItems.length || lineItems.length),
       pricingSettings,
+      ensured,
     };
+  };
+
+  const persistProposal = async (
+    currentId: string | null,
+    opts?: { requirePrice?: boolean },
+  ): Promise<{ id: string; status: string; totalPrice: number; lineItemsJson?: ContractorPricedLineItem[] }> => {
+    const { ensured, ...payload } = buildProposalPayload(opts);
+    if (ensured.usedPackage) {
+      setLineItems(ensured.lineItems);
+      setForm((f) => ({
+        ...f,
+        totalPrice: ensured.totals.customerTotal,
+        includedScope: payload.includedScope,
+        exclusions: payload.exclusions,
+      }));
+    } else if (payload.includedScope !== form.includedScope || payload.exclusions !== form.exclusions) {
+      setForm((f) => ({
+        ...f,
+        includedScope: payload.includedScope,
+        exclusions: payload.exclusions,
+      }));
+    }
     const url = currentId
       ? `/api/contractor/bathroom-jobs/${jobId}/proposals/${currentId}`
       : `/api/contractor/bathroom-jobs/${jobId}/proposals`;
@@ -386,7 +416,12 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const data = await persistProposal(proposalId);
       setProposalId(data.id);
       setProposalStatus(data.status || "DRAFT");
-      setForm((f) => ({ ...f, totalPrice: data.totalPrice, includedScope: f.includedScope || DEFAULT_SCOPE, exclusions: f.exclusions || DEFAULT_EXCLUSIONS }));
+      setForm((f) => ({
+        ...f,
+        totalPrice: data.totalPrice,
+        includedScope: f.includedScope || DEFAULT_SCOPE,
+        exclusions: f.exclusions || DEFAULT_EXCLUSIONS,
+      }));
       if (Array.isArray(data.lineItemsJson)) setLineItems(data.lineItemsJson);
       setMsg("Draft saved.");
       return data;
@@ -403,15 +438,29 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setError(null);
     setMsg(null);
     try {
-      // Always persist first so Approve works even before an explicit Save.
-      const saved = await persistProposal(proposalId);
-      setProposalId(saved.id);
-      if (Array.isArray(saved.lineItemsJson)) setLineItems(saved.lineItemsJson);
+      if (liveTotals?.belowMinimumMargin && !ackLowMargin) {
+        setError(
+          `Gross margin is below your minimum (${liveTotals.minimumGrossMarginPercent}%). Check the override box under Internal profitability, then approve again.`,
+        );
+        return;
+      }
 
-      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${saved.id}/approve`, {
+      let id = proposalId;
+      if (!id) {
+        const saved = await persistProposal(null, { requirePrice: true });
+        id = saved.id;
+        setProposalId(id);
+        if (Array.isArray(saved.lineItemsJson)) setLineItems(saved.lineItemsJson);
+      }
+
+      const { ensured, ...payload } = buildProposalPayload({ requirePrice: true });
+      if (ensured.usedPackage) setLineItems(ensured.lineItems);
+
+      const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${id}/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          ...payload,
           acknowledgeBelowMinimumMargin: ackLowMargin,
           overrideReason: ackLowMargin ? "Contractor acknowledged below-minimum margin" : undefined,
         }),
@@ -419,14 +468,14 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
       const data = await res.json();
       if (!res.ok) {
         if (data.code === "BELOW_MINIMUM_MARGIN") {
-          setError(data.error + " Check the box under Internal profitability, then approve again.");
-          setAckLowMargin(false);
+          setError(`${data.error} Check the box under Internal profitability, then approve again.`);
           return;
         }
         throw new Error(data.error || "Approve failed");
       }
       setProposalStatus(data.proposal.status);
       setForm((f) => ({ ...f, totalPrice: data.proposal.totalPrice ?? f.totalPrice }));
+      if (Array.isArray(data.proposal.lineItemsJson)) setLineItems(data.proposal.lineItemsJson);
       setMsg(data.note || "Approved — you can send the client link.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Approve failed");
@@ -440,44 +489,48 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
     setError(null);
     setMsg(null);
     try {
-      // Persist + approve if needed, then send — one click from draft.
-      let id = proposalId;
-      let status = proposalStatus;
+      if (liveTotals?.belowMinimumMargin && !ackLowMargin) {
+        setError(
+          `Gross margin is below your minimum (${liveTotals.minimumGrossMarginPercent}%). Check the override box, then try again.`,
+        );
+        return;
+      }
 
-      if (status === "DRAFT" || status === "REVISION_REQUESTED" || !id) {
-        const saved = await persistProposal(id);
+      let id = proposalId;
+      if (!id) {
+        const saved = await persistProposal(null, { requirePrice: true });
         id = saved.id;
         setProposalId(id);
-        const approveRes = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${id}/approve`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            acknowledgeBelowMinimumMargin: ackLowMargin,
-            overrideReason: ackLowMargin ? "Contractor acknowledged below-minimum margin" : undefined,
-          }),
-        });
-        const approveData = await approveRes.json();
-        if (!approveRes.ok) {
-          if (approveData.code === "BELOW_MINIMUM_MARGIN") {
-            setError(approveData.error + " Check the margin override box, then try again.");
-            return;
-          }
-          throw new Error(approveData.error || "Approve failed");
-        }
-        status = approveData.proposal.status;
-        setProposalStatus(status);
       }
+
+      const { ensured, ...payload } = buildProposalPayload({ requirePrice: true });
+      if (ensured.usedPackage) setLineItems(ensured.lineItems);
 
       const res = await fetch(`/api/contractor/bathroom-jobs/${jobId}/proposals/${id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ expiresDays: 30, rotateToken: true }),
+        body: JSON.stringify({
+          ...payload,
+          expiresDays: 30,
+          rotateToken: true,
+          autoApprove: true,
+          acknowledgeBelowMinimumMargin: ackLowMargin,
+          overrideReason: ackLowMargin ? "Contractor acknowledged below-minimum margin" : undefined,
+        }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Send failed");
+      if (!res.ok) {
+        if (data.code === "BELOW_MINIMUM_MARGIN") {
+          setError(`${data.error} Check the margin override box, then try again.`);
+          return;
+        }
+        throw new Error(data.error || "Send failed");
+      }
       setProposalStatus(data.proposal.status);
       setShareUrl(data.shareUrl);
       setShareExpiresAt(data.shareExpiresAt);
+      setForm((f) => ({ ...f, totalPrice: data.proposal.totalPrice ?? f.totalPrice }));
+      if (Array.isArray(data.proposal.lineItemsJson)) setLineItems(data.proposal.lineItemsJson);
       setMsg(data.note);
       try {
         await navigator.clipboard.writeText(data.shareUrl);
@@ -661,7 +714,7 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
             </button>
           </div>
 
-          {liveTotals && (
+          {liveTotals && liveTotals.customerTotal > 0 && (
             <div className="rounded-xl border border-stone-200 bg-stone-50 p-4 text-sm">
               <p className="font-medium text-stone-900">Internal profitability</p>
               <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
@@ -699,16 +752,30 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
             </div>
           )}
 
-          {!liveTotals && (
+          {needsPackageTotal && (
             <label className="block text-sm">
-              <span className="text-stone-500">Total price ($)</span>
+              <span className="text-stone-500">Package total for client ($)</span>
               <input
                 type="number"
+                min={0}
                 value={form.totalPrice || ""}
-                onChange={(e) => setField("totalPrice", Number(e.target.value))}
+                onChange={(e) => {
+                  setField("totalPrice", Number(e.target.value));
+                  markDirtyIfIssued();
+                }}
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-lg font-semibold"
+                placeholder="e.g. 18500"
               />
+              <span className="mt-1 block text-xs text-stone-500">
+                Required before approve/send. Or run an estimate / add priced line items above.
+              </span>
             </label>
+          )}
+
+          {!readyToApprove && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Approve and Send need a customer total greater than $0.
+            </p>
           )}
 
           {(
@@ -764,22 +831,24 @@ export function StudioWorkspace({ jobId }: { jobId: string }) {
             <button
               type="button"
               onClick={() => void approveProposal()}
-              disabled={saving || lockedAccepted || proposalStatus === "APPROVED" || proposalStatus === "SENT"}
+              disabled={saving || lockedAccepted || !readyToApprove}
               className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              title={!readyToApprove ? "Enter a package total or run an estimate first" : undefined}
             >
-              {proposalStatus === "APPROVED" || proposalStatus === "SENT" ? "Approved" : "Approve for client"}
+              {proposalStatus === "APPROVED" || proposalStatus === "SENT" ? "Re-approve" : "Approve for client"}
             </button>
             <button
               type="button"
               onClick={() => void sendToClient()}
-              disabled={saving || lockedAccepted}
+              disabled={saving || lockedAccepted || !readyToApprove}
               className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+              title={!readyToApprove ? "Enter a package total or run an estimate first" : undefined}
             >
               {proposalStatus === "SENT" ? "Re-send client link" : "Send client link"}
             </button>
           </div>
           <p className="text-xs text-stone-500">
-            Send will auto-save and approve if needed, then create the share link. You do not need to click Save first.
+            Send saves, approves, and creates the share link in one step. You do not need to click Save first.
           </p>
 
           {shareUrl && (

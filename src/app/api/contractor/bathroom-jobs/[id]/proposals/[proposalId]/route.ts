@@ -5,11 +5,8 @@ import { logAuditEvent } from "@/lib/audit";
 import { bathroomContractorStudioEnabled } from "@/lib/feature-flags";
 import { assertContractorOwnsBathroomProject } from "@/lib/bathroom/authorization";
 import { proposalSchema } from "@/lib/bathroom/schemas";
-import {
-  normalizeStudioPricing,
-  recalculatePricing,
-  type ContractorPricedLineItem,
-} from "@/lib/bathroom/contractor-pricing";
+import { normalizeStudioPricing } from "@/lib/bathroom/contractor-pricing";
+import { buildCommercialFields, resolveValidEstimateId } from "@/lib/bathroom/proposal-ops";
 
 export const runtime = "nodejs";
 
@@ -36,36 +33,24 @@ export async function PATCH(
     }
 
     const data = proposalSchema.partial().parse(await req.json());
-    const settings = normalizeStudioPricing({
+    const estimateId =
+      data.estimateId === undefined ? undefined : await resolveValidEstimateId(id, data.estimateId);
+    const commercial = buildCommercialFields(data, {
       ...normalizeStudioPricing(profile.studioPricingJson),
       ...(existing.pricingSnapshotJson as object || {}),
-      ...(data.pricingSettings || {}),
     });
 
-    let commercial: Record<string, unknown> = {};
-    if (data.lineItems?.length) {
-      const priced = recalculatePricing(data.lineItems as ContractorPricedLineItem[], settings);
-      commercial = {
-        totalPrice: priced.totals.customerTotal,
-        directCostTotal: priced.totals.directCostTotal,
-        overheadAmount: priced.totals.overheadAmount,
-        contingencyAmount: priced.totals.contingencyAmount,
-        profitAmount: priced.totals.profitAmount,
-        grossMarginPercent: priced.totals.grossMarginPercent,
-        markupPercent: priced.totals.markupPercent,
-        lineItemsJson: priced.lineItems,
-        pricingSnapshotJson: settings,
-      };
-    } else if (data.totalPrice !== undefined) {
-      commercial = { totalPrice: data.totalPrice };
-    }
-
-    // Editing an approved/sent proposal returns it to draft (must re-approve + re-send).
     const wasIssued =
       existing.status === "APPROVED" ||
       existing.status === "SENT" ||
       existing.status === "REVISION_REQUESTED";
     const nextStatus = wasIssued ? "DRAFT" : existing.status;
+
+    const hasCommercial =
+      data.lineItems !== undefined ||
+      data.totalPrice !== undefined ||
+      data.recomputeFromLines ||
+      data.pricingSettings !== undefined;
 
     const proposal = await prisma.contractorProposal.update({
       where: { id: proposalId },
@@ -82,7 +67,7 @@ export async function PATCH(
         changeOrderProcess: data.changeOrderProcess,
         optionalUpgrades: data.optionalUpgrades,
         suggestedChanges: data.suggestedChanges,
-        estimateId: data.estimateId === undefined ? undefined : data.estimateId,
+        estimateId,
         mode: data.mode,
         expirationDate:
           data.expirationDate === undefined
@@ -90,11 +75,22 @@ export async function PATCH(
             : data.expirationDate
               ? new Date(data.expirationDate)
               : null,
-        ...commercial,
+        ...(hasCommercial
+          ? {
+              totalPrice: commercial.totalPrice ?? existing.totalPrice,
+              directCostTotal: commercial.directCostTotal,
+              overheadAmount: commercial.overheadAmount,
+              contingencyAmount: commercial.contingencyAmount,
+              profitAmount: commercial.profitAmount,
+              grossMarginPercent: commercial.grossMarginPercent,
+              markupPercent: commercial.markupPercent,
+              lineItemsJson: commercial.lineItemsJson as object | undefined,
+              pricingSnapshotJson: commercial.pricingSnapshotJson as object,
+            }
+          : {}),
         status: nextStatus,
         approvedAt: wasIssued ? null : undefined,
         approvedByUserId: wasIssued ? null : undefined,
-        // Keep share token until re-send, but public view only works for SENT+ statuses
       },
     });
 

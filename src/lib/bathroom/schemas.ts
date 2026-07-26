@@ -156,11 +156,11 @@ export const rfqPromotionSchema = z.object({
 });
 
 export const studioPricingSettingsSchema = z.object({
-  markupPercent: z.number().min(0).max(200).optional(),
-  overheadPercent: z.number().min(0).max(100).optional(),
-  contingencyPercent: z.number().min(0).max(100).optional(),
-  minimumGrossMarginPercent: z.number().min(0).max(90).optional(),
-  defaultLaborRate: z.number().min(0).max(500).optional(),
+  markupPercent: z.coerce.number().min(0).max(200).optional(),
+  overheadPercent: z.coerce.number().min(0).max(100).optional(),
+  contingencyPercent: z.coerce.number().min(0).max(100).optional(),
+  minimumGrossMarginPercent: z.coerce.number().min(0).max(90).optional(),
+  defaultLaborRate: z.coerce.number().min(0).max(500).optional(),
 });
 
 export const contractorLineItemSchema = z.object({
@@ -169,13 +169,13 @@ export const contractorLineItemSchema = z.object({
   description: z.string().max(500),
   quantity: z.coerce.number().nonnegative().max(100_000),
   unit: z.string().max(40).default("each"),
-  unitCost: z.coerce.number().nonnegative().max(1_000_000),
+  unitCost: z.coerce.number().nonnegative().max(5_000_000),
   wastePercent: z.coerce.number().min(0).max(100).default(0),
   laborHours: z.coerce.number().min(0).max(10_000).default(0),
   laborRate: z.coerce.number().min(0).max(500).default(0),
-  otherDirectCost: z.coerce.number().min(0).max(1_000_000).default(0),
+  otherDirectCost: z.coerce.number().min(0).max(5_000_000).default(0),
   markupPercent: z.coerce.number().min(0).max(200),
-  customerPrice: z.coerce.number().nonnegative().max(1_000_000).transform((n) => Math.round(n)),
+  customerPrice: z.coerce.number().nonnegative().max(5_000_000).transform((n) => Math.round(n)),
   customerPriceLocked: z.boolean().default(false),
   included: z.boolean().default(true),
   costSource: z.enum(["renovessa_baseline", "contractor_override", "manual"]).default("manual"),
@@ -183,8 +183,10 @@ export const contractorLineItemSchema = z.object({
   sortOrder: z.coerce.number().int().min(0).max(10_000).default(0),
 });
 
+const emptyToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
+
 export const proposalSchema = z.object({
-  totalPrice: z.coerce.number().nonnegative().max(1_000_000).transform((n) => Math.round(n)),
+  totalPrice: z.coerce.number().nonnegative().max(5_000_000).transform((n) => Math.round(n)),
   includedScope: z.string().max(8000),
   exclusions: z.string().max(4000),
   materialAllowances: z.string().max(2000).optional(),
@@ -197,8 +199,8 @@ export const proposalSchema = z.object({
   changeOrderProcess: z.string().max(500).optional(),
   optionalUpgrades: z.string().max(2000).optional(),
   suggestedChanges: z.string().max(4000).optional(),
-  expirationDate: z.string().datetime().optional(),
-  proposalDocumentUrl: z.string().url().optional(),
+  expirationDate: z.preprocess(emptyToUndefined, z.string().datetime().optional()),
+  proposalDocumentUrl: z.preprocess(emptyToUndefined, z.string().url().optional()),
   status: z
     .enum([
       "DRAFT",
@@ -212,7 +214,10 @@ export const proposalSchema = z.object({
       "DECLINED",
     ])
     .optional(),
-  estimateId: z.union([z.string().min(1).max(40), z.null()]).optional(),
+  estimateId: z.preprocess(
+    (v) => (v === "" || v === undefined ? null : v),
+    z.union([z.string().min(1).max(40), z.null()]).optional(),
+  ),
   mode: z.enum(["quick", "detailed", "site_verified"]).optional(),
   lineItems: z.array(contractorLineItemSchema).max(200).optional(),
   pricingSettings: studioPricingSettingsSchema.optional(),
@@ -220,15 +225,19 @@ export const proposalSchema = z.object({
   recomputeFromLines: z.boolean().optional(),
 });
 
-export const proposalApproveSchema = z.object({
+export const proposalApproveSchema = proposalSchema.partial().extend({
   acknowledgeBelowMinimumMargin: z.boolean().optional().default(false),
   overrideReason: z.string().max(500).optional(),
 });
 
-export const proposalSendSchema = z.object({
-  expiresDays: z.number().int().min(1).max(180).optional().default(30),
+export const proposalSendSchema = proposalSchema.partial().extend({
+  expiresDays: z.coerce.number().int().min(1).max(180).optional().default(30),
   /** Rotate share token even if one already exists. */
   rotateToken: z.boolean().optional().default(false),
+  acknowledgeBelowMinimumMargin: z.boolean().optional().default(false),
+  overrideReason: z.string().max(500).optional(),
+  /** Persist + approve before issuing the link (default true). */
+  autoApprove: z.boolean().optional().default(true),
 });
 
 export const proposalAcceptSchema = z.object({
