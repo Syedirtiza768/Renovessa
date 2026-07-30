@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-07-27
+> Last updated: 2026-07-30
 
 ## Phase
 
@@ -42,6 +42,25 @@
 - Unsupported public metrics and fixed turnaround promises were removed; phone and estimate -> RFQ -> available contractor-options copy are consistent
 - Communication consent is affirmative (not pre-checked) and links to a dedicated calls/text disclosure
 - Production deployment verified on 2026-07-23: app/database healthy; public HTTPS routes, canonical host, sitemap, robots, positioning, and noindex controls passed
+
+### Digital Marketing Campaign Kit (Created 2026-07-30)
+- Complete homeowner acquisition kit at `outputs/marketing/renovessa-dmv-campaign-2026-07-30/`
+- 24 production PNGs for Meta/Instagram, Facebook, LinkedIn, X, YouTube, email, Open Graph, web hero, profile/cover, and standard Google Display placements
+- Scalable Renovessa mark/wordmarks, live-site palette board, two campaign master photographs, machine-readable manifests, and editable regeneration sources
+- Google responsive-search copy, paid-social copy, email copy, organic caption, and 15-second vertical-video script
+- Creative matches the live site: warm bone, charcoal, copper CTA, muted green trust accent, DM Serif Display + Inter
+- Messaging stays within approved positioning: local planning range, clearer scope, managed request for quote, contractor bids; concise estimate/availability disclosure included
+
+### Rockville Bathroom Full-Funnel Campaign System (Created 2026-07-30)
+
+- Complete niche campaign system at `outputs/marketing/renovessa-rockville-bathroom-campaign/`
+- 1,068 approved sRGB PNG exports in 27 exact pixel sizes; complete 22-column CSV/JSON asset manifest
+- Core paid-social matrix: 13 bathroom concepts × 4 funnel stages × 3 visual/copy directions × 4 universal formats = 624 assets
+- Supporting delivery includes four 8-slide carousels, 13 five-frame story sets, six dedicated retargeting segments, nine Google Display sizes, responsive performance companions, website, email, LinkedIn, Pinterest, Google Business Profile, 20 infographic topics, 10 lead-cover concepts, and 6/15/20/30-second motion-ready sets
+- Visual system follows the live Rockville landing page and planner: warm bone, ink/slate, copper CTA, trust green, DM Serif Display + Inter, quiet cards, Quick path Capture → Layout → Results
+- Eight text-free photo masters, editable deterministic renderer, prompt provenance, copy/caption/email/motion libraries, source audit, rejection log, contact sheet, and automated QA are included
+- Published Rockville ranges and exact site disclaimers are preserved; no fake customer work, testimonials, ratings, savings, contractor outcomes, permit determinations, or binding quotes were introduced
+- Lead-magnet deliverables are deliberately labeled as cover concepts until companion editorial downloads are produced and approved
 
 ### Portals
 - **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only

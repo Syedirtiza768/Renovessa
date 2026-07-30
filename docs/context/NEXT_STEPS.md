@@ -1,5 +1,23 @@
 # Next Steps
 
+## Rockville bathroom campaign — launch preparation
+
+1. **Choose a small first-wave test** — select 2–3 campaign families, one or two audiences, and the awareness/consideration/conversion sequence; retain the full 1,068-asset library as the testing reservoir
+2. **Add tracked destinations** — map the manifest IDs to the live Rockville landing page or planner and append channel/family/audience/stage/variation UTMs
+3. **Verify event measurement** — confirm landing view, planner start, layout interaction, results, brief generation, and bid-request intent without overstating downstream contractor outcomes
+4. **Run native previews** — check Meta safe areas, responsive Google crops, email rendering, LinkedIn 1200×627 placement, Pinterest long pins, and GBP square crops
+5. **Approve downloadable content before promotion** — the ten lead-magnet assets are cover concepts only; produce and review companion resources before using download language
+6. **Animate from the supplied frames** — build 6/15/20/30-second cuts while retaining the cost/diagram disclaimers and homeowner-control language
+7. **Optimize on qualified progress** — judge winners by planner and project-brief progression, not click-through rate alone
+
+## Digital homeowner campaign — launch preparation
+
+1. **Choose the first paid audience and landing page** — umbrella DMV campaign is ready; map each ad set to `/estimate` or a trade/location route only where fulfillment is live
+2. **Add UTMs and conversion events** — use channel/campaign/creative identifiers from the manifest and verify estimate-start plus qualified-RFQ measurement
+3. **Run native platform previews** — check Instagram Story/Reels safe areas, Facebook/LinkedIn cover crops, and Google Display legibility before publishing
+4. **Produce the 15-second motion cut** — animate the included storyboard/script using the supplied master photography and Renovessa end card
+5. **Launch with a controlled test matrix** — test “Estimate first” versus “Clearer scope” messaging, then promote winners based on qualified-RFQ outcomes rather than click-through rate alone
+
 ## Proposal Studio — immediate follow-up
 
 1. **Push schema** when Postgres is available: `npx prisma db push`

@@ -201,3 +201,23 @@
 - Added recommended, short/busy, warm, capacity-sensitive, unread-email, and day-before variants
 - Added timing guidance, reply notes, SMS-status dropdowns, conditional status colors, and explicit STOP/DNC/suppression safeguards
 - Verified the new ranges, formatting, frozen headers, validation rules, and conditional formatting through the live Sheets API
+
+# 2026-07-30 — Rockville bathroom full-funnel campaign system
+
+- Audited the live Rockville bathroom landing page and Quick planner route; recorded product language, planner stages, published ranges, visual tokens, and compliance guardrails
+- Built 13 campaign concepts from the requested A–L families, separating Guest Bath and Powder Room as independent project types
+- Produced 1,068 approved sRGB PNGs across 27 exact sizes, including the 624-asset core Meta matrix, four eight-slide carousels, 13 five-frame story sets, six dedicated retargeting segments, and four complete motion-ready duration sets
+- Added Google Display, Performance companions, website, email, Facebook, Instagram, LinkedIn, Pinterest, Google Business Profile, 20×3 infographics, and 10×4 lead-magnet cover concepts
+- Created six new text-free campaign photo masters and reused two compatible Renovessa masters; all image-generation prompts and provenance are documented
+- Added exact nested delivery folders, 22-column CSV/JSON manifests, copy and channel-content libraries, editable render and QA sources, approved/web-optimized hard-linked views, contact sheet, rejection/regeneration log, and export index
+- Final automated QA passed 1,068/1,068 files for existence, PNG format, manifest dimensions, sRGB color space, naming, metadata completeness, and core-matrix coverage
+- No application code, runtime configuration, database schema, or production page content changed
+
+# 2026-07-30 - Full-funnel homeowner digital campaign asset kit
+
+- Audited the live `renovessa.com` visual system and approved acquisition positioning, using the supplied concept boards as layout references
+- Created two clean campaign master photographs: a warm remodeled bathroom and a homeowner planning a project before requesting bids
+- Produced 24 exact-dimension PNG assets covering Meta/Instagram feed and stories, Facebook/LinkedIn/X, YouTube, email, Open Graph, web hero, social profile/covers, and common Google Display formats
+- Added scalable Renovessa mark and wordmark SVGs, a brand-palette board, CSV/JSON manifests, a campaign overview preview, and editable local regeneration sources
+- Added Google responsive-search headlines/descriptions, sitelinks, callouts, three Meta copy variants, LinkedIn/Facebook and X copy, email subject/preheader/body, organic caption, and a 15-second vertical-video script
+- Verified all 24 PNG dimensions against the manifest and kept claims within the approved estimate → scoped request → contractor bids model
