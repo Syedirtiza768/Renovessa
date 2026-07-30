@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
-import { bathroomRockvilleEnabled } from "@/lib/feature-flags";
+import { bathroomRockvilleEnabled, bathroomLandingEnabled } from "@/lib/feature-flags";
 
 const routes = [
   "/",
@@ -40,8 +40,14 @@ const bathroomRoutes = [
   "/bathroom-remodeling/rockville-md/contractors",
 ];
 
+const genericBathroomRoutes = [
+  "/bathroom-remodeling",
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const allRoutes = bathroomRockvilleEnabled() ? [...routes, ...bathroomRoutes] : routes;
+  let allRoutes = [...routes];
+  if (bathroomRockvilleEnabled()) allRoutes = [...allRoutes, ...bathroomRoutes];
+  if (bathroomLandingEnabled()) allRoutes = [...allRoutes, ...genericBathroomRoutes];
   return allRoutes.map((route) => ({
     url: absoluteUrl(route),
     lastModified: new Date("2026-07-26"),
@@ -51,7 +57,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ? 1
         : route === "/estimate"
         ? 0.9
-        : route.startsWith("/bathroom-remodeling/rockville-md")
+        : route.startsWith("/bathroom-remodeling")
         ? 0.85
         : 0.7,
   }));

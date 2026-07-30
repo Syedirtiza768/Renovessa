@@ -14,6 +14,7 @@ function flag(name: string, fallback = "false"): boolean {
 }
 
 export const BATHROOM_ROCKVILLE_LANDING_ENABLED = flag("BATHROOM_ROCKVILLE_LANDING_ENABLED");
+export const BATHROOM_LANDING_ENABLED = flag("BATHROOM_LANDING_ENABLED");
 export const BATHROOM_PLANNER_ENABLED = flag("BATHROOM_PLANNER_ENABLED");
 export const BATHROOM_DIAGRAM_BUILDER_ENABLED = flag("BATHROOM_DIAGRAM_BUILDER_ENABLED");
 export const BATHROOM_AI_INTERPRETATION_ENABLED = flag("BATHROOM_AI_INTERPRETATION_ENABLED", "false");
@@ -31,6 +32,14 @@ export const BATHROOM_CONTRACTOR_STUDIO_ENABLED = flag("BATHROOM_CONTRACTOR_STUD
  */
 export function bathroomRockvilleEnabled(): boolean {
   return BATHROOM_ROCKVILLE_LANDING_ENABLED;
+}
+
+/**
+ * Convenience: is the generic (non-location-specific) bathroom landing reachable?
+ * Used by the /bathroom-remodeling route guard.
+ */
+export function bathroomLandingEnabled(): boolean {
+  return BATHROOM_LANDING_ENABLED || BATHROOM_DEMO_MODE;
 }
 
 /**
@@ -63,7 +72,7 @@ export const BATHROOM_DEMO_MODE = flag("BATHROOM_DEMO_MODE");
 
 export function bathroomFlagSnapshot() {
   return {
-    landing: BATHROOM_ROCKVILLE_LANDING_ENABLED || BATHROOM_DEMO_MODE,
+    landing: BATHROOM_ROCKVILLE_LANDING_ENABLED || BATHROOM_LANDING_ENABLED || BATHROOM_DEMO_MODE,
     planner: BATHROOM_PLANNER_ENABLED || BATHROOM_DEMO_MODE,
     diagramBuilder: BATHROOM_DIAGRAM_BUILDER_ENABLED || BATHROOM_DEMO_MODE,
     aiInterpretation: BATHROOM_AI_INTERPRETATION_ENABLED,
