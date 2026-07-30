@@ -24,7 +24,7 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               {flags.planner ? (
-                <Link href="/bathroom-remodeling/rockville-md/planner" className="landing-btn-primary-lg">
+                <Link href="/bathroom-remodeling/planner" className="landing-btn-primary-lg">
                   Design and Estimate My Bathroom →
                 </Link>
               ) : (
@@ -53,11 +53,11 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
                   You can switch between modes without losing data.
                 </p>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <Link href="/bathroom-remodeling/rockville-md/planner?mode=quick" className="landing-card p-5 transition hover:border-ink-40">
+                  <Link href="/bathroom-remodeling/planner?mode=quick" className="landing-card p-5 transition hover:border-ink-40">
                     <h3 className="font-semibold text-ink-100">Quick Estimate</h3>
                     <p className="mt-1 text-sm text-ink-70">Bathroom type, size, finish tier, and a planning range in minutes.</p>
                   </Link>
-                  <Link href="/bathroom-remodeling/rockville-md/planner?mode=detailed" className="landing-card p-5 transition hover:border-ink-40">
+                  <Link href="/bathroom-remodeling/planner?mode=detailed" className="landing-card p-5 transition hover:border-ink-40">
                     <h3 className="font-semibold text-ink-100">Detailed Project Planner</h3>
                     <p className="mt-1 text-sm text-ink-70">Measurements, layout, fixtures, finishes, conditions, permits, and a contractor-ready brief.</p>
                   </Link>
@@ -189,7 +189,7 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
               before you talk to any contractor.
             </p>
             {flags.planner && (
-              <Link href="/bathroom-remodeling/rockville-md/planner" className="landing-btn-primary-lg mt-6">
+              <Link href="/bathroom-remodeling/planner" className="landing-btn-primary-lg mt-6">
                 Design and Estimate My Bathroom →
               </Link>
             )}

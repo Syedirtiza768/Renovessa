@@ -60,7 +60,7 @@ const ALL_STEPS: StepDef[] = [
   { id: "estimate", label: "Results" },
 ];
 
-export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
+export function BathroomPlanner({ flags, backHref = "/bathroom-remodeling/rockville-md" }: { flags: BathroomFlags; backHref?: string }) {
   const [state, setState] = useState<PlannerState>({
     projectId: null,
     referenceNumber: null,
@@ -230,7 +230,7 @@ export function BathroomPlanner({ flags }: { flags: BathroomFlags }) {
     <div className="min-h-screen bg-bone-0">
       <header className="border-b border-ink-15 bg-bone-1">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-4">
-          <Link href="/bathroom-remodeling/rockville-md" className="text-sm font-medium text-ink-70 hover:text-ink-100">
+          <Link href={backHref} className="text-sm font-medium text-ink-70 hover:text-ink-100">
             ← Back to landing
           </Link>
           <div className="flex items-center gap-3">
