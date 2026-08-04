@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { StepProps } from "../planner-types";
 import { PermitsStep } from "./PermitsStep";
 import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
+import { deriveEstimateInputs } from "@/lib/bathroom/estimate-input-derivation";
 
 type EstimateResult = {
   low: number;
@@ -46,6 +47,26 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
       cancelled = true;
     };
   }, [answers]);
+
+  useEffect(() => {
+    if (!result || !projectId) return;
+    const ctrl = new AbortController();
+    async function persist() {
+      try {
+        const inputs = deriveEstimateInputs(answers);
+        await fetch(`/api/bathroom-projects/${projectId}/estimates`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(inputs),
+          signal: ctrl.signal,
+        });
+      } catch {
+        // Non-blocking: brief/RFQ will surface errors independently
+      }
+    }
+    void persist();
+    return () => ctrl.abort();
+  }, [result, projectId, answers]);
 
   if (loading) {
     return <p className="text-sm text-ink-70">Calculating planning range…</p>;
