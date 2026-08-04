@@ -1,4 +1,15 @@
 
+# 2026-08-04 — Public Renovessa SVG logo
+
+- Added `public/renovessa-logo.svg`: a transparent, scalable Renovessa wordmark using the established ascending architectural-bar mark and the existing charcoal brand color.
+
+# 2026-08-03 — Rockville Google conversion launch package
+
+- Reviewed the supplied vertical bathroom-ad concepts and grounded the follow-up in the implemented Rockville planner rather than their unsupported “exact/verified quote” wording.
+- Curated a controlled nine-image first-wave Google asset set from the approved full-funnel campaign library: budget planning, planner/project brief, and scope comparison in landscape, square, and portrait.
+- Added responsive-search copy, Demand Gen/display copy, destination mapping, UTM labels, conversion-event guidance, and pre-launch claim/crop checks at `outputs/marketing/renovessa-rockville-bathroom-campaign/04-google-advertising/conversion-launch-2026-08-03/`.
+- No application code, production configuration, or external ad-account state changed.
+
 # 2026-07-27 — Proposal Studio share + acceptance (Phase B)
 
 - Tokenized public proposal page `/proposal/[token]` with accept / decline / question / revision request

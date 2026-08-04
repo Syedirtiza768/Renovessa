@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-07-30
+> Last updated: 2026-08-03
 
 ## Phase
 
@@ -13,6 +13,7 @@
 - PostgreSQL schema via Prisma (`prisma/schema.prisma`)
 - Demo seed data (`prisma/seed.ts`) aligned with blueprint demo accounts
 - Docker deployment on port **7090** (`docker-compose.yml`, `Dockerfile`)
+- Reusable public SVG logo at `public/renovessa-logo.svg`, aligned to the existing architectural-bar brand motif
 
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
@@ -61,6 +62,12 @@
 - Eight text-free photo masters, editable deterministic renderer, prompt provenance, copy/caption/email/motion libraries, source audit, rejection log, contact sheet, and automated QA are included
 - Published Rockville ranges and exact site disclaimers are preserved; no fake customer work, testimonials, ratings, savings, contractor outcomes, permit determinations, or binding quotes were introduced
 - Lead-magnet deliverables are deliberately labeled as cover concepts until companion editorial downloads are produced and approved
+
+### Rockville Google Conversion Launch Package (Created 2026-08-03)
+
+- Curated a controlled nine-image Google launch set from the approved Rockville campaign system: budget planning, planner/project brief, and scope comparison; each has landscape, square, and portrait versions
+- Added final responsive-search and Demand Gen/display copy, landing destinations, UTM content labels, conversion-event strategy, and policy/claim guardrails at `outputs/marketing/renovessa-rockville-bathroom-campaign/04-google-advertising/conversion-launch-2026-08-03/`
+- The launch set uses only the implemented planner, conceptual-layout, illustrative-planning-range, homeowner-control, and project-brief claims; it does not promise binding quotes or automatic contractor distribution
 
 ### Portals
 - **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only

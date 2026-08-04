@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import type { StepProps } from "../planner-types";
 import { PermitsStep } from "./PermitsStep";
+import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 
 type EstimateResult = {
   low: number;
@@ -19,6 +19,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showPermits, setShowPermits] = useState(false);
+  const [showRfqForm, setShowRfqForm] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -176,11 +177,30 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
         )}
       </div>
 
-      {flags.contractorMatching && (
+      {flags.contractorMatching && projectId && (
         <div className="rounded-lg border border-accent bg-accent/5 p-4">
-          <p className="text-sm font-medium text-ink-100">Ready to request contractor bids?</p>
-          <p className="mt-1 text-xs text-ink-70">Continue to generate your project brief and request bids from reviewed Rockville contractors.</p>
-          <Link href="#" className="mt-2 inline-block text-sm font-medium text-accent">Continue to brief →</Link>
+          {showRfqForm ? (
+            <BathroomRfqForm projectId={projectId} onBack={() => setShowRfqForm(false)} />
+          ) : (
+            <>
+              <p className="text-sm font-medium text-ink-100">Ready to request contractor bids?</p>
+              <p className="mt-1 text-xs text-ink-70">Submit your project details to request bids from reviewed Rockville-area bathroom contractors.</p>
+              <button
+                type="button"
+                onClick={() => setShowRfqForm(true)}
+                className="mt-2 inline-block text-sm font-medium text-accent"
+              >
+                Request contractor bids →
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {flags.contractorMatching && !projectId && (
+        <div className="rounded-lg border border-ink-15 p-4">
+          <p className="text-sm font-medium text-ink-100">Request contractor bids</p>
+          <p className="mt-1 text-xs text-ink-70">Add a short description or room size on the Capture step so we can create your project, then return here to request contractor bids.</p>
         </div>
       )}
     </div>
@@ -240,5 +260,294 @@ function BriefActions({ projectId }: { projectId: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+type RfqFormState = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  zipCode: string;
+  preferredContact: string;
+  tcpaConsent: boolean;
+  termsAccepted: boolean;
+  privacyAcknowledged: boolean;
+  maxContractors: number;
+  notes: string;
+};
+
+function BathroomRfqForm({ projectId, onBack }: { projectId: string; onBack: () => void }) {
+  const [form, setForm] = useState<RfqFormState>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    zipCode: "",
+    preferredContact: "any",
+    tcpaConsent: false,
+    termsAccepted: false,
+    privacyAcknowledged: false,
+    maxContractors: 3,
+    notes: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState<{ referenceNumber: string } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const setField = <K extends keyof RfqFormState>(key: K, value: RfqFormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const validate = (): Record<string, string> => {
+    const next: Record<string, string> = {};
+    if (!form.firstName.trim()) next.firstName = "Required";
+    if (!form.lastName.trim()) next.lastName = "Required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email.";
+    if (!/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) next.phone = "Enter a valid 10-digit US phone number.";
+    if (!/^\d{5}$/.test(form.zipCode)) next.zipCode = "Enter a 5-digit ZIP code.";
+    if (!form.termsAccepted) next.termsAccepted = "You must accept the Terms to continue.";
+    if (!form.privacyAcknowledged) next.privacyAcknowledged = "You must acknowledge the Privacy Policy.";
+    return next;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const validation = validate();
+    setErrors(validation);
+    if (Object.keys(validation).length > 0) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch(`/api/bathroom-projects/${projectId}/rfq`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          phone: form.phone.replace(/\D/g, ""),
+          zipCode: form.zipCode,
+          preferredContact: form.preferredContact,
+          tcpaConsent: form.tcpaConsent,
+          termsAccepted: true,
+          privacyAcknowledged: true,
+          maxContractors: form.maxContractors,
+          notes: form.notes.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `Submission failed (${res.status})`);
+      }
+      const data = (await res.json()) as { referenceNumber: string };
+      setSubmitted(data);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-ink-100">RFQ submitted successfully</p>
+        <p className="text-sm text-ink-70">
+          Your reference number is <span className="font-mono font-semibold">{submitted.referenceNumber}</span>.
+          We&apos;ll send a confirmation email and follow up with contractor matches.
+        </p>
+      </div>
+    );
+  }
+
+  const phoneDigits = form.phone.replace(/\D/g, "");
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <p className="text-sm font-medium text-ink-100">Request contractor bids</p>
+        <p className="mt-0.5 text-xs text-ink-70">We&apos;ll use this to send your RFQ confirmation and follow up with bids from Rockville-area bathroom contractors.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="rfq-first" className="text-xs font-medium text-ink-70">First name *</label>
+          <input
+            id="rfq-first"
+            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+            value={form.firstName}
+            onChange={(e) => setField("firstName", e.target.value)}
+            autoComplete="given-name"
+          />
+          {errors.firstName && <p className="mt-0.5 text-xs text-red-700">{errors.firstName}</p>}
+        </div>
+        <div>
+          <label htmlFor="rfq-last" className="text-xs font-medium text-ink-70">Last name *</label>
+          <input
+            id="rfq-last"
+            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+            value={form.lastName}
+            onChange={(e) => setField("lastName", e.target.value)}
+            autoComplete="family-name"
+          />
+          {errors.lastName && <p className="mt-0.5 text-xs text-red-700">{errors.lastName}</p>}
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="rfq-email" className="text-xs font-medium text-ink-70">Email *</label>
+        <input
+          id="rfq-email"
+          type="email"
+          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+          value={form.email}
+          onChange={(e) => setField("email", e.target.value)}
+          autoComplete="email"
+        />
+        {errors.email && <p className="mt-0.5 text-xs text-red-700">{errors.email}</p>}
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="rfq-phone" className="text-xs font-medium text-ink-70">Mobile phone *</label>
+          <input
+            id="rfq-phone"
+            type="tel"
+            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+            value={form.phone}
+            onChange={(e) => setField("phone", e.target.value)}
+            placeholder="(555) 555-5555"
+            autoComplete="tel"
+            inputMode="tel"
+          />
+          {errors.phone && <p className="mt-0.5 text-xs text-red-700">{errors.phone}</p>}
+        </div>
+        <div>
+          <label htmlFor="rfq-zip" className="text-xs font-medium text-ink-70">ZIP code *</label>
+          <input
+            id="rfq-zip"
+            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+            value={form.zipCode}
+            onChange={(e) => setField("zipCode", e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="20850"
+            inputMode="numeric"
+            maxLength={5}
+            autoComplete="postal-code"
+          />
+          {errors.zipCode && <p className="mt-0.5 text-xs text-red-700">{errors.zipCode}</p>}
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor="rfq-window" className="text-xs font-medium text-ink-70">Best time to reach you</label>
+        <select
+          id="rfq-window"
+          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+          value={form.preferredContact}
+          onChange={(e) => setField("preferredContact", e.target.value)}
+        >
+          <option value="any">Any time</option>
+          <option value="morning">Morning</option>
+          <option value="afternoon">Afternoon</option>
+          <option value="evening">Evening</option>
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="rfq-contractors" className="text-xs font-medium text-ink-70">
+          Max contractors to match ({form.maxContractors})
+        </label>
+        <input
+          id="rfq-contractors"
+          type="range"
+          min={1}
+          max={5}
+          className="mt-1 w-full"
+          value={form.maxContractors}
+          onChange={(e) => setField("maxContractors", Number(e.target.value))}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="rfq-notes" className="text-xs font-medium text-ink-70">Notes (optional)</label>
+        <textarea
+          id="rfq-notes"
+          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
+          rows={3}
+          maxLength={4000}
+          value={form.notes}
+          onChange={(e) => setField("notes", e.target.value)}
+          placeholder="Anything else contractors should know — access constraints, HOA rules, preferred brands, must-have dates…"
+        />
+      </div>
+
+      <label className="flex items-start gap-3 text-sm text-ink-70">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 shrink-0"
+          checked={form.tcpaConsent}
+          onChange={(e) => setField("tcpaConsent", e.target.checked)}
+        />
+        <span className="text-xs">
+          {COMMUNICATION_CONSENT_TEXT}
+        </span>
+      </label>
+
+      <label className="flex items-start gap-3 text-sm text-ink-70">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 shrink-0"
+          checked={form.termsAccepted}
+          onChange={(e) => setField("termsAccepted", e.target.checked)}
+        />
+        <span className="text-xs">
+          {LEGAL_CLICKWRAP_TEXT}{" "}
+          <a href="/terms" className="text-accent underline" target="_blank" rel="noopener noreferrer">Terms</a>{" "}
+          ·{" "}
+          <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Privacy</a>
+        </span>
+      </label>
+      {errors.termsAccepted && <p className="text-xs text-red-700">{errors.termsAccepted}</p>}
+
+      <label className="flex items-start gap-3 text-sm text-ink-70">
+        <input
+          type="checkbox"
+          className="mt-1 h-4 w-4 shrink-0"
+          checked={form.privacyAcknowledged}
+          onChange={(e) => setField("privacyAcknowledged", e.target.checked)}
+        />
+        <span className="text-xs">
+          I acknowledge the Renovessa Privacy Policy and understand my project and contact information will be processed to coordinate this RFQ.
+        </span>
+      </label>
+      {errors.privacyAcknowledged && <p className="text-xs text-red-700">{errors.privacyAcknowledged}</p>}
+
+      {submitError && <p className="text-sm text-red-700">{submitError}</p>}
+
+      <div className="flex gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onBack}
+          className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 transition hover:border-ink-40"
+        >
+          ← Back
+        </button>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
+        >
+          {submitting ? "Submitting…" : "Submit RFQ →"}
+        </button>
+      </div>
+    </form>
   );
 }

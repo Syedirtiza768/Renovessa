@@ -2,10 +2,12 @@
 
 ## Rockville bathroom campaign — launch preparation
 
-1. **Choose a small first-wave test** — select 2–3 campaign families, one or two audiences, and the awareness/consideration/conversion sequence; retain the full 1,068-asset library as the testing reservoir
-2. **Add tracked destinations** — map the manifest IDs to the live Rockville landing page or planner and append channel/family/audience/stage/variation UTMs
-3. **Verify event measurement** — confirm landing view, planner start, layout interaction, results, brief generation, and bid-request intent without overstating downstream contractor outcomes
-4. **Run native previews** — check Meta safe areas, responsive Google crops, email rendering, LinkedIn 1200×627 placement, Pinterest long pins, and GBP square crops
+- **Use the public logo where an SVG asset is needed** — `public/renovessa-logo.svg` is the reusable transparent wordmark; retain the existing brand-system variants for campaign-specific exports.
+
+1. **Configure the Google first wave** — use the nine selected images and ready-to-enter copy in `outputs/marketing/renovessa-rockville-bathroom-campaign/04-google-advertising/conversion-launch-2026-08-03/`; retain the full 1,068-asset library as the testing reservoir
+2. **Add tracked production destinations** — prepend the canonical production host to each launch-package destination and append its `utm_content` label
+3. **Verify event measurement** — confirm landing view, planner start, layout interaction, results, brief generation, and bid-request intent without overstating downstream contractor outcomes; optimize the initial campaign to planner start only after validation
+4. **Run native previews** — check Google responsive crops and policy review first, then all relevant Meta/email/LinkedIn/Pinterest/GBP crops before future channel expansion
 5. **Approve downloadable content before promotion** — the ten lead-magnet assets are cover concepts only; produce and review companion resources before using download language
 6. **Animate from the supplied frames** — build 6/15/20/30-second cuts while retaining the cost/diagram disclaimers and homeowner-control language
 7. **Optimize on qualified progress** — judge winners by planner and project-brief progression, not click-through rate alone

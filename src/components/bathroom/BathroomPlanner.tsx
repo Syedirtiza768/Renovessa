@@ -320,14 +320,15 @@ export function BathroomPlanner({ flags, backHref = "/bathroom-remodeling/rockvi
           <button type="button" onClick={reset} className="text-xs text-ink-40 underline">
             Start over
           </button>
-          <button
-            type="button"
-            onClick={goNext}
-            disabled={current === steps.length - 1}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
-          >
-            Continue →
-          </button>
+          {current < steps.length - 1 && (
+            <button
+              type="button"
+              onClick={goNext}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90"
+            >
+              Continue →
+            </button>
+          )}
         </nav>
       </main>
     </div>

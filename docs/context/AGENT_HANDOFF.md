@@ -1,8 +1,10 @@
 # Agent Handoff
 
-> Current session: 2026-07-30 — Rockville bathroom full-funnel campaign system
+> Current session: 2026-08-04 — Public Renovessa SVG logo
 
 ## Done
+
+- Added the reusable public wordmark at `public/renovessa-logo.svg`; it uses the established architectural-bar mark and requires no runtime integration to be usable.
 
 - Complete campaign system created at `outputs/marketing/renovessa-rockville-bathroom-campaign/`
 - 1,068 final PNGs and 1,068 approved hard-linked views; 27 exact sizes; full automated QA pass
@@ -12,6 +14,7 @@
 - Creative follows the live Rockville page and planner rather than inventing a separate brand direction
 - Cost, diagram, permit, credential, privacy, and contractor-role guardrails are preserved; lead magnets remain cover concepts until companion editorial files exist
 - No application runtime code, deployment configuration, database schema, or production page content was changed
+- Curated a first-wave Google conversion package at `outputs/marketing/renovessa-rockville-bathroom-campaign/04-google-advertising/conversion-launch-2026-08-03/`; it contains nine approved image assets by reference, ready-to-enter copy, UTM content labels, destinations, and claim guardrails
 
 ## Key files
 
@@ -23,10 +26,9 @@
 
 ## Next
 
-1. Select a controlled first-wave subset from the 624 core ads; do not upload the whole matrix at once
-2. Map every launch asset to the live Rockville landing page/planner with channel, family, audience, stage, and variation UTMs
-3. Confirm analytics for landing view, planner start, layout step, results view, brief generation, and user-controlled bid-request intent
-4. Run native platform safe-area, crop, policy, and compression previews before activation
-5. Produce and editorially approve any lead-magnet content before promoting its cover concept
-6. Animate the supplied motion-ready frames if video is in launch scope; preserve the included disclaimers
+1. Confirm the Rockville bathroom planner is public and verify the `planner_start` event before configuring campaign optimization.
+2. Enter the nine images and associated copy from the Google conversion-launch package; apply its UTM labels to the production domain.
+3. Run Google native crop, policy, and compression previews before activation.
 
+4. Produce and editorially approve any lead-magnet content before promoting its cover concept.
+5. Animate the supplied motion-ready frames if video is in launch scope; preserve the included disclaimers.
