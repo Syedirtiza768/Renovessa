@@ -8,7 +8,7 @@ import { generateEstimate } from "@/lib/bathroom/estimator";
 import { generateBudgetScenarios } from "@/lib/bathroom/budget-scenarios";
 import { scoreConfidence, deriveConfidenceInput } from "@/lib/bathroom/confidence";
 import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/bathroom/config";
-import { bathroomPlannerUsable, BATHROOM_DEMO_MODE } from "@/lib/feature-flags";
+import { bathroomPlannerUsable } from "@/lib/feature-flags";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!bathroomPlannerUsable()) {
@@ -32,12 +32,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const merged = { ...DEFAULT_ESTIMATOR_CONFIG, ...(published.configurationJson as Record<string, unknown>), version: published.version };
       config = merged;
       configurationId = published.id;
-    } else if (!BATHROOM_DEMO_MODE) {
-      // Fail closed: no approved configuration means no public numeric estimate.
-      return NextResponse.json(
-        { error: "No approved estimator configuration is published for this location. Numeric estimates are withheld until review." },
-        { status: 409 },
-      );
+    } else {
+      // Fall back to the built-in default config so estimates can persist
+      // even before an admin publishes a reviewed configuration.
+      configurationId = null;
     }
 
     const confidence = scoreConfidence(deriveConfidenceInput({

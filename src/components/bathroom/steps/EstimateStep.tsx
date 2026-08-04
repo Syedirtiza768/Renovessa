@@ -22,6 +22,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [showPermits, setShowPermits] = useState(false);
   const [showRfqForm, setShowRfqForm] = useState(false);
   const [estimatePersisted, setEstimatePersisted] = useState(false);
+  const [persistFailed, setPersistFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,9 +64,14 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
         });
         if (res.ok && !ctrl.signal.aborted) {
           setEstimatePersisted(true);
+          setPersistFailed(false);
+        } else if (!res.ok && !ctrl.signal.aborted) {
+          setPersistFailed(true);
         }
       } catch {
-        // Non-blocking: brief/RFQ will surface errors independently
+        if (!ctrl.signal.aborted) {
+          setPersistFailed(true);
+        }
       }
     }
     void persist();
@@ -170,7 +176,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
       )}
 
       {flags.projectBrief && projectId && (
-        <BriefActions projectId={projectId} estimatePersisted={estimatePersisted} />
+        <BriefActions projectId={projectId} estimatePersisted={estimatePersisted} persistFailed={persistFailed} />
       )}
 
       <div className="rounded-lg border border-ink-15 p-4">
@@ -232,13 +238,15 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   );
 }
 
-function BriefActions({ projectId, estimatePersisted }: { projectId: string; estimatePersisted: boolean }) {
+function BriefActions({ projectId, estimatePersisted, persistFailed }: { projectId: string; estimatePersisted: boolean; persistFailed: boolean }) {
   const [generating, setGenerating] = useState(false);
   const [briefId, setBriefId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submittingRfp, setSubmittingRfp] = useState(false);
+  const [rfpSubmitted, setRfpSubmitted] = useState<{ referenceNumber: string } | null>(null);
+  const [rfpError, setRfpError] = useState<string | null>(null);
 
   const generateBrief = async () => {
-    if (!estimatePersisted) return;
     setGenerating(true);
     setError(null);
     try {
@@ -259,33 +267,80 @@ function BriefActions({ projectId, estimatePersisted }: { projectId: string; est
     }
   };
 
+  const submitRfp = async () => {
+    setSubmittingRfp(true);
+    setRfpError(null);
+    try {
+      const res = await fetch(`/api/bathroom-projects/${projectId}/rfp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? `Failed (${res.status})`);
+      }
+      const data = (await res.json()) as { referenceNumber: string };
+      setRfpSubmitted(data);
+    } catch (e) {
+      setRfpError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setSubmittingRfp(false);
+    }
+  };
+
+  if (rfpSubmitted) {
+    return (
+      <div className="rounded-lg border border-green-300 bg-green-50 p-5">
+        <h3 className="font-semibold text-green-900">RFP submitted successfully</h3>
+        <p className="mt-1 text-sm text-green-800">
+          Your project brief has been submitted as an RFP (reference <span className="font-mono font-semibold">{rfpSubmitted.referenceNumber}</span>).
+          Our team will review it and match you with qualified contractors.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-ink-15 bg-bone-1 p-5">
-      <h3 className="font-semibold text-ink-100">Project brief</h3>
+      <h3 className="font-semibold text-ink-100">Project brief &amp; RFP</h3>
       <p className="mt-1 text-sm text-ink-70">
         Generate a contractor-ready brief with your project details, planning estimate, and permit guidance.
-        Then download it as a PDF to share with contractors.
+        Then submit it as an RFP to our admin team who will match you with qualified contractors.
       </p>
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
-      {!estimatePersisted && !error && (
+      {rfpError && <p className="mt-2 text-sm text-red-700">{rfpError}</p>}
+      {!estimatePersisted && !persistFailed && !error && (
         <p className="mt-2 text-xs text-ink-40">Saving estimate to your project…</p>
+      )}
+      {persistFailed && !estimatePersisted && (
+        <p className="mt-2 text-xs text-ink-40">Estimate will be saved when you generate the brief.</p>
       )}
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={generateBrief}
-          disabled={generating || !estimatePersisted}
+          disabled={generating}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
         >
           {generating ? "Generating…" : briefId ? "Regenerate brief" : "Generate brief"}
         </button>
         {briefId && (
-          <a
-            href={`/api/bathroom-projects/${projectId}/brief/pdf`}
-            className="rounded-lg border border-ink-15 px-4 py-2 text-sm font-medium text-ink-70 transition hover:border-ink-40"
-          >
-            Download PDF →
-          </a>
+          <>
+            <a
+              href={`/api/bathroom-projects/${projectId}/brief/pdf`}
+              className="rounded-lg border border-ink-15 px-4 py-2 text-sm font-medium text-ink-70 transition hover:border-ink-40"
+            >
+              Download PDF →
+            </a>
+            <button
+              type="button"
+              onClick={submitRfp}
+              disabled={submittingRfp}
+              className="rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-800 disabled:opacity-40"
+            >
+              {submittingRfp ? "Submitting…" : "Submit RFP to Admin"}
+            </button>
+          </>
         )}
       </div>
     </div>
