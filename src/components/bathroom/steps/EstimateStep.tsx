@@ -21,6 +21,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [error, setError] = useState<string | null>(null);
   const [showPermits, setShowPermits] = useState(false);
   const [showRfqForm, setShowRfqForm] = useState(false);
+  const [estimatePersisted, setEstimatePersisted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,12 +55,15 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
     async function persist() {
       try {
         const inputs = deriveEstimateInputs(answers);
-        await fetch(`/api/bathroom-projects/${projectId}/estimates`, {
+        const res = await fetch(`/api/bathroom-projects/${projectId}/estimates`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(inputs),
           signal: ctrl.signal,
         });
+        if (res.ok && !ctrl.signal.aborted) {
+          setEstimatePersisted(true);
+        }
       } catch {
         // Non-blocking: brief/RFQ will surface errors independently
       }
@@ -166,7 +170,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
       )}
 
       {flags.projectBrief && projectId && (
-        <BriefActions projectId={projectId} />
+        <BriefActions projectId={projectId} estimatePersisted={estimatePersisted} />
       )}
 
       <div className="rounded-lg border border-ink-15 p-4">
@@ -228,12 +232,13 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   );
 }
 
-function BriefActions({ projectId }: { projectId: string }) {
+function BriefActions({ projectId, estimatePersisted }: { projectId: string; estimatePersisted: boolean }) {
   const [generating, setGenerating] = useState(false);
   const [briefId, setBriefId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const generateBrief = async () => {
+    if (!estimatePersisted) return;
     setGenerating(true);
     setError(null);
     try {
@@ -262,11 +267,14 @@ function BriefActions({ projectId }: { projectId: string }) {
         Then download it as a PDF to share with contractors.
       </p>
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      {!estimatePersisted && !error && (
+        <p className="mt-2 text-xs text-ink-40">Saving estimate to your project…</p>
+      )}
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={generateBrief}
-          disabled={generating}
+          disabled={generating || !estimatePersisted}
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
         >
           {generating ? "Generating…" : briefId ? "Regenerate brief" : "Generate brief"}
