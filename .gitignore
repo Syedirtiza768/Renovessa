@@ -22,3 +22,7 @@ uploads/
 
 # Machine-local AI assistant permissions and settings.
 .claude/
+
+# Obsidian: keep shared vault config tracked, ignore per-machine window layout
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

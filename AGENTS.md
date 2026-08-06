@@ -1,136 +1,51 @@
-# AGENTS.md — Instructions for AI Agents
+# Agent instructions — Renovessa
 
-Read this file **before** making any changes to the Renovessa project.
+These rules apply to **any** AI agent or model working in this repo (Claude, Codex, Copilot, Cursor, Gemini, ...) — not just Claude Code. If your tool has its own instructions file (`CLAUDE.md`, `.cursorrules`, `.github/copilot-instructions.md`, ...), it should point back here rather than duplicating this content, so there's one place to keep current.
 
-## What This Project Is
+## What this project actually is
 
-**Renovessa** is a new software project in early planning. The repository currently contains **documentation only** — no application code, dependencies, or runtime configuration yet.
+Renovessa is a single Next.js 15 (App Router, TypeScript) app: a verified home-improvement appointment marketplace for the DMV area, with a public estimate/RFQ site, homeowner/contractor/admin portals, and a bathroom-remodeling planner sub-product. PostgreSQL + Prisma, JWT cookie auth, SendGrid email, Twilio voice/SMS, Docker Compose on port 7090.
 
-The working hypothesis (needs product confirmation) is a platform related to **renovation project management** — helping homeowners, contractors, or teams plan, track, and deliver renovation work. Treat all product details as **assumptions** until confirmed in `docs/planning/INITIAL_BRIEF.md` and `docs/context/PRODUCT_REQUIREMENTS.md`.
+**A previous version of this file (and several files under `docs/context/`, `docs/architecture/`, `docs/backend/`, `docs/frontend/`, `docs/planning/`) described this repo as "documentation only, Phase 0, no code yet."** That was accurate on 2026-06-02. It has been false for a long time — the app is implemented and has real users/campaigns behind it. Do not trust the "no code exists" framing anywhere you see it; check [[docs/context/CURRENT_STATE.md]] first.
 
-## Project Type
+## Before non-trivial work
 
-**New Project** — Phase 0 (documentation and planning foundation).
+Read `docs/Home.md`. It's the map-of-content for an Obsidian vault rooted at this repo (`docs/`), which links to the pre-existing (and unevenly maintained) `docs/context/`, `docs/architecture/`, `docs/backend/`, `docs/frontend/`, `docs/operations/`, `docs/planning/`, `docs/marketing/`, and `docs/compliance/` folders, plus new index notes (`docs/context.md`, `docs/architecture.md`, `docs/backend.md`, `docs/frontend.md`, `docs/operations.md`, `docs/planning.md`, `docs/scripts-and-outreach.md`) that tell you which files in each folder are current vs. stale Phase-0 templates. Read the relevant index note before trusting an individual doc file — several of them actively contradict the real code.
 
-## Current Development Status
+`docs/context/CURRENT_STATE.md` and `docs/context/SYSTEM_MAP.md` are the two files in this vault kept genuinely in sync with the code; start there.
 
-| Area | Status |
-|------|--------|
-| Documentation structure | Complete |
-| Product requirements | Blueprint-driven MVP |
-| Architecture | Implemented (Next.js + PostgreSQL) |
-| Frontend | MVP implemented |
-| Backend | MVP implemented |
-| Database | Prisma schema + seed data |
-| Deployment | Docker Compose on port 7090 |
+## After non-trivial work
 
-## Tech Stack
+If the change is architecturally significant — a new module, a changed data flow, a schema change, a non-obvious workaround — update the matching note (or add an entry to `docs/context/DECISION_LOG.md`, this repo's decision log) **before** considering the task done. Bump that note's status/`Last reviewed` line even if the content didn't need to change. Also keep the long-running per-session files current where relevant: `docs/context/PROGRESS_LOG.md` (append), `docs/context/AGENT_HANDOFF.md`, `docs/context/NEXT_STEPS.md`.
 
-| Layer | Choice | Status |
-|-------|--------|--------|
-| Frontend/Backend | Next.js 15 (App Router), TypeScript | **Accepted** — 2026-06-02 |
-| Database | PostgreSQL + Prisma | **Accepted** |
-| Auth | JWT session cookies (jose) | **Accepted** |
-| Styling | Tailwind CSS 4 (blueprint design system) | **Accepted** |
-| Deploy | Docker Compose, port **7090** | **Accepted** |
+## Enforcement
 
-## Important Commands
+A git pre-commit hook (`scripts/check-docs-freshness.mjs`, installed via `simple-git-hooks` — runs automatically after `npm install`, for any tool or human committing) checks staged diffs against `src/app`, `src/components`, `src/lib`, `prisma`, and `scripts`. If it judges a docs update is warranted and none was staged, it **blocks the commit**.
+
+- The check calls the local `claude` CLI non-interactively to judge the actual diff (not just path-matching), to keep false positives/negatives low. If that CLI isn't available or isn't authenticated, it fails safe into a blocking generic reminder instead of silently passing.
+- Override (only after actually checking): `SKIP_DOCS_CHECK=1 git commit ...`
+- This is a local hook, so it can be bypassed with `git commit --no-verify`. There is no scheduled staleness-audit agent configured for this repo yet (unlike some sibling projects) — the pre-commit hook is currently the only automated backstop, so don't skip it casually.
+
+## Commands
 
 ```bash
-# Docker (production-like, port 7090)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
-
-# Local development
 cp .env.example .env
 npm install
 docker compose up db -d
 npm run db:push
 npm run db:seed
-npm run dev
+npm run dev            # http://localhost:3000
 
-# Database
-npm run db:push
-npm run db:seed
+# or full stack in Docker, matching production (port 7090)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+
+npm test                # vitest
+npm run build           # prisma generate && next build
 ```
 
-```txt
-/docs/context/       — Current state, features, roadmap, handoff (read first)
-/docs/planning/      — Requirements, phases, user roles, flows
-/docs/architecture/  — System design, schema, APIs, security
-/docs/frontend/      — UI/UX, routes, components, state
-/docs/backend/       — Modules, services, models, jobs
-/docs/operations/    — Setup, env, testing, deployment
-```
+See `README.md` for demo account credentials and `docs/operations/DEPLOYMENT.md` for the real production deploy process (Ubuntu + Docker + Nginx + Certbot).
 
-## Required Reading Order
+## Known repo hygiene notes
 
-1. `AGENTS.md` (this file)
-2. `docs/context/CURRENT_STATE.md`
-3. `docs/context/SYSTEM_MAP.md`
-4. `docs/context/FEATURE_REGISTRY.md`
-5. Task-specific docs (architecture, planning, frontend, backend, operations)
-
-## Important Commands
-
-No application commands exist yet. When implementation begins, update this section with real install, dev, build, test, and database commands.
-
-## Documentation Update Rules
-
-After **every meaningful session**, update:
-
-- `docs/context/CURRENT_STATE.md`
-- `docs/context/PROGRESS_LOG.md` (append dated entry)
-- `docs/context/AGENT_HANDOFF.md`
-- `docs/context/NEXT_STEPS.md`
-
-Also update feature, architecture, API, or operations docs when those areas change.
-
-**Rule:** The codebase is the source of truth when code exists. Until then, documentation must clearly separate **Planned** from **Implemented**. Never describe planned work as completed.
-
-## Coding Conventions
-
-Not established yet. When stack is chosen:
-
-1. Record conventions in this file
-2. Add lint/format config to the repo
-3. Match patterns in existing code
-
-## Testing Expectations
-
-Not applicable until Phase 1+. See `docs/operations/TESTING.md`.
-
-## Known Risks
-
-- Product scope undefined — risk of building the wrong product
-- Tech stack not chosen — risk of rework
-- Name-based assumptions about renovation domain may be wrong
-
-See `docs/context/KNOWN_ISSUES.md`.
-
-## What Not To Change Without Review
-
-- Accepted decisions in `docs/context/DECISION_LOG.md`
-- Product scope in `docs/context/PRODUCT_REQUIREMENTS.md` (confirm with stakeholder first)
-- Security-related architecture in `docs/architecture/SECURITY.md`
-
-## Current Priorities
-
-1. Confirm product vision and target users with stakeholder
-2. Complete Phase 0 documentation
-3. Accept tech stack decision
-4. Begin Phase 1 foundation (scaffold only after decisions)
-
-## Handoff Process
-
-Before ending a session:
-
-1. Update `CURRENT_STATE.md`, `PROGRESS_LOG.md`, `AGENT_HANDOFF.md`, `NEXT_STEPS.md`
-2. Log decisions in `DECISION_LOG.md`
-3. Log new risks in `KNOWN_ISSUES.md`
-4. Use the session summary format in the project context prompt
-
-## How To Continue (Next Agent)
-
-1. Read `docs/context/AGENT_HANDOFF.md` and `docs/context/NEXT_STEPS.md`
-2. Ask the user to confirm or correct assumptions in `docs/planning/INITIAL_BRIEF.md`
-3. Do not implement features until Phase 0 is **Complete** and Phase 1 decisions are **Accepted**
+- `outputs/` (~1.6 GB of generated marketing assets) is currently untracked but **not** gitignored — it shows up in `git status` as untracked rather than being cleanly ignored. Worth a decision (ignore it, or move it out of the repo) rather than leaving it in this state.
+- `scraper/` is intentionally gitignored (contains scraped third-party PII) — never force-add it.

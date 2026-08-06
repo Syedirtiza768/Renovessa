@@ -16,7 +16,11 @@
     "campaign:verify-pilot15": "tsx scripts/verify-rfq-pilot-15-campaign.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bathroom:seed-content": "tsx scripts/seed-bathroom-content.ts"
+    "bathroom:seed-content": "tsx scripts/seed-bathroom-content.ts",
+    "postinstall": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "node scripts/check-docs-freshness.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
@@ -55,6 +59,7 @@
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
     "prisma": "^6.9.0",
+    "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
