@@ -947,7 +947,8 @@ model EstimatorConfiguration {
 model BathroomEstimate {
   id                   String          @id @default(cuid())
   projectId            String
-  configurationId      String
+  /// Null when computed from the built-in default config (no published row).
+  configurationId      String?
   version              Int             @default(1)
   lowAmount            Int
   expectedLowAmount    Int
@@ -963,7 +964,7 @@ model BathroomEstimate {
   createdAt            DateTime        @default(now())
 
   project       BathroomProject            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  configuration EstimatorConfiguration     @relation(fields: [configurationId], references: [id])
+  configuration EstimatorConfiguration?    @relation(fields: [configurationId], references: [id])
   lineItems     BathroomEstimateLineItem[]
   proposals     ContractorProposal[]
 

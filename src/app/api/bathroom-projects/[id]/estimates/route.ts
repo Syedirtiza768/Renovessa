@@ -53,7 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const saved = await prisma.bathroomEstimate.create({
       data: {
         projectId: id,
-        configurationId: configurationId ?? "default-internal",
+        configurationId: configurationId,
         lowAmount: estimate.lowAmount,
         expectedLowAmount: estimate.expectedLowAmount,
         expectedHighAmount: estimate.expectedHighAmount,

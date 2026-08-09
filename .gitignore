@@ -26,3 +26,6 @@ uploads/
 # Obsidian: keep shared vault config tracked, ignore per-machine window layout
 .obsidian/workspace.json
 .obsidian/workspace-mobile.json
+
+# SSH private keys (local access only, never commit)
+*.pem

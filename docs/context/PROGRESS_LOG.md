@@ -232,3 +232,15 @@
 - Added scalable Renovessa mark and wordmark SVGs, a brand-palette board, CSV/JSON manifests, a campaign overview preview, and editable local regeneration sources
 - Added Google responsive-search headlines/descriptions, sitelinks, callouts, three Meta copy variants, LinkedIn/Facebook and X copy, email subject/preheader/body, organic caption, and a 15-second vertical-video script
 - Verified all 24 PNG dimensions against the manifest and kept claims within the approved estimate → scoped request → contractor bids model
+
+# 2026-08-10 — Bathroom planner UX/RFP conversion audit + funnel fixes
+
+- Ran the full bathroom-planner audit brief against the production deployment (SSH access to EC2, `/opt/renovessa`, containers `renovessa-app-1`/`renovessa-db-1`, nginx `renovessa.com`); local repo matches prod code at `0a1de6d`
+- Found and fixed a hard dead end at the main conversion CTA: anonymous RFP submission always 400'd (client posted no contact data); `POST /api/bathroom-projects/[id]/rfp` now takes a validated contact+consent payload (`rfpSubmissionSchema`), records clickwrap evidence, sends the RFQ confirmation email, sets `RFQ_SUBMITTED`, and claims the project atomically to prevent duplicate RFPs
+- Found and fixed live-broken estimate persistence: FK to nonexistent `"default-internal"` EstimatorConfiguration (zero config rows in prod) — `BathroomEstimate.configurationId` is now nullable; schema pushed to prod DB
+- Found and fixed duplicate-project bug: refresh lost `projectId` (never saved to localStorage draft) and created a new project each load; drafts now persist `projectId`/`referenceNumber`/`clientGeneratedId`, validate the resumed project on hydrate, and server dedupes by `clientGeneratedId`
+- Reworked Estimate step UX: estimate retry on failure, persist-status badge, "Request contractor proposals" contact form (first name/email/phone/ZIP/timeline/contact preference/notes + terms/privacy required, TCPA optional), persistent success panel with what-happens-next (survives refresh via `answers.rfp_reference`)
+- Fixed Capture-step gating lie: room-size-only selection now satisfies `hasCaptureContent` (error message promised it did); save failures now surface with a Retry action in the planner header; progress label is "Step X of Y" instead of a misleading percentage
+- Added 15 unit tests (`__tests__/rfp-conversion.test.ts`); suite 70/70 green; `next build` clean
+- Added `scripts/e2e-bathroom-rfp-local.sh` and ran it green (9/9): anonymous journey → draft dedupe → autosave → preview → persisted estimate (27 line items) → brief → RFP (consent versions + 3 ConsentEvents + audit trail verified in prod DB) → duplicate/consent rejections → full test-data cleanup
+- Production deploy of the new build is pending; SMS OTP verification and client-side analytics funnel remain open gaps from the audit brief

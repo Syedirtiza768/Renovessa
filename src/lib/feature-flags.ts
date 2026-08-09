@@ -48,7 +48,7 @@ export function bathroomLandingEnabled(): boolean {
  * authority content only).
  */
 export function bathroomPlannerUsable(): boolean {
-  return BATHROOM_PLANNER_ENABLED && BATHROOM_ESTIMATOR_ENABLED;
+  return (BATHROOM_PLANNER_ENABLED || BATHROOM_DEMO_MODE) && (BATHROOM_ESTIMATOR_ENABLED || BATHROOM_DEMO_MODE);
 }
 
 /**
@@ -69,6 +69,57 @@ export function bathroomContractorStudioEnabled(): boolean {
  * regardless of the individual env values. Used by the demo seed and local dev.
  */
 export const BATHROOM_DEMO_MODE = flag("BATHROOM_DEMO_MODE");
+
+// ---------------------------------------------------------------------------
+// Solar experience (docs/planning/SOLAR_IMPLEMENTATION_NOTE.md)
+// Independent of the bathroom flags. Defaults OFF.
+// ---------------------------------------------------------------------------
+
+export const SOLAR_LANDING_ENABLED = flag("SOLAR_LANDING_ENABLED");
+export const SOLAR_PLANNER_ENABLED = flag("SOLAR_PLANNER_ENABLED");
+/** Google Solar API roof analysis. When off, the planner runs in manual-roof mode only. */
+export const SOLAR_GEOSPATIAL_ENABLED = flag("SOLAR_GEOSPATIAL_ENABLED");
+/** NREL PVWatts v8 second production model. */
+export const SOLAR_PVWATTS_ENABLED = flag("SOLAR_PVWATTS_ENABLED");
+/** OpenEI utility rate lookup. */
+export const SOLAR_UTILITY_RATES_ENABLED = flag("SOLAR_UTILITY_RATES_ENABLED");
+/** Incentive display. Even when on, nothing shows unless verified programs exist. */
+export const SOLAR_INCENTIVES_ENABLED = flag("SOLAR_INCENTIVES_ENABLED");
+/** Battery / storage branch (Phase 3). */
+export const SOLAR_STORAGE_ENABLED = flag("SOLAR_STORAGE_ENABLED");
+/** Contractor-ready brief + RFP promotion. */
+export const SOLAR_PROJECT_BRIEF_ENABLED = flag("SOLAR_PROJECT_BRIEF_ENABLED");
+/** Forces every solar flag on for local dev / demo. */
+export const SOLAR_DEMO_MODE = flag("SOLAR_DEMO_MODE");
+
+export function solarLandingEnabled(): boolean {
+  return SOLAR_LANDING_ENABLED || SOLAR_DEMO_MODE;
+}
+
+/** Is the planner reachable at all? The landing page can be live while it is not. */
+export function solarPlannerUsable(): boolean {
+  return SOLAR_PLANNER_ENABLED || SOLAR_DEMO_MODE;
+}
+
+export function solarBriefEnabled(): boolean {
+  return SOLAR_PROJECT_BRIEF_ENABLED || SOLAR_DEMO_MODE;
+}
+
+export function solarFlagSnapshot() {
+  return {
+    landing: solarLandingEnabled(),
+    planner: solarPlannerUsable(),
+    geospatial: SOLAR_GEOSPATIAL_ENABLED || SOLAR_DEMO_MODE,
+    pvwatts: SOLAR_PVWATTS_ENABLED || SOLAR_DEMO_MODE,
+    utilityRates: SOLAR_UTILITY_RATES_ENABLED || SOLAR_DEMO_MODE,
+    incentives: SOLAR_INCENTIVES_ENABLED || SOLAR_DEMO_MODE,
+    storage: SOLAR_STORAGE_ENABLED,
+    projectBrief: solarBriefEnabled(),
+    demoMode: SOLAR_DEMO_MODE,
+  };
+}
+
+export type SolarFlags = ReturnType<typeof solarFlagSnapshot>;
 
 export function bathroomFlagSnapshot() {
   return {

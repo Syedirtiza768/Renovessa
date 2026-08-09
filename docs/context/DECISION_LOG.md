@@ -4,6 +4,19 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-10 — Bathroom RFP conversion path unified on `/rfp` with contact capture + compliance parity
+
+### Decision
+The planner's Estimate → Request Proposal path now collects homeowner contact details and consent in the planner UI and posts them to `/api/bathroom-projects/[id]/rfp`. The route validates with `rfpSubmissionSchema` (terms/privacy literal-true required, TCPA consent optional-affirmative), records clickwrap evidence via `recordProjectCompliance`, sends the standard RFQ confirmation email, stamps the project `RFQ_SUBMITTED`, and claims the project atomically (`updateMany … WHERE projectRequestId IS NULL` inside the transaction) so double-clicks/retries cannot create duplicate RFPs. `BathroomEstimate.configurationId` is now nullable so estimates persist against the built-in default config when no `EstimatorConfiguration` row is published. Planner drafts persist `projectId`, `referenceNumber`, and a stable `clientGeneratedId` in localStorage; refresh/multi-tab resumes the same server draft instead of creating duplicates, and stale project ids are validated on hydrate.
+
+### Reason
+Production audit found three funnel-breaking defects: (1) anonymous RFP submission always failed — the client posted no contact data while the server required first name + email; (2) estimate persistence hard-failed on an FK to a nonexistent `"default-internal"` configuration row (zero `EstimatorConfiguration` rows existed in prod), silently blocking brief → RFP; (3) every browser refresh created a new `BathroomProject` because `projectId` was never written to the local draft.
+
+### Status
+Accepted and implemented; verified by `scripts/e2e-bathroom-rfp-local.sh` (9/9). Production deploy pending.
+
+---
+
 ## 2026-07-23 — Public intake, consent, and claim publication controls
 
 ### Decision

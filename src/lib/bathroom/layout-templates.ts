@@ -253,5 +253,10 @@ export function hasScopeFilled(answers: Record<string, string>): boolean {
 
 export function hasCaptureContent(answers: Record<string, string>): boolean {
   const prompt = (answers.requirementsPrompt ?? "").trim();
-  return prompt.length >= 10 || Boolean(answers.bathroomType) || Boolean(answers.photo_count);
+  return (
+    prompt.length >= 10 ||
+    Boolean(answers.bathroomType) ||
+    Boolean(answers.roomSizeBand) ||
+    Boolean(answers.photo_count && answers.photo_count !== "0")
+  );
 }

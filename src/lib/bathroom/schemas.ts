@@ -155,6 +155,25 @@ export const rfqPromotionSchema = z.object({
   notes: z.string().max(4000).optional(),
 });
 
+/**
+ * Homeowner RFP (Request for Proposal) submission from the planner estimate step.
+ * Contact fields mirror rfqPromotionSchema; last name is optional to keep the
+ * high-intent conversion form as short as possible.
+ */
+export const rfpSubmissionSchema = z.object({
+  firstName: z.string().min(1, "First name is required").max(60),
+  lastName: z.string().max(60).optional(),
+  email: z.string().email("Enter a valid email address"),
+  phone: z.string().regex(/^\d{10}$/, "Valid 10-digit US phone number is required"),
+  zipCode: z.string().regex(/^\d{5}$/, "ZIP code must be 5 digits"),
+  preferredContact: z.string().max(40).optional(),
+  timeline: z.string().max(40).optional(),
+  tcpaConsent: z.boolean().default(false),
+  termsAccepted: z.literal(true),
+  privacyAcknowledged: z.literal(true),
+  notes: z.string().max(4000).optional(),
+});
+
 export const studioPricingSettingsSchema = z.object({
   markupPercent: z.coerce.number().min(0).max(200).optional(),
   overheadPercent: z.coerce.number().min(0).max(100).optional(),

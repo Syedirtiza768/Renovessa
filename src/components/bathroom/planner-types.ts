@@ -8,11 +8,14 @@ export type PlannerAnswers = Record<string, string>;
 export type PlannerState = {
   projectId: string | null;
   referenceNumber: string | null;
+  /** Stable per-browser id used to de-duplicate server-side draft creation. */
+  clientId: string | null;
   mode: "quick" | "detailed";
   currentStep: string;
   answers: PlannerAnswers;
   saving: boolean;
   lastSavedAt: number | null;
+  saveFailed: boolean;
   error: string | null;
 };
 
