@@ -13,7 +13,7 @@ The planner's Estimate → Request Proposal path now collects homeowner contact 
 Production audit found three funnel-breaking defects: (1) anonymous RFP submission always failed — the client posted no contact data while the server required first name + email; (2) estimate persistence hard-failed on an FK to a nonexistent `"default-internal"` configuration row (zero `EstimatorConfiguration` rows existed in prod), silently blocking brief → RFP; (3) every browser refresh created a new `BathroomProject` because `projectId` was never written to the local draft.
 
 ### Status
-Accepted and implemented; verified by `scripts/e2e-bathroom-rfp-local.sh` (9/9). Production deploy pending.
+Accepted, implemented, and deployed to production 2026-08-10 (commit `e43b921`); live verification via `scripts/e2e-bathroom-rfp-live.sh` (9/9, incl. real confirmation email).
 
 ---
 

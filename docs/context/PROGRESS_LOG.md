@@ -244,3 +244,10 @@
 - Added 15 unit tests (`__tests__/rfp-conversion.test.ts`); suite 70/70 green; `next build` clean
 - Added `scripts/e2e-bathroom-rfp-local.sh` and ran it green (9/9): anonymous journey → draft dedupe → autosave → preview → persisted estimate (27 line items) → brief → RFP (consent versions + 3 ConsentEvents + audit trail verified in prod DB) → duplicate/consent rejections → full test-data cleanup
 - Production deploy of the new build is pending; SMS OTP verification and client-side analytics funnel remain open gaps from the audit brief
+
+# 2026-08-10 — Bathroom funnel fixes deployed to production
+
+- Committed `e43b921` (15 files) and pushed to `origin/main`; server pulled and rebuilt via `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`
+- New `renovessa-app-1` container healthy; entrypoint confirmed DB already in sync (nullable `configurationId` applied earlier via tunnel)
+- Live E2E (`scripts/e2e-bathroom-rfp-live.sh`) 9/9 against `https://renovessa.com`: anonymous draft → dedupe → autosave → estimate preview → persisted estimate (27 line items) → brief → RFP `RNV-2026-20247` with real SendGrid confirmation (`emailSent=true`), consent versions + 3 ConsentEvents verified, duplicates/consent-less submissions rejected, all test data removed
+- `/`, `/bathroom-remodeling`, and `/bathroom-remodeling/rockville-md/planner` all return 200 on production
