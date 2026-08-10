@@ -656,7 +656,7 @@ export function SolarPlanner({
             />
           )}
 
-          {state.currentStep === "design" && state.analysis && (
+          {state.currentStep === "design" && state.analysis && state.analysis.candidatePanels.length > 0 && (
             <DesignControls
               analysis={state.analysis}
               state={state}
@@ -684,7 +684,31 @@ export function SolarPlanner({
             />
           )}
 
-          {state.currentStep === "results" && !state.plan && (
+          {/* Analysis ran but found nothing to place — a real answer, not a
+              failure, and distinct from having no analysis at all. */}
+          {state.currentStep === "design" &&
+            state.analysis &&
+            state.analysis.candidatePanels.length === 0 && (
+              <NoSuitableRoofNotice onManual={() => goTo("manual_roof")} />
+            )}
+
+          {/* Every step that depends on a roof analysis needs a way forward
+              when there isn't one. A resumed draft whose server project is
+              gone lands here, and rendering nothing is a dead end (§57). */}
+          {(state.currentStep === "design" || state.currentStep === "results") && !state.analysis && (
+            <NeedsRoofNotice
+              computing={state.computing}
+              hasAddress={Boolean(state.address)}
+              onRestartAddress={() => goTo("address")}
+              onRetryAnalysis={
+                state.address && state.projectId
+                  ? () => void runRoofAnalysis(state.projectId!, state.address!.location)
+                  : undefined
+              }
+            />
+          )}
+
+          {state.currentStep === "results" && state.analysis && !state.plan && (
             <p className="text-sm text-ink-70">
               {state.computing ? "Building your plan…" : "Add your roof and usage to see results."}
             </p>
@@ -742,6 +766,72 @@ export function SolarPlanner({
           </p>
         )}
       </main>
+    </div>
+  );
+}
+
+/**
+ * Shown when a step that needs roof geometry is reached without it — most
+ * often a returning homeowner whose saved draft points at a project that no
+ * longer exists on the server. Always offers a way forward.
+ */
+function NeedsRoofNotice({
+  computing,
+  hasAddress,
+  onRestartAddress,
+  onRetryAnalysis,
+}: {
+  computing: boolean;
+  hasAddress: boolean;
+  onRestartAddress: () => void;
+  onRetryAnalysis?: () => void;
+}) {
+  if (computing) {
+    return <p className="text-sm text-ink-70">Analysing your roof…</p>;
+  }
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-ink-100">We need your roof first</h2>
+      <p className="mt-2 text-sm leading-relaxed text-ink-70">
+        {hasAddress
+          ? "We don't have a roof analysis for this plan any more — saved plans expire after a while. Your answers are still here; we just need to look at the roof again."
+          : "Start by telling us where your home is, and we'll analyse the roof from there."}
+      </p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        {onRetryAnalysis ? (
+          <>
+            <button type="button" onClick={onRetryAnalysis} className="landing-btn-primary">
+              Analyse my roof again
+            </button>
+            <button type="button" onClick={onRestartAddress} className="landing-btn-ghost">
+              Use a different address
+            </button>
+          </>
+        ) : (
+          // No project to retry against, so the address step is the route back.
+          // It arrives pre-filled, so this is one click for the homeowner.
+          <button type="button" onClick={onRestartAddress} className="landing-btn-primary">
+            {hasAddress ? "Look at my roof again" : "Enter my address"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Roof analysis succeeded but found nothing usable — distinct from having none. */
+function NoSuitableRoofNotice({ onManual }: { onManual: () => void }) {
+  return (
+    <div>
+      <h2 className="text-xl font-semibold text-ink-100">No suitable panel positions on this roof</h2>
+      <p className="mt-2 text-sm leading-relaxed text-ink-70">
+        The aerial analysis didn&rsquo;t find roof area suitable for panels. That can happen with heavy shade, a very
+        small roof, or an unusual roof shape — it doesn&rsquo;t necessarily mean solar is off the table. You can
+        describe your roof yourself, or send the project to installers to assess on site.
+      </p>
+      <button type="button" onClick={onManual} className="landing-btn-primary mt-5">
+        Describe my roof instead
+      </button>
     </div>
   );
 }
