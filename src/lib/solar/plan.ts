@@ -19,6 +19,7 @@ import { selectPanels, computeSystemSize, roofUsage } from "./layout-engine";
 import { reconcileProduction, providerProductionModel, computeOffsetPercent } from "./production";
 import { deriveConsumption } from "./consumption";
 import { generateCostEstimate, type CostAnswerFlags } from "./cost-engine";
+import { projectSrecIncome } from "./srec-income";
 import { scorePlanningConfidence } from "./confidence";
 import type { SolarPricingConfig } from "./pricing-config";
 
@@ -48,6 +49,9 @@ export interface BuildPlanInput {
 
   incentives: IncentiveProgram[];
   incentiveLookupFailed: boolean;
+
+  /** Project state (MD/DC/VA…) for the SREC income projection. */
+  stateCode?: string | null;
 }
 
 export interface BuildPlanOutput extends SolarPlanResult {
@@ -143,6 +147,13 @@ export function buildPlan(input: BuildPlanInput): BuildPlanOutput {
     incentives: input.incentives,
   });
 
+  // 6b. SREC income projection (market-priced production income, MD/DC only).
+  const srecIncome = projectSrecIncome({
+    annualAcKwh: production.annualAcKwh?.value ?? null,
+    stateCode: input.stateCode,
+    config,
+  });
+
   // 7. Confidence.
   const confidence = scorePlanningConfidence({
     analysis,
@@ -164,6 +175,7 @@ export function buildPlan(input: BuildPlanInput): BuildPlanOutput {
     offsetPercent,
     cost,
     confidence,
+    srecIncome,
     roofUsage: analysis
       ? roofUsage(analysis, selectedPanels.length)
       : { usedPanelCount: 0, maxPanelCount: 0, percentOfSuitableRoofUsed: 0 },

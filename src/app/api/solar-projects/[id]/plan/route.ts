@@ -131,6 +131,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       electricalInfoComplete: body.electricalInfoComplete ?? false,
       incentives,
       incentiveLookupFailed,
+      stateCode: project.state,
     });
 
     // A material model disagreement is logged for review, not just displayed.

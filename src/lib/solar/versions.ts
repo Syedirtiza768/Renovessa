@@ -23,6 +23,9 @@ export const COST_ENGINE_VERSION = "solar-cost-engine-2026-08-10-v1";
 /** Savings / economics model. */
 export const ECONOMICS_MODEL_VERSION = "solar-economics-2026-08-10-v1";
 
+/** SREC income projection (market-priced production income). */
+export const SREC_ENGINE_VERSION = "solar-srec-2026-08-10-v1";
+
 /** Confidence scoring rules. */
 export const CONFIDENCE_MODEL_VERSION = "solar-confidence-2026-08-10-v1";
 
@@ -46,6 +49,7 @@ export function calculationVersionSnapshot() {
     consumption: CONSUMPTION_MODEL_VERSION,
     cost: COST_ENGINE_VERSION,
     economics: ECONOMICS_MODEL_VERSION,
+    srec: SREC_ENGINE_VERSION,
     confidence: CONFIDENCE_MODEL_VERSION,
     brief: BRIEF_SCHEMA_VERSION,
     externalApis: {

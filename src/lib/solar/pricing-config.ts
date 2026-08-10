@@ -96,6 +96,23 @@ export interface SolarPricingConfig {
     defaultAnalysisYears: number;
     annualDegradationPercent: number;
   };
+
+  /**
+   * SREC income projection. Per-state market price brackets ($/SREC) from
+   * current market reporting — NOT guarantees. Absent state = no projection.
+   * `certified*` describes Maryland's Brighter Tomorrow Act 1.5x multiplier
+   * for qualifying rooftop systems; shown as an upside note, never the base.
+   */
+  srec: {
+    yearsProjected: number;
+    prices: Record<string, {
+      low: number;
+      high: number;
+      certifiedFactor?: number;
+      certifiedUntil?: string;
+      certifiedNote?: string;
+    }>;
+  };
 }
 
 export const DEFAULT_SOLAR_PRICING_CONFIG: SolarPricingConfig = {
@@ -199,6 +216,24 @@ export const DEFAULT_SOLAR_PRICING_CONFIG: SolarPricingConfig = {
     defaultAnalysisYears: 25,
     annualDegradationPercent: 0.5,
   },
+
+  srec: {
+    yearsProjected: 10,
+    prices: {
+      // Market reporting, Aug 2026: standard SRECs ~$50–$90; Certified (1.5x)
+      // for rooftop ≤5 MW placed in service 2024-07-01 through 2028-01-01.
+      MD: {
+        low: 50,
+        high: 90,
+        certifiedFactor: 1.5,
+        certifiedUntil: "2028-01-01",
+        certifiedNote:
+          "Rooftop systems placed in service before 2028-01-01 may qualify for Maryland Certified SRECs worth 1.5× the standard value (Brighter Tomorrow Act, 2024).",
+      },
+      // Market reporting, Aug 2026: DC SRECs ~$300–$425, highest in the region.
+      DC: { low: 300, high: 425 },
+    },
+  },
 };
 
 /** Select the band covering a system size. Falls back to the top band. */
@@ -234,6 +269,11 @@ export function mergePricingConfig(
     production: { ...DEFAULT_SOLAR_PRICING_CONFIG.production, ...(published.production ?? {}) },
     roof: { ...DEFAULT_SOLAR_PRICING_CONFIG.roof, ...(published.roof ?? {}) },
     economics: { ...DEFAULT_SOLAR_PRICING_CONFIG.economics, ...(published.economics ?? {}) },
+    srec: {
+      ...DEFAULT_SOLAR_PRICING_CONFIG.srec,
+      ...(published.srec ?? {}),
+      prices: { ...DEFAULT_SOLAR_PRICING_CONFIG.srec.prices, ...(published.srec?.prices ?? {}) },
+    },
     bands: published.bands?.length ? published.bands : DEFAULT_SOLAR_PRICING_CONFIG.bands,
     adders: published.adders?.length ? published.adders : DEFAULT_SOLAR_PRICING_CONFIG.adders,
   };

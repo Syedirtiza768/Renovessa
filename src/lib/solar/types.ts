@@ -155,6 +155,27 @@ export interface PanelLayoutSelection {
   targetOffsetFraction?: number;
 }
 
+/**
+ * SREC (Solar Renewable Energy Credit) income projection. Market-priced
+ * production income, always labelled as not-guaranteed. Prices come from the
+ * pricing config's `srec.prices` table, sourced from current market reporting
+ * and re-verified on the same cadence as the incentive register.
+ */
+export interface SrecIncomeProjection {
+  stateCode: string;
+  /** Credits earned per year at year-1 production (1 SREC = 1,000 kWh). */
+  srecsPerYear: Tracked<number>;
+  annualIncomeLowDollars: Tracked<number>;
+  annualIncomeHighDollars: Tracked<number>;
+  projectedYears: number;
+  /** Totals include panel degradation; prices are held flat (no forecast). */
+  totalIncomeLowDollars: Tracked<number>;
+  totalIncomeHighDollars: Tracked<number>;
+  /** Upside note, e.g. MD Certified SREC 1.5x multiplier window. */
+  certifiedMultiplierNote?: string;
+  assumptions: string[];
+}
+
 export interface SystemSize {
   panelCount: Tracked<number>;
   panelCapacityWatts: Tracked<number>;
@@ -371,6 +392,12 @@ export interface SolarPlanResult {
   offsetPercent: MaybeTracked<number>;
   cost: CostEstimate;
   confidence: PlanningConfidence;
+  /**
+   * Market-priced SREC production income projection (MD/DC only; null
+   * elsewhere). Never netted against installed cost — it is income over
+   * time, and prices are not guaranteed.
+   */
+  srecIncome?: SrecIncomeProjection | null;
   roofUsage: {
     usedPanelCount: number;
     maxPanelCount: number;

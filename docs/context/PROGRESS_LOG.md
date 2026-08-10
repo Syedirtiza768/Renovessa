@@ -310,3 +310,13 @@
 - Inserted 9 rows into prod `SolarIncentiveProgram` via `scripts/seed-solar-incentives-2026-08-10.sql`: PUBLISHED informational — MD SRECs (incl. 1.5× Certified SREC window through 2028-01-01), MD sales-tax exemption, MD property-tax exemption, DC SRECs, DC Solar for All, §48E third-party-owned context; DRAFT — MSAP (FY26 window closed/funding exhausted, republish when FY27 opens), MD Bridge Fund (eligibility window passed)
 - Every row carries source URL + `lastVerifiedAt` 2026-08-10; stale filter (180 days) means re-verification is due by ~2027-02-06
 - Live-verified on the MD test project: plan now lists 4 applicable programs with honest exclusion reasons; net cost correctly stays hidden because no universally-applicable, calculable upfront incentive exists in Aug 2026 (post-25D) — the register informs, it does not fabricate savings
+
+# 2026-08-10 — Solar SREC income projection (10-year MD/DC revenue ranges)
+
+- Post-25D, the solar plan's "after incentives" story was empty by design (net cost withheld); homeowners in MD/DC have one real monetizable program left — SRECs — so the plan now projects that income instead of leaving the value story blank
+- New `src/lib/solar/srec-income.ts`: `projectSrecIncome()` converts modeled annual AC production to SRECs/yr (1 SREC = 1 MWh), applies per-state price brackets from pricing config (MD $50–$90, DC $300–$425), projects 10 years with the array's annual degradation (geometric sum, not flat ×10), and returns LOW-confidence provenance labeled "market-priced, not guaranteed"
+- MD Certified SREC 1.5× multiplier shown as an informational note only while `new Date() < certifiedUntil` (2028-01-01) — never baked into the numbers, since certification is project-specific
+- SREC income is deliberately never netted into system cost or net cost: it is recurring market revenue, not an upfront incentive; cost-engine/ResultsStep copy now distinguishes "programs listed but not monetizable upfront" from "nothing verified"
+- Config-driven (`srec` block in `SolarPricingConfig`, admin-versionable, deep-merged); unknown/no-production states return null; version stamp `solar-srec-2026-08-10-v1` added to the plan snapshot
+- 6 new unit tests (`srec-income.test.ts`); full suite 216/216 green, `tsc --noEmit` clean
+- Pending: production deploy + live verification on the MD test project `RNV-2026-66990`

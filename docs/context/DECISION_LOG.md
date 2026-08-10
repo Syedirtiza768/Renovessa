@@ -271,3 +271,41 @@ Model id verified present on the OpenRouter model list on 2026-08-10.
 ### Status
 Accepted — code default changed; production env (`OPENROUTER_MODEL`,
 `BATHROOM_AI_INTERPRETATION_ENABLED=true`) to be applied at deploy
+
+
+---
+
+## 2026-08-10 — SREC income shown as a projection, never netted into cost
+
+### Decision
+The solar plan computes a 10-year SREC income projection (MD/DC only) from
+modeled production and config-driven price brackets, displayed as a separate
+"SREC income potential" section with LOW-confidence provenance. It is never
+subtracted from installed cost or net cost, and the MD Certified-SREC 1.5×
+multiplier appears only as an expiring informational note.
+
+### Reason
+With federal §25D terminated (P.L. 119-21), no universally-applicable upfront
+incentive exists in MD/DC, so net cost stays null by design. SRECs are the one
+remaining dollar-denominated benefit, but they are recurring, market-priced,
+and project-specific — netting them into cost would overstate certainty and
+confuse "price you pay" with "revenue you may earn". Flat brackets with a
+LOW-confidence label are honest; degradation-adjusted totals avoid inflating
+the 10-year figure.
+
+### Alternatives Considered
+- Netting SREC NPV into net cost — rejected: mixes upfront price with
+  speculative market revenue, undermines the "never fabricate savings" rule
+- Per-year price curves (SREC markets decay as supply grows) — rejected: no
+  verified forward curve available; flat bracket + LOW confidence is more
+  honest than a fabricated curve
+
+### Impact
+`srec` block in `SolarPricingConfig` (brackets re-verified on the same
+~180-day cadence as the incentive register), `srec-income.ts`,
+`SolarPlanResult.srecIncome`, ResultsStep section, plan-route `stateCode`
+input, version stamp `solar-srec-2026-08-10-v1`.
+
+### Status
+Accepted — implemented and tested (216/216 unit tests green, tsc clean);
+pending production deploy

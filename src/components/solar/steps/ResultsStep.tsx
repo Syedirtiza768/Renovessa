@@ -158,8 +158,9 @@ export function ResultsStep({
               </p>
             ) : (
               <p className="mt-4 rounded-lg border border-ink-15 bg-bone-1 p-3 text-sm leading-relaxed text-ink-70">
-                Incentive information could not currently be verified for your location, so none has been applied and
-                no net cost is shown. The range above is gross installed cost.
+                {cost.appliedIncentives.length > 0
+                  ? "The programs listed for your area could not be converted into a verified upfront deduction, so no net cost is shown. The range above is gross installed cost — SREC income potential is shown separately below."
+                  : "Incentive information could not currently be verified for your location, so none has been applied and no net cost is shown. The range above is gross installed cost."}
               </p>
             )}
           </>
@@ -176,6 +177,40 @@ export function ResultsStep({
           </div>
         )}
       </section>
+
+      {/* --- SREC income projection (market-priced, not guaranteed) -------- */}
+      {plan.srecIncome && (
+        <section aria-labelledby="solar-srec">
+          <h3 id="solar-srec" className="text-lg font-semibold text-ink-100">
+            SREC income potential ({plan.srecIncome.stateCode})
+          </h3>
+          <p className="mt-3 text-2xl text-ink-100" style={{ fontFamily: "var(--font-serif)" }}>
+            {formatUsdRange(
+              plan.srecIncome.totalIncomeLowDollars.value,
+              plan.srecIncome.totalIncomeHighDollars.value,
+            )}{" "}
+            <span className="text-base text-ink-40">over {plan.srecIncome.projectedYears} years</span>
+          </p>
+          <p className="mt-1 text-sm text-ink-40">
+            About {plan.srecIncome.srecsPerYear.value} credits/year,{" "}
+            {formatUsdRange(plan.srecIncome.annualIncomeLowDollars.value, plan.srecIncome.annualIncomeHighDollars.value)}{" "}
+            per year at current market prices.
+          </p>
+          <p className="mt-2 inline-block rounded-full bg-ink-5 px-2 py-0.5 text-xs text-ink-40">
+            Market-priced estimate — not guaranteed, not deducted from project cost
+          </p>
+          {plan.srecIncome.certifiedMultiplierNote && (
+            <p className="mt-3 rounded-lg border border-accent bg-accent/5 p-3 text-sm leading-relaxed text-ink-70">
+              {plan.srecIncome.certifiedMultiplierNote}
+            </p>
+          )}
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs leading-relaxed text-ink-40">
+            {plan.srecIncome.assumptions.map((a) => (
+              <li key={a}>{a}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* --- Monthly production ------------------------------------------ */}
       {production.monthlyAcKwh && (

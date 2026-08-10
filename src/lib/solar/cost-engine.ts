@@ -152,7 +152,9 @@ export function generateCostEstimate(input: CostEngineInput): CostEstimate {
 
   if (!monetised.length) {
     assumptions.push(
-      "No incentive has been verified for this project, so no net cost is shown. The figures above are gross installed cost.",
+      appliedIncentives.length
+        ? "The incentive programs listed for this location could not be converted into a verified upfront deduction, so no net cost is shown. The figures above are gross installed cost."
+        : "No incentive has been verified for this project, so no net cost is shown. The figures above are gross installed cost.",
     );
   }
 
