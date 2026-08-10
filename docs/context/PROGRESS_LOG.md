@@ -330,3 +330,10 @@
 - Gap noted: all prior E2E drove the API via curl — the browser effect path was never exercised; this class of bug needs a browser-level smoke check
 - Deployed `d44d74c`: server pulled, rebuilt, `renovessa-app-1` healthy; live bundle verification — served planner chunk `9587-6c763593e177814b.js` contains the fix marker string; API flow re-verified green via curl (brief POST 201 in 0.02s)
 - Browser-path verification via WebBridge attempted but the browser extension was not connected; owner asked to hard-refresh and retry. New test rows from today's repro (`RNV-2026-96632`, `RNV-2026-47518`) join the pending prod-DB cleanup list
+
+# 2026-08-10 — Sunlight overlay now aligns with the roof like panels do
+
+- Owner-reported: the solar roof visualizer's Sunlight layer sat at a visibly wrong angle over roofs whose ridge isn't north–south — segments were drawn from the provider's axis-aligned lat/lng bbox while panels are rotated by each plane's azimuth
+- Added `segmentPlaneCorners()` in `src/lib/solar/geo.ts`: recovers the across-slope × down-slope dimensions by inverting the exact bbox↔azimuth 2×2 system and redraws the face outline rotated about the bbox centre — exact for rectangular planes, same-centre axis-aligned fallback near 45°+k·90° (W/H inseparable) and for degenerate inputs
+- `RoofVisualizer` now draws every roof-face polygon (sunlight ramp, hover, excluded) in the azimuth-aligned frame the panels use; hover/click targets follow the roof edges too
+- 5 new geometry tests (`segment-plane.test.ts`): dimension/orientation recovery across 7 azimuths, centre preservation, exact bbox match at due-south, 45° fallback, no collapse/inversion; full suite 221/221 green, tsc clean

@@ -107,6 +107,65 @@ export function boundingBoxCorners(box: BoundingBox, origin: LatLng): PlanarPoin
 }
 
 /**
+ * Corner points of a roof plane as it appears from directly overhead,
+ * aligned to the plane's azimuth — the same frame panels are drawn in.
+ *
+ * The provider supplies only an axis-aligned lat/lng bounding box. Rendered
+ * as-is, the sunlight overlay sits at a visibly wrong angle over any roof
+ * whose ridge does not run north–south/east–west. But a rectangular plane of
+ * across-slope width W and down-slope height H at azimuth a produces an
+ * axis-aligned bbox of exactly (W·|cos a| + H·|sin a|) ×
+ * (W·|sin a| + H·|cos a|), so W and H can be recovered by inverting that
+ * 2×2 system and the azimuth-aligned outline redrawn at the bbox centre.
+ * The result lines up with the roof edges in the photo and with the panels.
+ *
+ * Degenerate near a = 45° + k·90° (the bbox is square and W, H cannot be
+ * separated) and for non-rectangular planes; in both cases the original
+ * axis-aligned box is a same-centre fallback rather than a wrong answer.
+ */
+export function segmentPlaneCorners(opts: {
+  boundingBox: BoundingBox;
+  origin: LatLng;
+  azimuthDegrees: number;
+}): PlanarPoint[] {
+  const axisAligned = boundingBoxCorners(opts.boundingBox, opts.origin);
+  const extent = extentOf(axisAligned);
+  if (!extent) return axisAligned;
+
+  const bx = extent.maxX - extent.minX;
+  const by = extent.maxY - extent.minY;
+  const cx = (extent.minX + extent.maxX) / 2;
+  const cy = (extent.minY + extent.maxY) / 2;
+
+  const a = ((opts.azimuthDegrees % 360) + 360) % 360;
+  const rad = (a * Math.PI) / 180;
+  const cos = Math.abs(Math.cos(rad));
+  const sin = Math.abs(Math.sin(rad));
+  const det = cos * cos - sin * sin; // cos(2a); vanishes at 45° + k·90°
+  if (Math.abs(det) < 0.1) return axisAligned;
+
+  const across = (bx * cos - by * sin) / det; // W, across-slope (ridge) extent
+  const down = (by * cos - bx * sin) / det; // H, down-slope extent
+  if (across <= 0 || down <= 0) return axisAligned;
+
+  // Down-slope unit vector: azimuth is degrees clockwise from north.
+  const dx = Math.sin(rad);
+  const dy = Math.cos(rad);
+  // Across-slope unit vector: down-slope rotated 90° clockwise.
+  const rx = dy;
+  const ry = -dx;
+
+  const hw = across / 2;
+  const hh = down / 2;
+  return [
+    { x: cx - hw * rx - hh * dx, y: cy - hw * ry - hh * dy },
+    { x: cx + hw * rx - hh * dx, y: cy + hw * ry - hh * dy },
+    { x: cx + hw * rx + hh * dx, y: cy + hw * ry + hh * dy },
+    { x: cx - hw * rx + hh * dx, y: cy - hw * ry + hh * dy },
+  ];
+}
+
+/**
  * Corner points of one panel as it appears **from directly overhead**, which
  * is the only view satellite imagery gives us.
  *

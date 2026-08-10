@@ -23,7 +23,7 @@ import type { RoofAnalysis, CandidatePanel, RoofSegment } from "@/lib/solar/type
 import { chooseBasemap, GOOGLE_IMAGERY_ATTRIBUTION } from "@/lib/solar/imagery";
 import {
   toPlanar,
-  boundingBoxCorners,
+  segmentPlaneCorners,
   panelCorners,
   toSvgPoints,
   extentOf,
@@ -81,7 +81,14 @@ export function RoofVisualizer({
   const geometry = useMemo(() => {
     const segmentShapes = analysis.segments.map((s) => ({
       segment: s,
-      corners: boundingBoxCorners(s.boundingBox, origin),
+      // Azimuth-aligned plane outline, recovered from the provider's
+      // axis-aligned bbox — the same frame the panels are drawn in, so the
+      // sunlight ramp and face outlines sit exactly on the roof edges.
+      corners: segmentPlaneCorners({
+        boundingBox: s.boundingBox,
+        origin,
+        azimuthDegrees: s.azimuthDegrees,
+      }),
     }));
 
     const panelShapes = analysis.candidatePanels.map((p) => {
@@ -217,11 +224,12 @@ export function RoofVisualizer({
           )}
 
           {/* Roof planes.
-              The provider gives an axis-aligned lat/lng bounding box, not the
-              plane's true outline, so over a real photo these rectangles can
-              never line up with a diagonal ridge. They are drawn only when
-              they carry information the photo doesn't — the sunlight ramp, an
-              excluded face, or the one being hovered. */}
+              Drawn azimuth-aligned (see segmentPlaneCorners), so the outline
+              and the sunlight ramp follow the roof's real edges the way the
+              panels do. Over the photo a face is muted to nothing unless it
+              is carrying information the image cannot — the sunlight ramp, an
+              excluded face, or the one being hovered. It stays in the DOM
+              either way so it remains hoverable and clickable. */}
           {geometry.segmentShapes.map(({ segment, corners }) => {
             const excluded = excludedSegments.has(segment.index);
             const sunlightLayer = layer === "sunlight" && hasSunlightData;
