@@ -8,6 +8,7 @@ import { getGeospatialProvider } from "@/lib/solar/providers";
 import { buildManualRoofAnalysis } from "@/lib/solar/manual-roof";
 import { saveRoofAnalysis, loadActiveRoofAnalysis } from "@/lib/solar/persistence";
 import { checkSolarRateLimit } from "@/lib/solar/rate-limit";
+import { checkRoofAnalysisBudget, budgetExceededFailure } from "@/lib/solar/provider-budget";
 import { solarPlannerUsable } from "@/lib/feature-flags";
 import type { RoofAnalysis } from "@/lib/solar/types";
 
@@ -54,6 +55,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // --- Provider mode ---
+    // Aggregate daily spend guard, checked before the provider is touched.
+    // The per-IP limiter bounds one caller; this bounds the bill.
+    const budget = await checkRoofAnalysisBudget();
+    if (!budget.allowed) {
+      await logAuditEvent({
+        eventType: "SOLAR_PROVIDER_FAILURE",
+        description: `Daily roof-analysis budget exhausted (${budget.used}/${budget.cap})`,
+        actorId: session?.id,
+        solarProjectId: id,
+        metadata: { used: budget.used, cap: budget.cap },
+      });
+      return NextResponse.json(
+        { analysis: null, failure: budgetExceededFailure() },
+        { headers: { "Retry-After": String(budget.resetsInSeconds) } },
+      );
+    }
+
     const provider = getGeospatialProvider();
     if (!provider) {
       await logSolarProviderFailure(id, session?.id, "google-solar", "DISABLED");
