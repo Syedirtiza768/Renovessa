@@ -321,3 +321,10 @@
 - 6 new unit tests (`srec-income.test.ts`); full suite 216/216 green, `tsc --noEmit` clean
 - Pending: production deploy + live verification on the MD test project `RNV-2026-66990`
 - Deployed `a1fc5d9`: server pulled, rebuilt, `renovessa-app-1` healthy; live-verified on MD test project `RNV-2026-66990` (135,561 kWh/yr): 135.6 SRECs/yr, $6,778–$12,200/yr, 10-yr $66,276–$119,296 (degradation-adjusted), Certified-SREC note present, provenance LOW; `/solar/planner` 200
+
+# 2026-08-10 — Fixed stuck "Generating your project brief…" spinner
+
+- Owner-reported on production: planner stuck at the auto-brief spinner after estimate save; prod DB showed the brief WAS created (`RNV-2026-19550`, brief + estimate rows present) — pure client-side effect bug
+- Root cause: `EstimateStep.tsx` auto-brief `useEffect` had `briefGenerating` in its deps and set it synchronously inside the effect → self-retrigger → cleanup aborted its own in-flight fetch → `finally` skipped the reset → spinner forever; brief POST actually completed server-side
+- Fix: `useRef` per-project guard, `briefGenerating` removed from deps, retryable error surfaced on failure (manual button stays as fallback); suite 216/216 green, tsc clean
+- Gap noted: all prior E2E drove the API via curl — the browser effect path was never exercised; this class of bug needs a browser-level smoke check

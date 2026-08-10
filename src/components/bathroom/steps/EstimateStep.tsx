@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { StepProps } from "../planner-types";
 import { PermitsStep } from "./PermitsStep";
 import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
@@ -92,9 +92,14 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
     return () => ctrl.abort();
   }, [result, projectId, answers, estimatePersisted]);
 
-  // Auto-generate brief once estimate is successfully persisted
+  // Auto-generate brief once estimate is successfully persisted.
+  // Guarded by a ref (not state) so setting briefGenerating inside the
+  // effect cannot retrigger it and abort its own in-flight fetch.
+  const briefRequestedForRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!estimatePersisted || !projectId || briefId || briefGenerating) return;
+    if (!estimatePersisted || !projectId || briefId) return;
+    if (briefRequestedForRef.current === projectId) return;
+    briefRequestedForRef.current = projectId;
     const ctrl = new AbortController();
     async function autoBrief() {
       setBriefGenerating(true);
@@ -105,19 +110,25 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
           headers: { "Content-Type": "application/json" },
           signal: ctrl.signal,
         });
-        if (res.ok && !ctrl.signal.aborted) {
+        if (ctrl.signal.aborted) return;
+        if (res.ok) {
           const data = (await res.json()) as { saved: { id: string } };
           setBriefId(data.saved.id);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setBriefError((data as { error?: string }).error ?? `Brief generation failed (${res.status}). You can retry below.`);
         }
       } catch {
-        // non-fatal: brief can be generated manually
+        if (!ctrl.signal.aborted) {
+          setBriefError("Brief generation was interrupted. You can retry below.");
+        }
       } finally {
         if (!ctrl.signal.aborted) setBriefGenerating(false);
       }
     }
     void autoBrief();
     return () => ctrl.abort();
-  }, [estimatePersisted, projectId, briefId, briefGenerating]);
+  }, [estimatePersisted, projectId, briefId]);
 
   if (loading) {
     return <p className="text-sm text-ink-70">Calculating planning range…</p>;

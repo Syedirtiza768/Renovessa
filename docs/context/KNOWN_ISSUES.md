@@ -301,3 +301,37 @@ admin queue (`ProjectRequest` status NEW) with no automatic contractor dispatch.
 
 ### Status
 Resolved 2026-08-10 — deployed in `e81f112` with `BATHROOM_AI_INTERPRETATION_ENABLED=true` and `OPENROUTER_MODEL=openai/gpt-5.6-luna`. Live verified: the basin-swap prompt now returns `source: openrouter` with `fixture_replacement` + `sink_basin`, and the preview range is $865–$2,328 with only scope-relevant line items. Still open by design: saved-estimate confidence placeholder and the disabled contractor-matching decision.
+
+
+---
+
+## Estimate Step "Generating your project brief…" Spinner Stuck Forever
+
+### Type
+Correctness / UX (React effect bug)
+
+### Severity
+High — blocks the primary conversion path in the browser (brief → PDF → RFP)
+
+### Description
+Reported 2026-08-10 on `https://renovessa.com/bathroom-remodeling/planner`:
+after the estimate is saved, the auto-brief spinner rotates indefinitely.
+Root cause in `EstimateStep.tsx`: the auto-brief `useEffect` listed
+`briefGenerating` in its dependency array while calling
+`setBriefGenerating(true)` synchronously inside the effect. The state change
+re-ran the effect, the cleanup aborted the in-flight brief `fetch`, the new
+effect run early-returned on `briefGenerating === true`, and the aborted
+fetch's `finally` skipped the reset — so `briefGenerating` stayed `true`
+forever. The server usually completed the POST anyway (brief row exists in
+the DB), so the UI was stuck on a brief that had actually been created.
+Introduced with the funnel-fix batch (`e43b921`); missed because all E2E
+verification drove the API via curl, never the browser effect path.
+
+### Suggested Fix or Mitigation
+Guard the effect with a `useRef` (per projectId) instead of state, remove
+`briefGenerating` from the deps, and surface a retryable error when the POST
+fails so the manual "Generate my project brief" button becomes actionable.
+
+### Status
+Resolved 2026-08-10 — ref-guard fix; suite 216/216 green, tsc clean;
+pending production deploy + browser-path verification.
