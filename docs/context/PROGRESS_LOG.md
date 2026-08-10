@@ -276,3 +276,13 @@
 - New `renovessa-app-1` container healthy; entrypoint confirmed DB already in sync (nullable `configurationId` applied earlier via tunnel)
 - Live E2E (`scripts/e2e-bathroom-rfp-live.sh`) 9/9 against `https://renovessa.com`: anonymous draft → dedupe → autosave → estimate preview → persisted estimate (27 line items) → brief → RFP `RNV-2026-20247` with real SendGrid confirmation (`emailSent=true`), consent versions + 3 ConsentEvents verified, duplicates/consent-less submissions rejected, all test data removed
 - `/`, `/bathroom-remodeling`, and `/bathroom-remodeling/rockville-md/planner` all return 200 on production
+
+# 2026-08-10 — Production E2E audit of powder-room basin swap + fixes
+
+- Ran the bathroom planner end-to-end against production (SSH to EC2, `renovessa-app-1` on :7090) for the scenario "change the wash basin in the powder room": anonymous project `RNV-2026-65405` → interpret → estimate → brief → RFP `RNV-2026-69061` (`emailSent=true`, duplicate RFP correctly rejected with 409, DB records verified)
+- Found the flow's plumbing works but the estimate was wrong for the scenario ($11,403–$37,150 full-remodel line items for a basin swap), the heuristic interpret defaulted to `remodel_same_layout` (AI interpretation disabled, no OPENROUTER_API_KEY), `/brief/pdf` 500'd on missing pdfkit AFM fonts, and saved estimates used placeholder HIGH confidence
+- Fixed `/brief/pdf` ENOENT: `serverExternalPackages: ["pdfkit"]` in `next.config.ts` (pdfkit was webpack-bundled so `__dirname/data/*.afm` was unreachable in the standalone image)
+- Added scope-aware `fixture_replacement` objective: itemized small-job branch in the estimator (per-fixture allowance × finish tier, flat hookup labor, small-job minimum charge 450; no shower/tile/permit items), fixture-swap budget-scenario copy, conditional "which fixture?" picker in ScopeStep (remodel-only fields hidden), `fixtureType` plumbed through schemas/derivation/interpret (both heuristic keywords and the AI prompt)
+- Documented all findings in `docs/context/KNOWN_ISSUES.md` (3 new entries) and the pricing decision in `docs/context/DECISION_LOG.md`
+- 6 new estimator unit tests; full suite 199/199 green; `tsc --noEmit` clean
+- Production deploy pending; test records `RNV-2026-65405` / `RNV-2026-69061` still in prod DB awaiting cleanup decision

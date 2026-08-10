@@ -33,12 +33,6 @@ Accepted, implemented, build clean (Next.js 15.5.21).
 
 ## 2026-08-10 — Flag-dependent routes must be `force-dynamic` (build-time env freeze)
 
-Record product, architecture, and technical decisions here.
-
----
-
-## 2026-08-10 — Flag-dependent routes must be `force-dynamic` (build-time env freeze)
-
 ### Decision
 Any route whose output branches on a feature flag is marked `export const dynamic = "force-dynamic"`, and the `SOLAR_*` flag helpers read `process.env` at **call time** rather than as module-level constants. Applied to `/solar`, `/solar/planner`, `/solar/methodology`, and `src/app/sitemap.ts`.
 
@@ -171,3 +165,43 @@ Renovessa is a **verified home improvement appointment marketplace** for DMV (DC
 
 ### Status
 Accepted (from Renovessa_Product_Blueprint.docx)
+
+---
+
+## 2026-08-10 — Small-Job Branch in Bathroom Estimator (`fixture_replacement`)
+
+### Decision
+Add a `fixture_replacement` project objective that bypasses the per-sqft remodel
+baseline in `generateEstimate` and instead prices an itemized small job:
+fixture removal/disposal, a per-fixture allowance (sink_basin / faucet / toilet /
+vanity_cabinet / shower_head, scaled by finish tier), flat hookup plumbing labor
+(+ optional relocation per foot), parts, and site protection — with a separate
+`smallJobMinimumCharge` (450) instead of the remodel `minimumCharge` (2500).
+No shower/tub, tile, flooring, or permit line items are emitted for this scope.
+
+### Reason
+Production E2E on 2026-08-10 showed a powder-room wash-basin swap estimated at
+$11,403–$37,150 with full-remodel line items — the estimator emitted the same
+line-item list for every objective. Homeowners with single-fixture jobs got
+meaningless ranges, which undermines trust in the planning-range → RFP funnel.
+
+### Alternatives Considered
+- Filtering the full line-item list per objective — rejected: keeps remodel
+  assumptions (per-sqft base, permit bundle) that don't apply to small jobs
+- Routing fixture swaps out of the estimator entirely (`OUT_OF_SCOPE_INDICATORS`)
+  — rejected: a basin/vanity replacement is a legitimate contractor job and a
+  valid RFP, unlike faucet repair or drain cleaning
+
+### Impact
+`config.ts` (new objective + `fixtureReplacement` pricing block +
+`FIXTURE_REPLACEMENT_TYPES`), `estimator.ts` (small-job branch + `fixtureType`
+input), `budget-scenarios.ts` (fixture-swap scenario copy), `schemas.ts`,
+`estimate-input-derivation.ts`, `requirements-interpret.ts`, interpret-route
+heuristic, and ScopeStep UI (conditional fixture picker; remodel-only fields
+hidden for this objective). Published DB EstimatorConfiguration rows merge over
+the default config, so the new pricing block survives a published override
+(shallow merge keeps default `fixtureReplacement` unless explicitly overridden).
+
+### Status
+Accepted — implemented and tested (199/199 unit tests green, tsc clean);
+pending production deploy

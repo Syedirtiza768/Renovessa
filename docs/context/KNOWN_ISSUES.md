@@ -233,7 +233,7 @@ required from `node_modules` at runtime instead of bundled; rebuild and redeploy
 the Docker image, then re-verify `/brief/pdf` returns 200 `application/pdf`.
 
 ### Status
-Open — root cause confirmed in production on 2026-08-10
+Fix implemented 2026-08-10 — `serverExternalPackages: ["pdfkit"]` added to `next.config.ts`. Pending production deploy and live re-verification of `/brief/pdf`.
 
 ---
 
@@ -265,7 +265,7 @@ to ~$1,500.
    the per-sqft remodel baseline
 
 ### Status
-Open — confirmed with production preview and saved estimates on 2026-08-10
+Fixed in code 2026-08-10 — new `fixture_replacement` objective: itemized small-job branch in `estimator.ts` (no shower/tub/tile/permit line items, small-job minimum charge), per-fixture allowances in config, fixture-swap scenario copy, conditional UI picker in ScopeStep, and heuristic/AI interpret wiring (`fixtureType`). Unit tests added; suite green. Pending production deploy.
 
 ---
 
@@ -300,4 +300,4 @@ admin queue (`ProjectRequest` status NEW) with no automatic contractor dispatch.
    admin queue is the intended operating model
 
 ### Status
-Open — confirmed in production on 2026-08-10
+Partially fixed 2026-08-10 — the keyword heuristic now maps basin/sink/faucet/toilet/vanity swap language to `fixture_replacement` + `fixtureType`. Still open: AI interpretation is disabled in production (no `OPENROUTER_API_KEY`), the saved-estimate confidence placeholder (HIGH confidence for approximate inputs), and the disabled contractor-matching decision.
