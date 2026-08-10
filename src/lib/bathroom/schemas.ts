@@ -125,7 +125,7 @@ export const estimateInputsSchema = z.object({
   condoHighFloor: z.boolean().default(false),
   homeAgeYears: z.number().int().nonnegative().max(300).default(20),
   waterDamageReported: z.boolean().default(false),
-  inRockville: z.boolean().default(true),
+  locationId: z.string().max(60).default("unknown"),
 });
 
 export const permitAnswersSchema = z.object({

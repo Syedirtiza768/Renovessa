@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { bathroomEstimatorEnabled } from "@/lib/feature-flags";
 import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/bathroom/config";
-import { generateEstimate, type EstimateInputs } from "@/lib/bathroom/estimator";
+import { generateEstimate } from "@/lib/bathroom/estimator";
 import { generateBudgetScenarios } from "@/lib/bathroom/budget-scenarios";
 import { scoreConfidence, type ConfidenceInput } from "@/lib/bathroom/confidence";
 import { deriveEstimateInputs } from "@/lib/bathroom/estimate-input-derivation";
+import { normalizeAnswers, resolveLocationId, hasLocation } from "@/lib/bathroom/answer-normalization";
 
 export const runtime = "nodejs";
 
@@ -28,12 +29,32 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid body.", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const a = parsed.data.answers;
+  const a = normalizeAnswers(parsed.data.answers);
   const conditions = (a.conditions ?? "").split(",").filter(Boolean);
   const accessibility = (a.accessibilityFeatures ?? "").split(",").filter(Boolean);
   const waterDamageReported = conditions.some((c) =>
     ["active_leak", "water_stains", "soft_flooring", "past_leak"].includes(c),
   );
+
+  // If no location is provided, do not show a localized estimate.
+  if (!hasLocation(a)) {
+    return NextResponse.json({
+      low: 0,
+      mid: 0,
+      high: 0,
+      confidence: {
+        level: "LOW",
+        reasons: ["Location is required for a localized planning range"],
+        suggestions: ["Enter your ZIP code to see a localized estimate"],
+      },
+      lineItems: [],
+      costDrivers: [],
+      assumptions: ["Add your project location to receive a planning range."],
+      exclusions: [],
+      scenarios: [],
+      locationMissing: true,
+    });
+  }
 
   const confidenceInput: ConfidenceInput = {
     hasExactMeasurements: a.measurementMethod === "guided",
@@ -48,8 +69,7 @@ export async function POST(req: Request) {
   };
   const confidence = scoreConfidence(confidenceInput);
 
-  const inputs: EstimateInputs = deriveEstimateInputs(a);
-
+  const inputs = deriveEstimateInputs(a);
   const estimate = generateEstimate(inputs, DEFAULT_ESTIMATOR_CONFIG, confidence);
   const scenarios = generateBudgetScenarios(inputs, DEFAULT_ESTIMATOR_CONFIG, confidence);
 
@@ -71,6 +91,7 @@ export async function POST(req: Request) {
     })),
     costDrivers: estimate.costDrivers,
     assumptions: estimate.assumptions,
+    unknowns: estimate.unknowns,
     exclusions: estimate.exclusions,
     scenarios: scenarios.map((s) => ({
       id: s.id,
@@ -81,5 +102,6 @@ export async function POST(req: Request) {
       benefits: s.benefits,
       recommendedNextDecision: s.recommendedNextDecision,
     })),
+    locationId: resolveLocationId(a),
   });
 }

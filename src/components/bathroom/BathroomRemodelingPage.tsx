@@ -19,13 +19,13 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
               Plan Your Bathroom Remodel Before Requesting Contractor Bids
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-relaxed text-ink-70">
-              Measure your bathroom, explore layout changes, select materials, receive a localized planning range,
-              and create a detailed project brief for qualified local contractors.
+              Capture your project scope, explore layout options, and receive a useful local planning range
+              — then build a contractor-ready brief and control how many contractors receive it.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               {flags.planner ? (
                 <Link href="/bathroom-remodeling/planner" className="landing-btn-primary-lg">
-                  Design and Estimate My Bathroom →
+                  Get my planning range →
                 </Link>
               ) : (
                 <span className="landing-btn-primary-lg opacity-60 cursor-not-allowed">
@@ -33,16 +33,82 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
                 </span>
               )}
               <Link href="/bathroom-remodeling/rockville-md/cost" className="landing-btn-ghost">
-                Explore Bathroom Costs
+                Explore bathroom costs
               </Link>
             </div>
             <p className="mt-5 text-xs leading-relaxed text-ink-40">
-              Free planning tool. No obligation. Your details are not automatically distributed to multiple contractors.
+              Free planning tool. No obligation. Your details are not automatically distributed to contractors.
             </p>
           </div>
         </section>
 
-        {/* 2. Planner entry point + 3. Interactive estimate preview */}
+        {/* 2. What you'll receive */}
+        <section className="px-4 py-12 sm:px-6">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="landing-h2">What you&apos;ll receive</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { t: "Local planning range", d: "Low/mid/high estimate based on your bathroom size, scope, and location." },
+                { t: "Cost breakdown", d: "Category-by-category costs so you understand what drives the range." },
+                { t: "Layout sketch", d: "Conceptual existing and proposed layout to explore ideas with contractors." },
+                { t: "Cost drivers & hidden-cost warnings", d: "See what will most affect your final price before surprises arise." },
+                { t: "Permit questions", d: "Guidance on likely permit categories for your jurisdiction." },
+                { t: "Contractor-ready brief", d: "Downloadable PDF brief you can share with any contractor." },
+                { t: "Controlled contractor requests", d: "You choose how many contractors receive your project (1, 2, or 3)." },
+              ].map((item) => (
+                <div key={item.t} className="landing-card p-5">
+                  <h3 className="font-semibold text-ink-100">{item.t}</h3>
+                  <p className="mt-1 text-sm text-ink-70">{item.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 3. Illustrative example results card */}
+        <section className="px-4 py-12 sm:px-6 bg-bone-1">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="landing-h2">Example result</h2>
+            <p className="mt-3 max-w-3xl text-ink-70">
+              This is an illustrative example using sample inputs — not your project.
+              Your actual range depends on your bathroom, location, and selections.
+            </p>
+            <div className="mt-6 max-w-2xl">
+              <div className="landing-card p-6">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs uppercase tracking-wide text-ink-40">Illustrative planning range</p>
+                  <span className="rounded-full bg-ink-15 px-2 py-0.5 text-xs text-ink-70">Example only</span>
+                </div>
+                <p className="mt-2 font-serif-landing text-3xl text-ink-100">$14,500 – $32,000</p>
+                <p className="mt-1 text-sm text-ink-70">Mid estimate: $22,000</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border border-ink-15 p-3">
+                    <p className="text-xs text-ink-40">Bathroom</p>
+                    <p className="text-sm font-medium text-ink-100">Guest bath, ~40 sq ft</p>
+                  </div>
+                  <div className="rounded-lg border border-ink-15 p-3">
+                    <p className="text-xs text-ink-40">Scope</p>
+                    <p className="text-sm font-medium text-ink-100">Same-layout remodel</p>
+                  </div>
+                  <div className="rounded-lg border border-ink-15 p-3">
+                    <p className="text-xs text-ink-40">Finish tier</p>
+                    <p className="text-sm font-medium text-ink-100">Mid-range</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-xs font-medium text-ink-40">Top cost drivers</p>
+                  <ul className="mt-1 list-disc pl-5 text-sm text-ink-70">
+                    <li>Tile selection and installation</li>
+                    <li>Plumbing fixture upgrades</li>
+                    <li>Vanity and countertop</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 4. Planner entry point */}
         {flags.planner && (
           <section className="px-4 py-12 sm:px-6">
             <div className="mx-auto max-w-5xl">
@@ -55,55 +121,28 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   <Link href="/bathroom-remodeling/planner?mode=quick" className="landing-card p-5 transition hover:border-ink-40">
                     <h3 className="font-semibold text-ink-100">Quick Estimate</h3>
-                    <p className="mt-1 text-sm text-ink-70">Bathroom type, size, finish tier, and a planning range in minutes.</p>
+                    <p className="mt-1 text-sm text-ink-70">Location, bathroom type, size, finish tier, and a planning range in minutes.</p>
                   </Link>
                   <Link href="/bathroom-remodeling/planner?mode=detailed" className="landing-card p-5 transition hover:border-ink-40">
                     <h3 className="font-semibold text-ink-100">Detailed Project Planner</h3>
-                    <p className="mt-1 text-sm text-ink-70">Measurements, layout, fixtures, finishes, conditions, permits, and a contractor-ready brief.</p>
+                    <p className="mt-1 text-sm text-ink-70">Measurements, layout sketch, fixtures, finishes, conditions, permits, and a contractor-ready brief.</p>
                   </Link>
                 </div>
               </div>
-            </div>
-          </section>
-        )}
-
-        {/* 4. Existing and proposed diagram preview */}
-        {flags.diagramBuilder && (
-          <section className="px-4 py-12 sm:px-6 bg-bone-1">
-            <div className="mx-auto max-w-5xl">
-              <h2 className="landing-h2">Draw your existing and proposed layouts</h2>
-              <p className="mt-3 max-w-3xl text-ink-70">
-                A 2D diagram builder helps you record the current bathroom and explore a proposed layout. The diagram
-                engine calculates floor area, perimeter, paintable wall area, wet-wall area, tile area, and baseboard
-                length automatically.
-              </p>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="landing-card p-5">
-                  <h3 className="font-semibold text-ink-100">Existing layout</h3>
-                  <p className="mt-1 text-sm text-ink-70">Walls, doors, windows, fixtures, plumbing, and electrical reference points.</p>
-                </div>
-                <div className="landing-card p-5">
-                  <h3 className="font-semibold text-ink-100">Proposed layout</h3>
-                  <p className="mt-1 text-sm text-ink-70">Relocate fixtures, resize the shower, add a bench or niche, switch to a double vanity.</p>
-                </div>
-              </div>
-              <p className="mt-4 text-xs text-ink-40">
-                Conceptual planning diagram only. Not an architectural, engineering, construction, or permit drawing.
-              </p>
             </div>
           </section>
         )}
 
         {/* 5. How Renovessa works */}
-        <section className="px-4 py-12 sm:px-6">
+        <section className="px-4 py-12 sm:px-6 bg-bone-1">
           <div className="mx-auto max-w-5xl">
             <h2 className="landing-h2">How Renovessa works</h2>
             <ol className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 list-none">
               {[
                 { n: "1", t: "Describe the bathroom", d: "Bathroom type, age, current usability, and users." },
-                { n: "2", t: "Measure and draw", d: "Simple dimensions, guided wall-by-wall, or upload an existing plan." },
+                { n: "2", t: "Measure and sketch", d: "Simple dimensions, guided wall-by-wall, or upload an existing plan." },
                 { n: "3", t: "Select finishes", d: "Shower, vanity, flooring, tile, fixtures, and accessibility features." },
-                { n: "4", t: "Get a planning range", d: "A localized estimate with cost drivers and confidence." },
+                { n: "4", t: "Get a planning range", d: "A localized estimate with cost drivers and confidence level." },
               ].map((s) => (
                 <li key={s.n} className="landing-card p-5">
                   <p className="font-mono-landing text-xs text-ink-40">Step {s.n}</p>
@@ -133,7 +172,7 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
           </div>
         </section>
 
-        {/* 9. Process guide + 10. Material guidance + 11. Accessibility */}
+        {/* 9. Process guide + Material guidance + Accessibility */}
         <section className="px-4 py-12 sm:px-6">
           <div className="mx-auto max-w-5xl grid gap-5 md:grid-cols-3">
             <div className="landing-card p-5">
@@ -153,7 +192,7 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
           </div>
         </section>
 
-        {/* 12. Illustrative scenarios */}
+        {/* 10. Illustrative scenarios */}
         <section className="px-4 py-12 sm:px-6 bg-bone-1">
           <div className="mx-auto max-w-5xl">
             <h2 className="landing-h2">Illustrative project scenarios</h2>
@@ -177,10 +216,10 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
           </div>
         </section>
 
-        {/* 13. FAQ */}
+        {/* 11. FAQ */}
         <BathroomFaq />
 
-        {/* 14. Final planner CTA */}
+        {/* 12. Final planner CTA */}
         <section className="px-4 py-12 sm:px-6">
           <div className="mx-auto max-w-5xl rounded-xl bg-ink-100 p-7 text-bone-0 sm:p-9">
             <h2 className="font-serif-landing text-3xl">Ready to plan your bathroom?</h2>
@@ -190,13 +229,13 @@ export function BathroomRemodelingPage({ flags }: { flags: BathroomFlags }) {
             </p>
             {flags.planner && (
               <Link href="/bathroom-remodeling/planner" className="landing-btn-primary-lg mt-6">
-                Design and Estimate My Bathroom →
+                Build my contractor-ready plan →
               </Link>
             )}
           </div>
         </section>
 
-        {/* 15. Methodology */}
+        {/* 13. Methodology */}
         <BathroomMethodology />
       </main>
       <SiteFooter />

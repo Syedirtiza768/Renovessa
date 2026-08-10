@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { StepProps } from "../planner-types";
 import { BATHROOM_TYPES, PROJECT_OBJECTIVES } from "@/lib/bathroom/config";
 import { ROOM_SIZE_BANDS, resolveRoomFeet } from "@/lib/bathroom/layout-templates";
+import { setCanonical } from "@/lib/bathroom/answer-normalization";
 
 type MediaItem = {
   id: string;
@@ -17,14 +18,15 @@ type MediaItem = {
 
 const WALL_OPTIONS = [
   { id: "", label: "General / whole room" },
-  { id: "north", label: "North wall" },
-  { id: "south", label: "South wall" },
-  { id: "east", label: "East wall" },
-  { id: "west", label: "West wall" },
-  { id: "ceiling_shower", label: "Ceiling above shower" },
+  { id: "vanity_wall", label: "Wall with vanity" },
+  { id: "tub_shower_wall", label: "Wall with tub/shower" },
+  { id: "toilet_wall", label: "Wall with toilet" },
+  { id: "door_wall", label: "Wall with door" },
   { id: "floor", label: "Floor" },
-  { id: "under_sink", label: "Under sink / vanity" },
-  { id: "inspiration", label: "Inspiration / style" },
+  { id: "ceiling", label: "Ceiling" },
+  { id: "problem_area", label: "Problem area" },
+  { id: "inspiration", label: "Inspiration" },
+  { id: "not_sure", label: "Not sure" },
 ];
 
 export function PhotoUploadPanel({ projectId, onCountChange }: { projectId: string | null; onCountChange?: (n: number) => void }) {
@@ -103,7 +105,8 @@ export function PhotoUploadPanel({ projectId, onCountChange }: { projectId: stri
       <div>
         <h3 className="text-sm font-semibold text-ink-100">Upload photos</h3>
         <p className="mt-1 text-sm text-ink-70">
-          Add photos of each wall, the ceiling above the shower, and any problem areas. JPEG, PNG, or WebP · max 10 MB each · up to 20 photos.
+          Add photos of each wall, the ceiling, and any problem areas. Photos improve estimate confidence.
+          JPEG, PNG, or WebP · max 10 MB each · up to 20 photos.
         </p>
       </div>
 
@@ -236,14 +239,42 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
     }
   };
 
+  const setCanonicalAnswer = (key: string, value: string) => {
+    const next = setCanonical(answers, key as any, value);
+    // Emit each changed canonical key so the parent state updates
+    for (const [k, v] of Object.entries(next)) {
+      if (answers[k] !== v) {
+        setAnswer(k, v);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-ink-100">Capture your remodel</h2>
         <p className="mt-1 text-sm text-ink-70">
-          Describe what you want, pick an approximate room size, and add photos.
+          Enter your location, describe what you want, pick an approximate room size, and add photos.
           We&apos;ll fill the rest — review on Layout and Results. Not a quote or diagnosis.
         </p>
+      </div>
+
+      {/* Location — required for localized estimate */}
+      <div>
+        <p className="text-sm font-medium text-ink-100">Project ZIP code *</p>
+        <p className="mt-0.5 text-xs text-ink-40">Used for localized planning range and permit guidance.</p>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          value={answers.zipCode || answers.zip || ""}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, "").slice(0, 5);
+            setCanonicalAnswer("zipCode", val);
+          }}
+          placeholder="e.g. 20850"
+          className="mt-2 w-full rounded-lg border border-ink-15 p-3 text-sm sm:max-w-xs"
+        />
       </div>
 
       <div>
@@ -259,10 +290,13 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
                 onClick={() => {
                   setAnswer("roomSizeBand", b.id);
                   const feet = resolveRoomFeet({ roomSizeBand: b.id });
-                  setAnswer("length", String(feet.lengthFt));
-                  setAnswer("width", String(feet.widthFt));
-                  setAnswer("ceilingHeight", String(feet.ceilingFt));
-                  setAnswer("measurement_method", "simple");
+                  const next = setCanonical(answers, "lengthFt", String(feet.lengthFt));
+                  for (const [k, v] of Object.entries(next)) {
+                    if (answers[k] !== v) setAnswer(k, v);
+                  }
+                  setAnswer("widthFt", String(feet.widthFt));
+                  setAnswer("ceilingFt", String(feet.ceilingFt));
+                  setAnswer("measurementMethod", "simple");
                 }}
                 className={`rounded-full border px-3 py-1.5 text-sm transition ${
                   selected ? "border-accent bg-accent text-bone-0" : "border-ink-15 text-ink-70 hover:border-ink-40"
@@ -339,7 +373,7 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
           }}
           className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 hover:border-ink-40"
         >
-          Save & continue later
+          Save this draft on this device
         </button>
         {projectId ? (
           <span className="text-xs text-ink-40">Draft ready — you can upload photos</span>

@@ -5,14 +5,21 @@ import type { StepProps } from "../planner-types";
 import { PermitsStep } from "./PermitsStep";
 import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
 import { deriveEstimateInputs } from "@/lib/bathroom/estimate-input-derivation";
+import { getCanonical, hasLocation, resolveLocationId, isSupportedZip } from "@/lib/bathroom/answer-normalization";
 
 type EstimateResult = {
   low: number;
   mid: number;
   high: number;
   confidence: { level: string; reasons: string[]; suggestions: string[] };
-  lineItems: { category: string; low: number; mid: number; high: number }[];
-  scenarios?: { id: string; label: string; total: number; compromises: string[]; benefits: string[] }[];
+  lineItems: { category: string; description: string; low: number; mid: number; high: number }[];
+  costDrivers?: string[];
+  assumptions?: string[];
+  unknowns?: string[];
+  exclusions?: string[];
+  scenarios?: { id: string; label: string; total: number; compromises: string[]; benefits: string[]; recommendedNextDecision?: string }[];
+  locationId?: string;
+  locationMissing?: boolean;
 };
 
 export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNumber }: StepProps) {
@@ -24,6 +31,9 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [showRfqForm, setShowRfqForm] = useState(false);
   const [estimatePersisted, setEstimatePersisted] = useState(false);
   const [persistFailed, setPersistFailed] = useState(false);
+  const [briefId, setBriefId] = useState<string | null>(null);
+  const [briefGenerating, setBriefGenerating] = useState(false);
+  const [briefError, setBriefError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,14 +59,13 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
     return () => {
       cancelled = true;
     };
-    // retryNonce lets the homeowner retry after a failure without losing answers
   }, [answers, retryNonce]);
 
   // Persist the estimate to the project once both the preview result and the
   // server-side project draft exist. Retries automatically when projectId
   // arrives after the result (draft creation races the preview call).
   useEffect(() => {
-    if (!result || !projectId || estimatePersisted) return;
+    if (!result || !projectId || estimatePersisted || result.locationMissing) return;
     const ctrl = new AbortController();
     async function persist() {
       try {
@@ -83,6 +92,33 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
     return () => ctrl.abort();
   }, [result, projectId, answers, estimatePersisted]);
 
+  // Auto-generate brief once estimate is successfully persisted
+  useEffect(() => {
+    if (!estimatePersisted || !projectId || briefId || briefGenerating) return;
+    const ctrl = new AbortController();
+    async function autoBrief() {
+      setBriefGenerating(true);
+      setBriefError(null);
+      try {
+        const res = await fetch(`/api/bathroom-projects/${projectId}/brief`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: ctrl.signal,
+        });
+        if (res.ok && !ctrl.signal.aborted) {
+          const data = (await res.json()) as { saved: { id: string } };
+          setBriefId(data.saved.id);
+        }
+      } catch {
+        // non-fatal: brief can be generated manually
+      } finally {
+        if (!ctrl.signal.aborted) setBriefGenerating(false);
+      }
+    }
+    void autoBrief();
+    return () => ctrl.abort();
+  }, [estimatePersisted, projectId, briefId, briefGenerating]);
+
   if (loading) {
     return <p className="text-sm text-ink-70">Calculating planning range…</p>;
   }
@@ -105,25 +141,56 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
 
   if (!result) return null;
 
+  // Location missing state
+  if (result.locationMissing) {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-ink-100">Your planning results</h2>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+          <p className="text-sm font-medium text-amber-900">Location needed for a planning range</p>
+          <p className="mt-1 text-sm text-amber-800">
+            Enter your project ZIP code on the Capture step to receive a localized estimate.
+            Without a location, we cannot show a reliable planning range.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const locationDisplay = result.locationId === "rockville-md"
+    ? "Rockville, MD"
+    : result.locationId && result.locationId !== "unknown"
+    ? result.locationId
+    : "Location not verified";
+
+  const submittedReference = answers.rfp_reference || null;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-semibold text-ink-100">Your planning results</h2>
-          <p className="mt-1 text-sm text-ink-70">Illustrative planning range only — not a contractor quote. Permit questions are optional below.</p>
+          <p className="mt-1 text-sm text-ink-70">Illustrative planning range only — not a contractor quote.</p>
         </div>
         <EstimateStatusBadge estimatePersisted={estimatePersisted} persistFailed={persistFailed} projectId={projectId} />
       </div>
 
+      {/* Location and range */}
       <div className="rounded-xl border border-ink-15 bg-bone-1 p-5">
-        <p className="text-xs uppercase tracking-wide text-ink-40">Planning range</p>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <p className="text-xs uppercase tracking-wide text-ink-40">Planning range · {locationDisplay}</p>
+          {result.locationId === "unknown" && (
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Location not in pilot area</span>
+          )}
+        </div>
         <p className="mt-1 font-serif-landing text-3xl text-ink-100">
           ${result.low.toLocaleString()} – ${result.high.toLocaleString()}
         </p>
         <p className="mt-1 text-sm text-ink-70">Mid estimate: ${result.mid.toLocaleString()}</p>
       </div>
 
-      <div>
+      {/* Confidence */}
+      <div className="rounded-lg border border-ink-15 p-4">
         <h3 className="text-sm font-semibold text-ink-100">Confidence: {result.confidence.level}</h3>
         {result.confidence.reasons.length > 0 && (
           <ul className="mt-2 list-disc pl-5 text-sm text-ink-70">
@@ -144,9 +211,11 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
         )}
       </div>
 
+      {/* Cost categories — mobile cards, desktop table */}
       <div>
         <h3 className="text-sm font-semibold text-ink-100">Cost categories</h3>
-        <div className="mt-2 overflow-x-auto rounded-lg border border-ink-15">
+        {/* Desktop table */}
+        <div className="mt-2 hidden overflow-x-auto rounded-lg border border-ink-15 sm:block">
           <table className="w-full min-w-[420px] text-sm">
             <thead className="bg-bone-1 text-left text-xs uppercase tracking-wide text-ink-40">
               <tr>
@@ -159,7 +228,10 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
             <tbody>
               {result.lineItems.map((li) => (
                 <tr key={li.category} className="border-t border-ink-15">
-                  <td className="p-3">{li.category}</td>
+                  <td className="p-3">
+                    <span className="font-medium">{li.category}</span>
+                    <span className="block text-xs text-ink-40">{li.description}</span>
+                  </td>
                   <td className="p-3">${li.low.toLocaleString()}</td>
                   <td className="p-3">${li.mid.toLocaleString()}</td>
                   <td className="p-3">${li.high.toLocaleString()}</td>
@@ -168,8 +240,59 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
             </tbody>
           </table>
         </div>
+        {/* Mobile stacked cards */}
+        <div className="mt-2 grid gap-3 sm:hidden">
+          {result.lineItems.map((li) => (
+            <div key={li.category} className="rounded-lg border border-ink-15 p-3">
+              <p className="text-sm font-medium text-ink-100">{li.category}</p>
+              <p className="text-xs text-ink-40">{li.description}</p>
+              <div className="mt-2 flex justify-between text-sm">
+                <span className="text-ink-70">Low: <span className="font-medium text-ink-100">${li.low.toLocaleString()}</span></span>
+                <span className="text-ink-70">Mid: <span className="font-medium text-ink-100">${li.mid.toLocaleString()}</span></span>
+                <span className="text-ink-70">High: <span className="font-medium text-ink-100">${li.high.toLocaleString()}</span></span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
+      {/* Cost drivers */}
+      {result.costDrivers && result.costDrivers.length > 0 && (
+        <div className="rounded-lg border border-ink-15 p-4">
+          <h3 className="text-sm font-semibold text-ink-100">Cost drivers</h3>
+          <ul className="mt-2 list-disc pl-5 text-sm text-ink-70">
+            {result.costDrivers.map((d) => (
+              <li key={d}>{d}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Assumptions & exclusions */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {result.assumptions && result.assumptions.length > 0 && (
+          <div className="rounded-lg border border-ink-15 p-4">
+            <h3 className="text-sm font-semibold text-ink-100">Assumptions</h3>
+            <ul className="mt-2 list-disc pl-5 text-sm text-ink-70">
+              {result.assumptions.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {result.exclusions && result.exclusions.length > 0 && (
+          <div className="rounded-lg border border-ink-15 p-4">
+            <h3 className="text-sm font-semibold text-ink-100">Exclusions</h3>
+            <ul className="mt-2 list-disc pl-5 text-sm text-ink-70">
+              {result.exclusions.map((e) => (
+                <li key={e}>{e}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Budget scenarios */}
       {result.scenarios && result.scenarios.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-ink-100">Budget scenarios</h3>
@@ -184,28 +307,106 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
                 {s.compromises.length > 0 && (
                   <p className="mt-1 text-xs text-ink-40">Trade-offs: {s.compromises.join(", ")}</p>
                 )}
+                {s.recommendedNextDecision && (
+                  <p className="mt-2 text-xs font-medium text-accent">Next: {s.recommendedNextDecision}</p>
+                )}
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {flags.projectBrief && projectId && (
-        <BriefActions
-          projectId={projectId}
-          answers={answers}
-          setAnswer={setAnswer}
-          estimatePersisted={estimatePersisted}
-          persistFailed={persistFailed}
+      {/* Brief + RFP actions */}
+      {flags.projectBrief && projectId && !submittedReference && (
+        <div className="rounded-lg border border-accent bg-accent/5 p-5">
+          <h3 className="font-semibold text-ink-100">Ready for the next step?</h3>
+          {briefError && <p className="mt-2 text-sm text-red-700">{briefError}</p>}
+          {!briefId && briefGenerating && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-ink-40">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent"></span>
+              <span>Generating your project brief…</span>
+            </div>
+          )}
+          {!briefId && !briefGenerating && !estimatePersisted && !persistFailed && (
+            <div className="mt-2 flex items-center gap-2 text-xs text-ink-40">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent"></span>
+              <span>Saving estimate to your project…</span>
+            </div>
+          )}
+          {briefId && (
+            <p className="mt-2 text-xs text-green-700">Project brief ready.</p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-3">
+            {briefId && (
+              <>
+                <a
+                  href={`/api/bathroom-projects/${projectId}/brief/pdf`}
+                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90"
+                >
+                  Download my project brief
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowRfqForm(true)}
+                  className="rounded-lg border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent/5"
+                >
+                  Request contractor proposals
+                </button>
+              </>
+            )}
+            {!briefId && !briefGenerating && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setBriefGenerating(true);
+                  setBriefError(null);
+                  try {
+                    const res = await fetch(`/api/bathroom-projects/${projectId}/brief`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                    if (!res.ok) {
+                      const data = await res.json().catch(() => ({}));
+                      throw new Error(data.error ?? `Failed (${res.status})`);
+                    }
+                    const data = (await res.json()) as { saved: { id: string } };
+                    setBriefId(data.saved.id);
+                  } catch (e) {
+                    setBriefError(e instanceof Error ? e.message : "Unknown error");
+                  } finally {
+                    setBriefGenerating(false);
+                  }
+                }}
+                disabled={!estimatePersisted || briefGenerating}
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
+              >
+                {briefGenerating ? "Generating…" : !estimatePersisted ? "Saving estimate…" : "Generate my project brief"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {submittedReference && (
+        <RfpSuccessPanel referenceNumber={submittedReference} projectId={projectId} />
+      )}
+
+      {showRfqForm && !submittedReference && (
+        <RfpContactForm
+          projectId={projectId!}
+          defaultZip={getCanonical(answers, "zipCode") || ""}
+          onBack={() => setShowRfqForm(false)}
+          onSubmitted={(ref) => setAnswer("rfp_reference", ref)}
         />
       )}
 
+      {/* Permit guidance */}
       <div className="rounded-lg border border-ink-15 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-sm font-semibold text-ink-100">Permit guidance</h3>
             <p className="mt-0.5 text-xs text-ink-40">
-              Optional — flags likely categories for Rockville / Montgomery County. Not a legal determination.
+              Optional — flags likely permit categories. Not a legal determination.
             </p>
           </div>
           <button
@@ -228,33 +429,6 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
           </div>
         )}
       </div>
-
-      {flags.contractorMatching && projectId && (
-        <div className="rounded-lg border border-accent bg-accent/5 p-4">
-          {showRfqForm ? (
-            <BathroomRfqForm projectId={projectId} onBack={() => setShowRfqForm(false)} />
-          ) : (
-            <>
-              <p className="text-sm font-medium text-ink-100">Ready to request contractor bids?</p>
-              <p className="mt-1 text-xs text-ink-70">Submit your project details to request bids from reviewed Rockville-area bathroom contractors.</p>
-              <button
-                type="button"
-                onClick={() => setShowRfqForm(true)}
-                className="mt-2 inline-block text-sm font-medium text-accent"
-              >
-                Request contractor bids →
-              </button>
-            </>
-          )}
-        </div>
-      )}
-
-      {flags.contractorMatching && !projectId && (
-        <div className="rounded-lg border border-ink-15 p-4">
-          <p className="text-sm font-medium text-ink-100">Request contractor bids</p>
-          <p className="mt-1 text-xs text-ink-70">Add a short description or room size on the Capture step so we can create your project, then return here to request contractor bids.</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -289,128 +463,7 @@ function EstimateStatusBadge({ estimatePersisted, persistFailed, projectId }: { 
   );
 }
 
-function BriefActions({
-  projectId,
-  answers,
-  setAnswer,
-  estimatePersisted,
-  persistFailed,
-}: {
-  projectId: string;
-  answers: Record<string, string>;
-  setAnswer: (key: string, value: string) => void;
-  estimatePersisted: boolean;
-  persistFailed: boolean;
-}) {
-  const [generating, setGenerating] = useState(false);
-  const [briefId, setBriefId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [showRfpForm, setShowRfpForm] = useState(false);
-
-  const submittedReference = answers.rfp_reference || null;
-
-  const generateBrief = async () => {
-    setGenerating(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/bathroom-projects/${projectId}/brief`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `Failed (${res.status})`);
-      }
-      const data = (await res.json()) as { saved: { id: string } };
-      setBriefId(data.saved.id);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  // Already submitted (survives refresh via persisted answers)
-  if (submittedReference) {
-    return <RfpSuccessPanel referenceNumber={submittedReference} projectId={projectId} />;
-  }
-
-  if (showRfpForm && briefId) {
-    return (
-      <RfpContactForm
-        projectId={projectId}
-        defaultZip={answers.zip || answers.zipCode || ""}
-        onBack={() => setShowRfpForm(false)}
-        onSubmitted={(ref) => setAnswer("rfp_reference", ref)}
-      />
-    );
-  }
-
-  return (
-    <div className="rounded-lg border border-accent bg-accent/5 p-5">
-      <h3 className="font-semibold text-ink-100">Ready to get real contractor proposals?</h3>
-      <p className="mt-1 text-sm text-ink-70">
-        Your project brief is nearly ready. Renovessa can use your project details to request proposals from
-        qualified local bathroom remodeling contractors.
-      </p>
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
-      {!estimatePersisted && !persistFailed && !error && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-ink-40">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent"></span>
-          <span>Saving estimate to your project…</span>
-        </div>
-      )}
-      {persistFailed && !estimatePersisted && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-amber-700">
-          <span>⚠</span>
-          <span>Estimate save failed. Click &quot;Generate brief&quot; to retry.</span>
-        </div>
-      )}
-      {estimatePersisted && !briefId && !generating && (
-        <p className="mt-2 text-xs text-green-700">Estimate saved — ready to generate your brief.</p>
-      )}
-      <div className="mt-3 flex flex-wrap gap-3">
-        {!briefId && (
-          <button
-            type="button"
-            onClick={generateBrief}
-            disabled={generating || !estimatePersisted}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
-          >
-            {generating ? "Generating…" : !estimatePersisted ? "Saving estimate…" : "Generate my project brief"}
-          </button>
-        )}
-        {briefId && (
-          <>
-            <button
-              type="button"
-              onClick={() => setShowRfpForm(true)}
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90"
-            >
-              Request contractor proposals →
-            </button>
-            <a
-              href={`/api/bathroom-projects/${projectId}/brief/pdf`}
-              className="rounded-lg border border-ink-15 px-4 py-2 text-sm font-medium text-ink-70 transition hover:border-ink-40"
-            >
-              Download brief PDF
-            </a>
-            <button
-              type="button"
-              onClick={generateBrief}
-              disabled={generating}
-              className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 transition hover:border-ink-40 disabled:opacity-40"
-            >
-              {generating ? "Regenerating…" : "Regenerate brief"}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RfpSuccessPanel({ referenceNumber, projectId }: { referenceNumber: string; projectId: string }) {
+function RfpSuccessPanel({ referenceNumber, projectId }: { referenceNumber: string; projectId: string | null }) {
   return (
     <div className="rounded-lg border border-green-300 bg-green-50 p-5">
       <h3 className="font-semibold text-green-900">Your bathroom project has been submitted</h3>
@@ -427,12 +480,14 @@ function RfpSuccessPanel({ referenceNumber, projectId }: { referenceNumber: stri
         </ol>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        <a
-          href={`/api/bathroom-projects/${projectId}/brief/pdf`}
-          className="rounded-lg border border-green-400 bg-white px-4 py-2 text-sm font-medium text-green-900 transition hover:bg-green-100"
-        >
-          Download project brief PDF
-        </a>
+        {projectId && (
+          <a
+            href={`/api/bathroom-projects/${projectId}/brief/pdf`}
+            className="rounded-lg border border-green-400 bg-white px-4 py-2 text-sm font-medium text-green-900 transition hover:bg-green-100"
+          >
+            Download project brief PDF
+          </a>
+        )}
       </div>
       <p className="mt-3 text-xs text-green-800">
         A confirmation email is on its way. Want to change something? Use the steps above to edit your project —
@@ -453,6 +508,7 @@ type RfpFormState = {
   tcpaConsent: boolean;
   termsAccepted: boolean;
   privacyAcknowledged: boolean;
+  maxContractors: number;
   notes: string;
 };
 
@@ -478,6 +534,7 @@ function RfpContactForm({
     tcpaConsent: false,
     termsAccepted: false,
     privacyAcknowledged: false,
+    maxContractors: 3,
     notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -527,6 +584,7 @@ function RfpContactForm({
           tcpaConsent: form.tcpaConsent,
           termsAccepted: true,
           privacyAcknowledged: true,
+          maxContractors: form.maxContractors,
           notes: form.notes.trim() || undefined,
         }),
       });
@@ -537,7 +595,6 @@ function RfpContactForm({
       const data = (await res.json()) as { referenceNumber: string };
       onSubmitted(data.referenceNumber);
     } catch (err) {
-      // Form data is preserved — nothing is lost on failure.
       setSubmitError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setSubmitting(false);
@@ -549,8 +606,7 @@ function RfpContactForm({
       <div>
         <h3 className="font-semibold text-ink-100">Request contractor proposals</h3>
         <p className="mt-1 text-sm text-ink-70">
-          Almost done — we only need your contact details so contractors can reach you and we can send your
-          confirmation. Your project brief is already built.
+          Your project brief is already built. We only need your contact details so contractors can reach you.
         </p>
       </div>
 
@@ -656,6 +712,29 @@ function RfpContactForm({
       </div>
 
       <div>
+        <label htmlFor="rfp-contractors" className="text-xs font-medium text-ink-70">
+          How many contractors? ({form.maxContractors})
+        </label>
+        <div className="mt-1 flex gap-2">
+          {[1, 2, 3].map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setField("maxContractors", n)}
+              className={`rounded-lg border px-3 py-1 text-sm ${
+                form.maxContractors === n
+                  ? "border-accent bg-accent text-bone-0"
+                  : "border-ink-15 text-ink-70 hover:border-ink-40"
+              }`}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-ink-40">You control how many contractors receive your project brief.</p>
+      </div>
+
+      <div>
         <label htmlFor="rfp-notes" className="text-xs font-medium text-ink-70">Notes for contractors (optional)</label>
         <textarea
           id="rfp-notes"
@@ -729,293 +808,6 @@ function RfpContactForm({
           className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
         >
           {submitting ? "Submitting…" : "Request my proposals →"}
-        </button>
-      </div>
-    </form>
-  );
-}
-
-type RfqFormState = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  zipCode: string;
-  preferredContact: string;
-  tcpaConsent: boolean;
-  termsAccepted: boolean;
-  privacyAcknowledged: boolean;
-  maxContractors: number;
-  notes: string;
-};
-
-function BathroomRfqForm({ projectId, onBack }: { projectId: string; onBack: () => void }) {
-  const [form, setForm] = useState<RfqFormState>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    zipCode: "",
-    preferredContact: "any",
-    tcpaConsent: false,
-    termsAccepted: false,
-    privacyAcknowledged: false,
-    maxContractors: 3,
-    notes: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState<{ referenceNumber: string } | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const setField = <K extends keyof RfqFormState>(key: K, value: RfqFormState[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const validate = (): Record<string, string> => {
-    const next: Record<string, string> = {};
-    if (!form.firstName.trim()) next.firstName = "Required";
-    if (!form.lastName.trim()) next.lastName = "Required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email.";
-    if (!/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) next.phone = "Enter a valid 10-digit US phone number.";
-    if (!/^\d{5}$/.test(form.zipCode)) next.zipCode = "Enter a 5-digit ZIP code.";
-    if (!form.termsAccepted) next.termsAccepted = "You must accept the Terms to continue.";
-    if (!form.privacyAcknowledged) next.privacyAcknowledged = "You must acknowledge the Privacy Policy.";
-    return next;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const validation = validate();
-    setErrors(validation);
-    if (Object.keys(validation).length > 0) return;
-
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      const res = await fetch(`/api/bathroom-projects/${projectId}/rfq`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          email: form.email.trim(),
-          phone: form.phone.replace(/\D/g, ""),
-          zipCode: form.zipCode,
-          preferredContact: form.preferredContact,
-          tcpaConsent: form.tcpaConsent,
-          termsAccepted: true,
-          privacyAcknowledged: true,
-          maxContractors: form.maxContractors,
-          notes: form.notes.trim() || undefined,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `Submission failed (${res.status})`);
-      }
-      const data = (await res.json()) as { referenceNumber: string };
-      setSubmitted(data);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (submitted) {
-    return (
-      <div className="space-y-3">
-        <p className="text-sm font-semibold text-ink-100">RFQ submitted successfully</p>
-        <p className="text-sm text-ink-70">
-          Your reference number is <span className="font-mono font-semibold">{submitted.referenceNumber}</span>.
-          We&apos;ll send a confirmation email and follow up with contractor matches.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <p className="text-sm font-medium text-ink-100">Request contractor bids</p>
-        <p className="mt-0.5 text-xs text-ink-70">We&apos;ll use this to send your RFQ confirmation and follow up with bids from Rockville-area bathroom contractors.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="rfq-first" className="text-xs font-medium text-ink-70">First name *</label>
-          <input
-            id="rfq-first"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.firstName}
-            onChange={(e) => setField("firstName", e.target.value)}
-            autoComplete="given-name"
-          />
-          {errors.firstName && <p className="mt-0.5 text-xs text-red-700">{errors.firstName}</p>}
-        </div>
-        <div>
-          <label htmlFor="rfq-last" className="text-xs font-medium text-ink-70">Last name *</label>
-          <input
-            id="rfq-last"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.lastName}
-            onChange={(e) => setField("lastName", e.target.value)}
-            autoComplete="family-name"
-          />
-          {errors.lastName && <p className="mt-0.5 text-xs text-red-700">{errors.lastName}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="rfq-email" className="text-xs font-medium text-ink-70">Email *</label>
-        <input
-          id="rfq-email"
-          type="email"
-          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-          value={form.email}
-          onChange={(e) => setField("email", e.target.value)}
-          autoComplete="email"
-        />
-        {errors.email && <p className="mt-0.5 text-xs text-red-700">{errors.email}</p>}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="rfq-phone" className="text-xs font-medium text-ink-70">Mobile phone *</label>
-          <input
-            id="rfq-phone"
-            type="tel"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.phone}
-            onChange={(e) => setField("phone", e.target.value)}
-            placeholder="(555) 555-5555"
-            autoComplete="tel"
-            inputMode="tel"
-          />
-          {errors.phone && <p className="mt-0.5 text-xs text-red-700">{errors.phone}</p>}
-        </div>
-        <div>
-          <label htmlFor="rfq-zip" className="text-xs font-medium text-ink-70">ZIP code *</label>
-          <input
-            id="rfq-zip"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.zipCode}
-            onChange={(e) => setField("zipCode", e.target.value.replace(/\D/g, "").slice(0, 5))}
-            placeholder="20850"
-            inputMode="numeric"
-            maxLength={5}
-            autoComplete="postal-code"
-          />
-          {errors.zipCode && <p className="mt-0.5 text-xs text-red-700">{errors.zipCode}</p>}
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="rfq-window" className="text-xs font-medium text-ink-70">Best time to reach you</label>
-        <select
-          id="rfq-window"
-          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-          value={form.preferredContact}
-          onChange={(e) => setField("preferredContact", e.target.value)}
-        >
-          <option value="any">Any time</option>
-          <option value="morning">Morning</option>
-          <option value="afternoon">Afternoon</option>
-          <option value="evening">Evening</option>
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="rfq-contractors" className="text-xs font-medium text-ink-70">
-          Max contractors to match ({form.maxContractors})
-        </label>
-        <input
-          id="rfq-contractors"
-          type="range"
-          min={1}
-          max={5}
-          className="mt-1 w-full"
-          value={form.maxContractors}
-          onChange={(e) => setField("maxContractors", Number(e.target.value))}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="rfq-notes" className="text-xs font-medium text-ink-70">Notes (optional)</label>
-        <textarea
-          id="rfq-notes"
-          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-          rows={3}
-          maxLength={4000}
-          value={form.notes}
-          onChange={(e) => setField("notes", e.target.value)}
-          placeholder="Anything else contractors should know — access constraints, HOA rules, preferred brands, must-have dates…"
-        />
-      </div>
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.tcpaConsent}
-          onChange={(e) => setField("tcpaConsent", e.target.checked)}
-        />
-        <span className="text-xs">
-          {COMMUNICATION_CONSENT_TEXT}
-        </span>
-      </label>
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.termsAccepted}
-          onChange={(e) => setField("termsAccepted", e.target.checked)}
-        />
-        <span className="text-xs">
-          {LEGAL_CLICKWRAP_TEXT}{" "}
-          <a href="/terms" className="text-accent underline" target="_blank" rel="noopener noreferrer">Terms</a>{" "}
-          ·{" "}
-          <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Privacy</a>
-        </span>
-      </label>
-      {errors.termsAccepted && <p className="text-xs text-red-700">{errors.termsAccepted}</p>}
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.privacyAcknowledged}
-          onChange={(e) => setField("privacyAcknowledged", e.target.checked)}
-        />
-        <span className="text-xs">
-          I acknowledge the Renovessa Privacy Policy and understand my project and contact information will be processed to coordinate this RFQ.
-        </span>
-      </label>
-      {errors.privacyAcknowledged && <p className="text-xs text-red-700">{errors.privacyAcknowledged}</p>}
-
-      {submitError && <p className="text-sm text-red-700">{submitError}</p>}
-
-      <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 transition hover:border-ink-40"
-        >
-          ← Back
-        </button>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90 disabled:opacity-40"
-        >
-          {submitting ? "Submitting…" : "Submit RFQ →"}
         </button>
       </div>
     </form>

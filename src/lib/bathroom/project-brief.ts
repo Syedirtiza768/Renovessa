@@ -29,7 +29,7 @@ export interface BriefSource {
     city: string;
     state: string;
     zip?: string;
-    inRockville: boolean;
+    locationId: string;
     accessNotes?: string;
   };
   measurements?: {

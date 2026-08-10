@@ -4,6 +4,39 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-10 — Bathroom Remodeling: canonical answer schema, real location, and UX improvements
+
+### Decision
+1. **Canonical planner-answer schema** — All planner answers (measurements, layout, selections, conditions) now normalize through `src/lib/bathroom/answer-normalization.ts` on ingress. Canonical keys (`lengthFt`, `widthFt`, `ceilingFt`, `measurementMethod`, `zipCode`, `city`, `locationId`) replace ad-hoc camelCase/snake_case/compass labels. A bidirectional migration layer keeps v1 `measurements_draft` drafts readable.
+2. **Location is real** — ZIP code is collected in the Capture step and resolved to a `locationId` via a known-location register (`src/lib/bathroom/estimate-input-derivation.ts`). The estimator no longer hardcodes `inRockville: true`; it uses `locationId` to look up location-aware config. Missing/unknown ZIPs fail closed in the preview API and render a location disclaimer in assumptions.
+3. **Landing pages strengthened** — Both generic and Rockville landing pages now show a "What you'll receive" 4-step illustrated flow, an example results card with realistic range + scope, and clear homeowner CTAs.
+4. **Planner photo labels made homeowner-friendly** — Compass directions ("North wall") replaced with fixture-context labels ("Wall with vanity", "Wall with tub/shower", etc.).
+5. **Results page enriched** — Location used is displayed; cost drivers, assumptions, and exclusions are surfaced; auto-generate brief is available; mobile uses stacked cards; contractor count choice (1/2/3) in the RFP form.
+
+### Reason
+The bathroom experience was accumulating data-shape drift: frontend keys didn't match estimator keys, `inRockville` was hardcoded everywhere, photo labels assumed homeowners know compass orientation, and landing pages didn't clearly explain what the planner produces. This created friction for both homeowners (unclear value, confusing labels) and contractors (location assumptions baked in, schema mismatch risk).
+
+### Impact
+- Removed all `inRockville` references from estimator, schemas, brief builder, preview API, and contractor studio route.
+- `src/lib/bathroom/schemas.ts` `estimateInputsSchema` now uses `locationId`.
+- `src/lib/bathroom/estimator.ts`, `estimate-input-derivation.ts`, `layout-templates.ts`, `confidence.ts`, `brief-pdf.ts`, `project-brief.ts` all read canonical keys.
+- `src/app/api/bathroom-estimator/preview/route.ts` normalizes answers and fails closed on missing location.
+- `src/components/bathroom/steps/RequirementsPromptStep.tsx` collects ZIP early and uses canonical keys.
+- `src/components/bathroom/steps/EstimateStep.tsx` shows location, cost drivers, assumptions, exclusions; auto-brief; mobile cards; contractor count.
+- Both `BathroomRemodelingPage.tsx` and `RockvilleBathroomPage.tsx` updated with "What you'll receive", example card, CTAs.
+- Tests: 9 new normalization tests, updated estimator (10), confidence (7), layout-templates (17). Total suite: 167/167.
+
+### Status
+Accepted, implemented, build clean (Next.js 15.5.21).
+
+---
+
+## 2026-08-10 — Flag-dependent routes must be `force-dynamic` (build-time env freeze)
+
+Record product, architecture, and technical decisions here.
+
+---
+
 ## 2026-08-10 — Flag-dependent routes must be `force-dynamic` (build-time env freeze)
 
 ### Decision

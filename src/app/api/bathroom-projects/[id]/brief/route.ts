@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         qualificationGrade: project.qualificationGrade ?? undefined,
       },
       location: {
-        city: "Rockville", state: "MD", inRockville: true,
+        city: "Rockville", state: "MD", locationId: "rockville-md",
       },
       measurements: measurements[0]
         ? {

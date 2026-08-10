@@ -5,6 +5,7 @@
  */
 
 import type { FixturePlacement, LayoutGeometry, WallSegment } from "./geometry";
+import { getCanonical } from "./answer-normalization";
 
 export type RoomSizeBand = "powder" | "small" | "medium" | "large";
 
@@ -42,9 +43,10 @@ export function resolveRoomFeet(answers: Record<string, string>): {
   ceilingFt: number;
 } {
   const band = ROOM_SIZE_BANDS.find((b) => b.id === answers.roomSizeBand);
-  const lengthFt = Number(answers.length) || band?.lengthFt || 8;
-  const widthFt = Number(answers.width) || band?.widthFt || 5;
-  const ceilingFt = Number(answers.ceilingHeight) || band?.ceilingFt || 8;
+  // Prefer canonical explicit measurements, then legacy, then band default
+  const lengthFt = Number(getCanonical(answers, "lengthFt")) || band?.lengthFt || 8;
+  const widthFt = Number(getCanonical(answers, "widthFt")) || band?.widthFt || 5;
+  const ceilingFt = Number(getCanonical(answers, "ceilingFt")) || band?.ceilingFt || 8;
   return { lengthFt, widthFt, ceilingFt };
 }
 
@@ -236,14 +238,14 @@ export function geometryFromFeet(
 }
 
 export function hasBasicsFilled(answers: Record<string, string>): boolean {
-  return Boolean(answers.bathroomType && (answers.propertyType || answers.zip || answers.city));
+  return Boolean(answers.bathroomType && (getCanonical(answers, "zipCode") || answers.city));
 }
 
 export function hasSizeFilled(answers: Record<string, string>): boolean {
   return Boolean(
-    (answers.length && answers.width) ||
+    (getCanonical(answers, "lengthFt") && getCanonical(answers, "widthFt")) ||
       answers.roomSizeBand ||
-      answers.measurement_method === "simple",
+      getCanonical(answers, "measurementMethod") === "simple",
   );
 }
 

@@ -1,4 +1,16 @@
 
+# 2026-08-10 — Bathroom Remodeling: canonical schema, real location, landing + planner UX improvements
+
+- **Canonical answer schema** — Added `src/lib/bathroom/answer-normalization.ts` with canonical keys (`lengthFt`, `widthFt`, `ceilingFt`, `measurementMethod`, `zipCode`, `city`, `locationId`) and bidirectional legacy migration. All ingress points (planner-types on load, preview API, RequirementsPromptStep, estimator input derivation) normalize before use.
+- **Location made real** — Replaced hardcoded `inRockville: true` with `locationId` resolution from ZIP code. `estimate-input-derivation.ts` maps ZIP → city/locationId via known-location register. Estimator, preview API, brief builder, and contractor studio route all use `locationId`. Preview fails closed when location missing; unknown ZIPs show a disclaimer in assumptions.
+- **Schema cleanup** — `estimateInputsSchema` replaced `inRockville` with `locationId`; `inRockville` fully removed from codebase (verified via grep).
+- **Landing page improvements** — Added "What you'll receive" 4-step illustrated flow, example results card with realistic range + scope, and clear homeowner CTAs (planner, cost guide, contractors) to both generic and Rockville landing pages.
+- **Planner UX improvements** — Photo labels changed from compass directions to homeowner-friendly fixture-context labels ("Wall with vanity", "Wall with tub/shower", etc.). ZIP collected early in Requirements step. Room-size band chips now show floor area. Draft normalization migrates v1 `measurements_draft` keys on load.
+- **Results page improvements** — Location used is displayed prominently; cost drivers, assumptions, and exclusions surfaced; auto-generate brief available; mobile uses stacked cards; contractor count choice (1/2/3) in RFP form.
+- **Contractor flow** — Studio estimate route uses `locationId: "rockville-md"`.
+- **Tests** — Added `answer-normalization.test.ts` (9 tests). Updated `estimator.test.ts` (10), `confidence.test.ts` (7), `layout-templates.test.ts` (17 including room-size band floor area and estimate impact). Total suite: 167/167. Build clean (Next.js 15.5.21).
+- **Files changed** — `answer-normalization.ts`, `estimator.ts`, `estimate-input-derivation.ts`, `layout-templates.ts`, `confidence.ts`, `schemas.ts`, `brief-pdf.ts`, `project-brief.ts`, `preview/route.ts`, `brief/route.ts`, `estimates/route.ts`, `contractor/bathroom-jobs/[id]/estimate/route.ts`, `planner-types.ts`, `RequirementsPromptStep.tsx`, `EstimateStep.tsx`, `MeasurementsStep.tsx`, `BathroomRemodelingPage.tsx`, `RockvilleBathroomPage.tsx`, plus test files.
+
 # 2026-08-10 — Renovessa Solar phase 1: built, deployed, landing live
 
 - Audited the existing bathroom planner, estimator, anonymous-draft, RFQ, admin-config and design-system architecture before writing any solar code; reused the *shape* (pure versioned engines, immutable input snapshots, fail-closed public numbers, `clientGeneratedId` drafts, shared `ProjectRequest` pipeline) while isolating solar domain logic in `src/lib/solar/`.

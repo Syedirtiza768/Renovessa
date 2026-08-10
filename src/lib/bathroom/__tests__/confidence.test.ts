@@ -80,9 +80,9 @@ describe("confidence", () => {
     expect(result.improvements.length).toBeGreaterThan(0);
   });
 
-  it("derives confidence input from answers", () => {
+  it("derives confidence input from canonical answers", () => {
     const input = deriveConfidenceInput({
-      measurement_method: "guided",
+      measurementMethod: "guided",
       finish_tier: "standard",
       plumbing_changes: "known",
       condition_questionnaire: "complete",
@@ -93,5 +93,13 @@ describe("confidence", () => {
     expect(input.plumbingChangesKnown).toBe(true);
     expect(input.conditionQuestionnaireComplete).toBe(true);
     expect(input.unknownLayout).toBe(false);
+  });
+
+  it("derives confidence input from legacy measurement_method", () => {
+    const input = deriveConfidenceInput({
+      measurement_method: "guided",
+      finish_tier: "standard",
+    });
+    expect(input.hasExactMeasurements).toBe(true);
   });
 });

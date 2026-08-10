@@ -44,7 +44,7 @@ export function renderBriefPdf(brief: ProjectBrief): PdfDoc {
     "City": loc.city,
     "State": loc.state,
     "ZIP": loc.zip ?? "—",
-    "In Rockville service area": loc.inRockville ? "Yes" : "No",
+    "Service area": loc.locationId === "rockville-md" ? "Rockville, MD" : (loc.locationId ?? "—"),
   });
   doc.moveDown(0.8);
 

@@ -15,7 +15,7 @@ const baseInputs: EstimateInputs = {
   condoHighFloor: false,
   homeAgeYears: 30,
   waterDamageReported: false,
-  inRockville: true,
+  locationId: "rockville-md",
 };
 
 const mediumConfidence = scoreConfidence({
@@ -86,5 +86,16 @@ describe("estimator", () => {
     const result = generateEstimate(baseInputs, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
     expect(result.configVersion).toBe(DEFAULT_ESTIMATOR_CONFIG.version);
     expect(result.calculationTimestamp).toBeTruthy();
+  });
+
+  it("adds unknown-location disclaimer for non-rockville locations", () => {
+    const unknownInputs = { ...baseInputs, locationId: "unknown" };
+    const result = generateEstimate(unknownInputs, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+    expect(result.assumptions.some((a) => a.includes("does not yet have a published local configuration"))).toBe(true);
+  });
+
+  it("does not add unknown-location disclaimer for rockville", () => {
+    const result = generateEstimate(baseInputs, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+    expect(result.assumptions.some((a) => a.includes("does not yet have a published local configuration"))).toBe(false);
   });
 });

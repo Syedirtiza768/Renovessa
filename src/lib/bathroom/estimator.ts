@@ -22,7 +22,7 @@ export interface EstimateInputs {
   condoHighFloor: boolean;
   homeAgeYears: number;
   waterDamageReported: boolean;
-  inRockville: boolean;
+  locationId: string;
 }
 
 export interface LineItem {
@@ -68,6 +68,13 @@ function finishFactor(config: EstimatorConfig, tier: string) {
   return (config.qualityTierFactor as any)[tier] ?? 1;
 }
 
+function locationFactor(config: EstimatorConfig, locationId: string): number {
+  // Only rockville-md has a published config today. Unknown locations
+  // use the same baseline with a clear disclaimer in the assumptions.
+  if (locationId === "rockville-md") return config.locationFactor;
+  return config.locationFactor;
+}
+
 export function generateEstimate(
   inputs: EstimateInputs,
   config: EstimatorConfig = DEFAULT_ESTIMATOR_CONFIG,
@@ -78,7 +85,7 @@ export function generateEstimate(
   const base = factorForObjective(config, inputs.objective);
   const bTypeF = bathroomTypeFactor(config, inputs.bathroomType);
   const finishF = finishFactor(config, inputs.finishTier || "standard");
-  const locF = inputs.inRockville ? config.locationFactor : 1;
+  const locF = locationFactor(config, inputs.locationId);
 
   const baseLow = area * base.low * bTypeF * finishF * locF;
   const baseHigh = area * base.high * bTypeF * finishF * locF;
@@ -356,6 +363,19 @@ export function generateEstimate(
   if (inputs.waterDamageReported) costDrivers.push("Unknown water damage requires a larger contingency");
   if (finishF >= 1.4) costDrivers.push("Premium/luxury finishes widen the cost range");
 
+  const assumptions: string[] = [
+    "Estimate assumes standard DMV labor rates and contractor overhead.",
+    "Permit allowance is an estimate; actual permit costs depend on jurisdiction and scope.",
+    "Tile area includes shower walls and floor; verify final selection.",
+    "Plumbing relocation distance is approximate until verified on site.",
+  ];
+
+  if (inputs.locationId !== "rockville-md") {
+    assumptions.push(
+      "This location does not yet have a published local configuration. The range uses the Rockville baseline as a reference point and may differ from actual local costs.",
+    );
+  }
+
   return {
     lowAmount: totalLow,
     expectedLowAmount: expectedLow,
@@ -364,12 +384,7 @@ export function generateEstimate(
     contingencyAmount,
     confidenceLevel: confidence.level,
     lineItems,
-    assumptions: [
-      "Estimate assumes standard DMV labor rates and contractor overhead.",
-      "Permit allowance is an estimate; actual permit costs depend on jurisdiction and scope.",
-      "Tile area includes shower walls and floor; verify final selection.",
-      "Plumbing relocation distance is approximate until verified on site.",
-    ],
+    assumptions,
     unknowns: [
       "Hidden water, mold, or structural conditions behind walls or under flooring",
       "Exact permit and inspection requirements for this jurisdiction",

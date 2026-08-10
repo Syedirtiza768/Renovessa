@@ -47,6 +47,31 @@ Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live*
 - **Production-grade rate limiting** — replace in-memory rate limiting with a shared store (Redis) for multi-instance deployments
 - **Search Console verification** — submit bathroom sitemap, track organic conversions for bathroom pages
 - **Logo upload for contractor letterhead**
+- **Client-side analytics funnel events** for the bathroom planner (server-side audit events exist for major transitions)
+- **SMS OTP phone verification** at RFP submission (contact capture + consent is live; OTP deferred until SMS provider routing is configured)
+
+## Bathroom Remodeling Experience — Recently shipped (2026-08-10)
+
+- **Canonical answer schema + real location** — `answer-normalization.ts` with canonical keys and legacy migration; ZIP → `locationId` resolution; `inRockville` fully removed; preview API fails closed on missing location
+- **Landing page improvements** — "What you'll receive" 4-step flow, example results card, homeowner CTAs on both generic and Rockville pages
+- **Planner UX improvements** — Homeowner-friendly photo labels (fixture-context instead of compass), ZIP collected early, room-size floor-area chips, draft v1 migration
+- **Results page improvements** — Location displayed, cost drivers/assumptions/exclusions surfaced, auto-brief, mobile stacked cards, contractor count choice (1/2/3)
+- **Build + tests** — 167/167 tests pass, Next.js 15.5.21 build clean
+
+## Bathroom Remodeling Experience — Previously shipped
+
+- **RFP conversion path + funnel fixes (2026-08-10)** — contact capture, compliance evidence, atomic claim, draft dedupe, estimate retry, success panel
+- **Proposal Studio share + acceptance (2026-07-27)** — `/proposal/[token]`, accept/decline/questions, version lock
+- **Proposal Studio commercial layer (2026-07-27)** — priced line items, markup vs margin, approve-before-PDF
+- **Quick path + unified layout (2026-07-27)** — Capture → Layout → Results; templates + proposed generation
+- **Requirements prompt + photo uploads (2026-07-27)** — Describe step, interpret API, `BathroomMedia`, Docker upload volume
+- **Interactive diagram builder** — drag/drop, resize, rotate fixtures on existing/proposed layouts
+
+- **Migrate photo storage to S3/R2** — local `UPLOAD_ROOT` / Docker volume is live; move to object storage for multi-instance durability
+- **Background job processing** — move brief generation, PDF rendering, and email notifications to a job queue
+- **Production-grade rate limiting** — replace in-memory rate limiting with a shared store (Redis) for multi-instance deployments
+- **Search Console verification** — submit bathroom sitemap, track organic conversions for bathroom pages
+- **Logo upload for contractor letterhead**
 
 ## Bathroom Remodeling Experience — Recently shipped
 

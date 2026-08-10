@@ -64,7 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       condoHighFloor: ["condo", "coop", "apartment"].includes(a.propertyType || ""),
       homeAgeYears,
       waterDamageReported,
-      inRockville: true,
+      locationId: "rockville-md",
     };
 
     const estimate = generateEstimate(inputs, DEFAULT_ESTIMATOR_CONFIG, confidence);

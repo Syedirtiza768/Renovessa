@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BathroomFlags } from "./RockvilleBathroomPage";
+import { normalizeAnswers } from "@/lib/bathroom/answer-normalization";
 
 export type PlannerAnswers = Record<string, string>;
 
@@ -19,7 +20,7 @@ export type PlannerState = {
   error: string | null;
 };
 
-export const DRAFT_KEY = "renovessa_bathroom_planner_draft_v1";
+export const DRAFT_KEY = "renovessa_bathroom_planner_draft_v2";
 
 export function usePersistentDraft() {
   const [hydrated, setHydrated] = useState(false);
@@ -30,8 +31,23 @@ export function loadDraft(): Partial<PlannerState> | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(DRAFT_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
+    if (!raw) {
+      // Try legacy v1 key for migration
+      const legacy = window.localStorage.getItem("renovessa_bathroom_planner_draft_v1");
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        return {
+          ...parsed,
+          answers: parsed.answers ? normalizeAnswers(parsed.answers) : {},
+        };
+      }
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      ...parsed,
+      answers: parsed.answers ? normalizeAnswers(parsed.answers) : {},
+    };
   } catch {
     return null;
   }
@@ -50,6 +66,7 @@ export function clearDraft() {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(DRAFT_KEY);
+    window.localStorage.removeItem("renovessa_bathroom_planner_draft_v1");
   } catch {
     // ignore
   }

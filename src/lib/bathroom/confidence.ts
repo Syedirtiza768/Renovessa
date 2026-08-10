@@ -3,6 +3,8 @@
  * Pure function: input completeness -> High/Medium/Low.
  */
 
+import { getCanonical } from "./answer-normalization";
+
 export type ConfidenceInput = {
   hasExactMeasurements: boolean;
   hasCompleteDiagram: boolean;
@@ -80,11 +82,13 @@ export function scoreConfidence(input: ConfidenceInput): ConfidenceResult {
 
 /** Derive confidence inputs from a bathroom project's structured answers. */
 export function deriveConfidenceInput(answers: Record<string, string>): ConfidenceInput {
+  const measurementMethod = getCanonical(answers, "measurementMethod") ?? "";
+  const measurementConfirmed = getCanonical(answers, "measurement_confirmed") ?? "";
   return {
-    hasExactMeasurements: answers.measurement_method === "guided" || answers.measurement_confirmed === "true",
+    hasExactMeasurements: measurementMethod === "guided" || measurementConfirmed === "true",
     hasCompleteDiagram: answers.has_diagram === "yes",
     hasMultiplePhotos: Number(answers.photo_count || "0") >= 3,
-    finishTierSelected: Boolean(answers.finish_tier),
+    finishTierSelected: Boolean(answers.finish_tier || answers.fixtureTier),
     plumbingChangesKnown: answers.plumbing_changes === "known" || answers.plumbing_relocation === "none",
     conditionQuestionnaireComplete: answers.condition_questionnaire === "complete",
     unknownLayout: answers.layout_known === "no",

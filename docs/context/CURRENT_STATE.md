@@ -151,6 +151,26 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - Client-side analytics funnel events for the bathroom planner (server-side audit events exist for major transitions)
 - Search Console verification and privacy-safe organic conversion analytics for bathroom pages
 
+### Implemented (2026-08-10) — Canonical schema, real location, landing + planner UX
+- **Canonical planner-answer schema** — `src/lib/bathroom/answer-normalization.ts` defines canonical keys (`lengthFt`, `widthFt`, `ceilingFt`, `measurementMethod`, `zipCode`, `city`, `locationId`) with a bidirectional legacy→canonical migration layer. All planner steps, estimator inputs, preview API, and brief builder now normalize on ingress.
+- **Real location resolution** — ZIP code collected in Capture step; `src/lib/bathroom/estimate-input-derivation.ts` resolves `locationId` from ZIP against a known-location register. Estimator uses `locationId` instead of hardcoded `inRockville: true`; unknown ZIPs render a location disclaimer in assumptions. Preview API fails closed when location is missing.
+- **Landing page improvements** — Both `/bathroom-remodeling` and `/bathroom-remodeling/rockville-md` now include a "What you'll receive" section (illustrated 4-step flow), an illustrative example results card with realistic range + scope, and homeowner CTAs (planner, cost guide, contractor list).
+- **Planner UX improvements** — Photo upload labels changed from compass directions ("North wall") to homeowner-friendly ones ("Wall with vanity", "Wall with tub/shower", etc.). ZIP collected early in Requirements step. `planner-types.ts` normalizes on load and migrates from v1 `measurements_draft` key. Room-size band selection now includes floor-area chips.
+- **Results page improvements** — Location used is displayed; cost drivers and assumptions/exclusions are surfaced; auto-generate brief is available; mobile uses stacked cards; contractor count choice (1/2/3) in the RFP form.
+- **Contractor flow updates** — Studio estimate route uses `locationId: "rockville-md"`; schema `estimateInputsSchema` replaced `inRockville` with `locationId`.
+- **Tests** — `answer-normalization.test.ts` (9 tests), updated `estimator.test.ts` (10), `confidence.test.ts` (7), `layout-templates.test.ts` (17 including room-size band floor area and estimate impact). All 167 tests pass. Build clean.
+- Object storage migration (S3/R2) for uploads beyond local Docker volume
+- Vision-assisted fixture placement from photos
+- Logo upload for contractor letterhead
+- Change orders against accepted studio proposals
+- Email/SMS notifications for proposal engagement
+- Full contractor price book (CSV import / assemblies)
+- Background job processing
+- Production-grade rate limiting on bathroom endpoints
+- SMS OTP phone verification at RFP submission (contact capture + consent is live; OTP deferred until SMS provider routing is configured)
+- Client-side analytics funnel events for the bathroom planner (server-side audit events exist for major transitions)
+- Search Console verification and privacy-safe organic conversion analytics for bathroom pages
+
 ## Solar Experience (Phase 1 — Implemented + deployed dormant 2026-08-10)
 
 A specialized residential-solar sub-product. **Deployed to production on 2026-08-10 (commit `816d882`) with every `SOLAR_*` flag OFF** — the code and schema are live, the routes 404 by design, and nothing is user-visible. See `docs/planning/SOLAR_IMPLEMENTATION_NOTE.md` for the full audit, architecture, data-source matrix, calculation methodology, AI matrix and fallback matrix.

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 72" role="img" aria-labelledby="title desc">
+  <title id="title">Renovessa</title>
+  <desc id="desc">Renovessa architectural wordmark</desc>
+  <!-- The ascending bars reference a home taking shape, from plans to completion. -->
+  <g fill="#1a1a1a" transform="translate(4 8)">
+    <rect x="5" y="31" width="5" height="22" rx="1.5"/>
+    <rect x="14" y="20" width="5" height="33" rx="1.5"/>
+    <rect x="23" y="8" width="5" height="45" rx="1.5"/>
+    <rect x="32" y="16" width="5" height="37" rx="1.5"/>
+    <rect x="41" y="24" width="5" height="29" rx="1.5"/>
+    <rect x="50" y="28" width="5" height="25" rx="1.5"/>
+  </g>
+  <text x="82" y="47" fill="#1a1a1a" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="600" letter-spacing="-1.1">Renovessa</text>
+</svg>

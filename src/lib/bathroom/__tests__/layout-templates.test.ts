@@ -7,7 +7,12 @@ import {
   hasSizeFilled,
   needsProposedLayout,
   resolveRoomFeet,
+  ROOM_SIZE_BANDS,
 } from "@/lib/bathroom/layout-templates";
+import { calculateGeometry } from "@/lib/bathroom/geometry";
+import { generateEstimate, type EstimateInputs } from "@/lib/bathroom/estimator";
+import { DEFAULT_ESTIMATOR_CONFIG } from "@/lib/bathroom/config";
+import { scoreConfidence } from "@/lib/bathroom/confidence";
 
 describe("layout-templates", () => {
   it("resolves room feet from size band", () => {
@@ -15,6 +20,14 @@ describe("layout-templates", () => {
       lengthFt: 8,
       widthFt: 5,
       ceilingFt: 8,
+    });
+  });
+
+  it("resolves room feet from canonical explicit measurements", () => {
+    expect(resolveRoomFeet({ lengthFt: "10", widthFt: "6", ceilingFt: "9", roomSizeBand: "small" })).toEqual({
+      lengthFt: 10,
+      widthFt: 6,
+      ceilingFt: 9,
     });
   });
 
@@ -47,9 +60,73 @@ describe("layout-templates", () => {
     expect(needsProposedLayout({ projectObjective: "tub_to_shower" })).toBe(true);
   });
 
-  it("detects filled basics/scope/size for quick path", () => {
-    expect(hasBasicsFilled({ bathroomType: "primary", propertyType: "condo" })).toBe(true);
+  it("detects filled basics with canonical zipCode", () => {
+    expect(hasBasicsFilled({ bathroomType: "primary", zipCode: "20850" })).toBe(true);
+    expect(hasBasicsFilled({ bathroomType: "primary", zip: "20850" })).toBe(true);
+    expect(hasBasicsFilled({ bathroomType: "primary" })).toBe(false);
+  });
+
+  it("detects filled size with canonical lengthFt/widthFt", () => {
+    expect(hasSizeFilled({ lengthFt: "8", widthFt: "5" })).toBe(true);
+    expect(hasSizeFilled({ length: "8", width: "5" })).toBe(true);
     expect(hasSizeFilled({ roomSizeBand: "medium" })).toBe(true);
+    expect(hasSizeFilled({})).toBe(false);
+  });
+
+  it("detects filled scope", () => {
     expect(hasScopeFilled({ projectObjective: "remodel_same_layout" })).toBe(true);
+    expect(hasScopeFilled({})).toBe(false);
+  });
+});
+
+describe("room-size bands affect floor area", () => {
+  it.each([
+    ["powder", 20],
+    ["small", 40],
+    ["medium", 54],
+    ["large", 96],
+  ] as const)("%s band produces ~%s sq ft", (band, expectedArea) => {
+    const template = buildExistingTemplate({ bathroomType: "guest", roomSizeBand: band });
+    const geo = calculateGeometry(template);
+    expect(geo.floorAreaSqft).toBeCloseTo(expectedArea, 0);
+  });
+});
+
+describe("room-size bands affect estimate", () => {
+  const mediumConfidence = scoreConfidence({
+    hasExactMeasurements: false,
+    hasCompleteDiagram: false,
+    hasMultiplePhotos: false,
+    finishTierSelected: true,
+    plumbingChangesKnown: true,
+    conditionQuestionnaireComplete: false,
+    unknownLayout: false,
+    possibleHiddenDamage: false,
+    majorStructuralOrPlumbingUncertainty: false,
+  });
+
+  it.each([
+    ["powder", 20],
+    ["small", 40],
+    ["medium", 54],
+    ["large", 96],
+  ] as const)("%s band produces different estimate than other bands", (band, area) => {
+    const inputs: EstimateInputs = {
+      objective: "remodel_same_layout",
+      bathroomType: "guest",
+      finishTier: "standard",
+      floorAreaSqft: area,
+      plumbingRelocationFt: 0,
+      electricalModifications: 1,
+      tileFullHeightRoom: false,
+      curblessShower: false,
+      condoHighFloor: false,
+      homeAgeYears: 30,
+      waterDamageReported: false,
+      locationId: "rockville-md",
+    };
+    const result = generateEstimate(inputs, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+    expect(result.lowAmount).toBeGreaterThan(0);
+    expect(result.highComplexityAmount).toBeGreaterThan(result.lowAmount);
   });
 });
