@@ -2,6 +2,17 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
 import { bathroomRockvilleEnabled, bathroomLandingEnabled, solarLandingEnabled } from "@/lib/feature-flags";
 
+/**
+ * Generated per request, not prerendered.
+ *
+ * This file's contents depend on feature flags, and Next evaluates a static
+ * sitemap at build time — so a prerendered copy freezes whatever the env was
+ * during `next build`. Renovessa builds one image and supplies env at
+ * container start, which meant enabling a landing flag at runtime made the
+ * page reachable but never added it to the sitemap.
+ */
+export const dynamic = "force-dynamic";
+
 const routes = [
   "/",
   "/estimate",

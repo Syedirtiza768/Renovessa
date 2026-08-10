@@ -4,6 +4,26 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-10 — Flag-dependent routes must be `force-dynamic` (build-time env freeze)
+
+### Decision
+Any route whose output branches on a feature flag is marked `export const dynamic = "force-dynamic"`, and the `SOLAR_*` flag helpers read `process.env` at **call time** rather than as module-level constants. Applied to `/solar`, `/solar/planner`, `/solar/methodology`, and `src/app/sitemap.ts`.
+
+### Reason
+Renovessa builds **one** Docker image and supplies env at container start, but Next.js evaluates statically-prerendered routes at `next build` time. A flag-gated page that Next chooses to prerender therefore bakes in whatever the env was *during the image build*, and no amount of runtime env will change it.
+
+This was caught live: after enabling `SOLAR_LANDING_ENABLED=true` on production and recreating the container, `/solar` and `/solar/methodology` correctly returned 200 — but `/sitemap.xml` still omitted them, because the sitemap had been prerendered while the flag was false.
+
+`src/lib/feature-flags.ts` still holds the `BATHROOM_*` flags as module-level constants. They are unaffected today only because every bathroom flag is `false` in production; the same freeze would occur the moment one is enabled without a rebuild. Left as-is rather than refactored blind — noted here so the next person enabling a bathroom flag knows to rebuild or convert them.
+
+### Impact
+`/sitemap.xml` is now `ƒ` (dynamic) instead of `○` (static) — a negligible cost for a small, cached-at-the-edge document, and it means the sitemap always reflects what is actually reachable.
+
+### Status
+Accepted, implemented, deployed 2026-08-10.
+
+---
+
 ## 2026-08-10 — Renovessa Solar: provider-adapter architecture, two-model production reconciliation, fail-closed pricing
 
 ### Decision
