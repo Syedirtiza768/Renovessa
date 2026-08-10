@@ -518,6 +518,7 @@ export function SolarPlanner({ flags, imageryStaleYears = 3 }: { flags: SolarFla
               excludedSegments={excludedSet}
               onTogglePanel={state.currentStep === "design" ? togglePanel : undefined}
               onToggleSegment={state.currentStep === "design" ? toggleSegment : undefined}
+              imageryEnabled={flags.imagery && !state.analysis.isManual}
             />
             {state.plan && (
               <div className="grid grid-cols-2 gap-4 border-t border-ink-15 px-4 py-3 text-sm sm:grid-cols-4">

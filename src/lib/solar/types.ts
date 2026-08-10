@@ -165,7 +165,7 @@ export interface SystemSize {
 // Production
 // ---------------------------------------------------------------------------
 
-export type ProductionModelId = "GOOGLE_SOLAR" | "PVWATTS_V8";
+export type ProductionModelId = "GOOGLE_SOLAR" | "PVWATTS_V8" | "PVGIS_V52";
 
 export interface SegmentProductionInput {
   segmentIndex: number;

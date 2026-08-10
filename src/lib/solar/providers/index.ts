@@ -13,6 +13,7 @@
 import { GoogleGeocodingProvider } from "./google-geocoding";
 import { GoogleSolarProvider } from "./google-solar";
 import { PVWattsProvider } from "./pvwatts";
+import { PVGISProvider } from "./pvgis";
 import { OpenEIUtilityRateProvider } from "./openei";
 import { ConfiguredIncentiveProvider } from "./configured-incentives";
 import type {
@@ -26,6 +27,7 @@ import type {
 import {
   solarGeospatialEnabled,
   solarPvwattsEnabled,
+  solarPvgisEnabled,
   solarUtilityRatesEnabled,
   solarIncentivesEnabled,
 } from "@/lib/feature-flags";
@@ -34,6 +36,7 @@ import {
 let geocoding: GeocodingProvider | null = null;
 let geospatial: SolarGeospatialProvider | null = null;
 let production: ProductionModelProvider | null = null;
+let pvgis: ProductionModelProvider | null = null;
 let utilityRates: UtilityRateProvider | null = null;
 let incentives: IncentiveProvider | null = null;
 
@@ -47,10 +50,23 @@ export function getGeospatialProvider(): SolarGeospatialProvider | null {
   return (geospatial ??= new GoogleSolarProvider());
 }
 
-/** null when the second production model is switched off — single-model path. */
+/**
+ * The independent second production model.
+ *
+ * Prefers PVWatts when an NREL key is configured, otherwise falls back to
+ * PVGIS, which needs no credential. The two-model cross-check is a core
+ * accuracy feature, so the default must be something that actually runs —
+ * gating it behind a signup meant most deployments would silently produce
+ * SINGLE_MODEL results.
+ */
 export function getProductionModelProvider(): ProductionModelProvider | null {
-  if (!solarPvwattsEnabled()) return null;
-  return (production ??= new PVWattsProvider());
+  if (solarPvwattsEnabled() && process.env.NREL_API_KEY?.trim()) {
+    return (production ??= new PVWattsProvider());
+  }
+  if (solarPvgisEnabled()) {
+    return (pvgis ??= new PVGISProvider());
+  }
+  return null;
 }
 
 export function getUtilityRateProvider(): UtilityRateProvider | null {

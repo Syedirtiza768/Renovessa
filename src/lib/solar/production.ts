@@ -251,6 +251,8 @@ export function modelLabel(id: ProductionModelId): string {
       return "Google Solar";
     case "PVWATTS_V8":
       return "NREL PVWatts v8";
+    case "PVGIS_V52":
+      return "PVGIS v5.2 (EU JRC)";
   }
 }
 

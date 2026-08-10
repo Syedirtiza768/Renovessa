@@ -102,9 +102,23 @@ export function solarGeospatialEnabled(): boolean {
   return flag("SOLAR_GEOSPATIAL_ENABLED") || solarDemoMode();
 }
 
-/** NREL PVWatts v8, the second production model. */
+/** NREL PVWatts v8 as the second production model. Requires NREL_API_KEY. */
 export function solarPvwattsEnabled(): boolean {
   return flag("SOLAR_PVWATTS_ENABLED") || solarDemoMode();
+}
+
+/**
+ * PVGIS v5.2 as the second production model. Defaults ON: it needs no API key,
+ * and the two-model cross-check is a core accuracy feature that should not be
+ * off by default just because a credential is missing.
+ */
+export function solarPvgisEnabled(): boolean {
+  return flag("SOLAR_PVGIS_ENABLED", "true");
+}
+
+/** Satellite basemap under the roof geometry. Requires the Maps Static API. */
+export function solarImageryEnabled(): boolean {
+  return flag("SOLAR_IMAGERY_ENABLED") || solarDemoMode();
 }
 
 /** OpenEI utility rate lookup. */
@@ -133,6 +147,8 @@ export function solarFlagSnapshot() {
     planner: solarPlannerUsable(),
     geospatial: solarGeospatialEnabled(),
     pvwatts: solarPvwattsEnabled(),
+    pvgis: solarPvgisEnabled(),
+    imagery: solarImageryEnabled(),
     utilityRates: solarUtilityRatesEnabled(),
     incentives: solarIncentivesEnabled(),
     storage: solarStorageEnabled(),

@@ -20,6 +20,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import type { RoofAnalysis, CandidatePanel, RoofSegment } from "@/lib/solar/types";
+import { chooseBasemap, GOOGLE_IMAGERY_ATTRIBUTION } from "@/lib/solar/imagery";
 import {
   toPlanar,
   boundingBoxCorners,
@@ -42,7 +43,9 @@ interface RoofVisualizerProps {
   excludedSegments: Set<number>;
   onTogglePanel?: (panelId: string) => void;
   onToggleSegment?: (segmentIndex: number) => void;
-  /** Phase 2 slot: an attributed imagery basemap rendered beneath the geometry. */
+  /** Show the real aerial photo beneath the panels. Falls back silently. */
+  imageryEnabled?: boolean;
+  /** Escape hatch for a custom basemap node (tests, future providers). */
   basemap?: ReactNode;
 }
 
@@ -65,10 +68,13 @@ export function RoofVisualizer({
   excludedSegments,
   onTogglePanel,
   onToggleSegment,
+  imageryEnabled = false,
   basemap,
 }: RoofVisualizerProps) {
   const [layer, setLayer] = useState<RoofLayer>("panels");
   const [hoveredSegment, setHoveredSegment] = useState<number | null>(null);
+  const [imageryFailed, setImageryFailed] = useState(false);
+  const [showImagery, setShowImagery] = useState(true);
 
   const origin = analysis.buildingCenter;
 
@@ -99,9 +105,24 @@ export function RoofVisualizer({
     ];
     const extent = extentOf(allPoints.length ? allPoints : [toPlanar(origin, origin)]);
     const padded = padExtent(extent ?? { minX: -10, maxX: 10, minY: -10, maxY: 10 }, 3);
+    const box = viewBoxFor(padded);
 
-    return { segmentShapes, panelShapes, ...viewBoxFor(padded) };
+    // Size the aerial image to cover the roof, then place it in the SAME
+    // planar-metre space as the geometry. Because both use metres east/north
+    // of the building centre, the panels land exactly where they belong on the
+    // photo — no separate registration step, nothing to drift out of sync.
+    const basemapSpec = chooseBasemap(origin, box.width, box.height);
+
+    return { segmentShapes, panelShapes, basemapSpec, ...box };
   }, [analysis, origin]);
+
+  const basemapUrl = useMemo(() => {
+    if (!imageryEnabled) return null;
+    const b = geometry.basemapSpec;
+    return `/api/solar/basemap?lat=${origin.latitude}&lng=${origin.longitude}&w=${b.widthMeters.toFixed(1)}&h=${b.heightMeters.toFixed(1)}`;
+  }, [imageryEnabled, geometry.basemapSpec, origin]);
+
+  const imageryVisible = Boolean(basemapUrl) && showImagery && !imageryFailed;
 
   const sunshineRange = useMemo(() => {
     const values = analysis.segments
@@ -144,6 +165,16 @@ export function RoofVisualizer({
         </div>
 
         <div className="flex items-center gap-3 text-xs text-ink-40">
+          {basemapUrl && !imageryFailed && (
+            <button
+              type="button"
+              onClick={() => setShowImagery((v) => !v)}
+              aria-pressed={showImagery}
+              className="rounded-full border border-ink-15 px-3 py-1 transition hover:text-ink-100"
+            >
+              {showImagery ? "Hide photo" : "Show photo"}
+            </button>
+          )}
           <span aria-hidden className="font-mono-landing">
             ↑ N
           </span>
@@ -167,21 +198,44 @@ export function RoofVisualizer({
           aria-label={roofAltText(analysis)}
           preserveAspectRatio="xMidYMid meet"
         >
+          {/* The real roof, in the same planar-metre space as the geometry. */}
+          {imageryVisible && basemapUrl && (
+            <image
+              href={basemapUrl}
+              x={-geometry.basemapSpec.widthMeters / 2}
+              y={-geometry.basemapSpec.heightMeters / 2}
+              width={geometry.basemapSpec.widthMeters}
+              height={geometry.basemapSpec.heightMeters}
+              preserveAspectRatio="none"
+              onError={() => setImageryFailed(true)}
+            />
+          )}
+
           {/* Roof planes */}
           {geometry.segmentShapes.map(({ segment, corners }) => {
             const excluded = excludedSegments.has(segment.index);
-            const fill =
-              layer === "sunlight" && hasSunlightData
-                ? sunlightFill(segment, sunshineRange.min, sunshineRange.max)
-                : "#efebe2";
+            const sunlightLayer = layer === "sunlight" && hasSunlightData;
+            const fill = sunlightLayer ? sunlightFill(segment, sunshineRange.min, sunshineRange.max) : "#efebe2";
+            // Over the photo the plane fills become a tint, not a mask —
+            // hiding the homeowner's actual roof would defeat the point.
+            const fillOpacity = imageryVisible
+              ? excluded
+                ? 0.12
+                : sunlightLayer
+                  ? 0.55
+                  : 0
+              : excluded
+                ? 0.3
+                : 1;
             return (
               <polygon
                 key={`seg-${segment.index}`}
                 points={toSvgPoints(corners)}
                 fill={fill}
-                fillOpacity={excluded ? 0.3 : 1}
-                stroke={hoveredSegment === segment.index ? "#c17a2a" : "#8a8a8a"}
-                strokeWidth={hoveredSegment === segment.index ? 0.35 : 0.15}
+                fillOpacity={fillOpacity}
+                stroke={hoveredSegment === segment.index ? "#c17a2a" : imageryVisible ? "#ffffff" : "#8a8a8a"}
+                strokeWidth={hoveredSegment === segment.index ? 0.35 : imageryVisible ? 0.1 : 0.15}
+                strokeOpacity={imageryVisible && hoveredSegment !== segment.index ? 0.5 : 1}
                 strokeDasharray={excluded ? "0.6 0.4" : undefined}
                 onMouseEnter={() => setHoveredSegment(segment.index)}
                 onMouseLeave={() => setHoveredSegment(null)}
@@ -235,6 +289,8 @@ export function RoofVisualizer({
       )}
 
       <figcaption className="border-t border-ink-15 px-4 py-3 text-xs leading-relaxed text-ink-40">
+        {/* Licence requires the source line alongside the imagery (§52). */}
+        {imageryVisible && <span className="mr-1 text-ink-70">{GOOGLE_IMAGERY_ATTRIBUTION}.</span>}
         Conceptual solar layout drawn from{" "}
         {analysis.isManual ? "the roof faces you described" : "aerial roof analysis"}. Final panel placement,
         setbacks, access pathways, structural requirements and code compliance must be verified by your installer
