@@ -119,24 +119,117 @@ describe("geographic projection", () => {
     expect(p.x).toBeCloseTo(0, 9);
   });
 
-  it("produces a panel rectangle of the right area regardless of rotation", () => {
+  const W = 1.045; // module short dimension
+  const H = 1.879; // module long dimension
+
+  const shoelace = (pts: Array<{ x: number; y: number }>) =>
+    Math.abs(pts.reduce((s, p, i) => {
+      const q = pts[(i + 1) % pts.length];
+      return s + (p.x * q.y - q.x * p.y);
+    }, 0) / 2);
+
+  /** Extent of the rectangle along a unit direction. */
+  const extentAlong = (pts: Array<{ x: number; y: number }>, ux: number, uy: number) => {
+    const proj = pts.map((p) => p.x * ux + p.y * uy);
+    return Math.max(...proj) - Math.min(...proj);
+  };
+
+  it("a flat panel keeps its true module footprint", () => {
     const corners = panelCorners({
       center: origin,
       origin,
-      widthMeters: 1.045,
-      heightMeters: 1.879,
+      widthMeters: W,
+      heightMeters: H,
       orientation: "LANDSCAPE",
       azimuthDegrees: 217,
+      pitchDegrees: 0,
     });
     expect(corners).toHaveLength(4);
-    // Shoelace area is rotation-invariant, so it must match w x h.
-    const area = Math.abs(
-      corners.reduce((sum, p, i) => {
-        const q = corners[(i + 1) % corners.length];
-        return sum + (p.x * q.y - q.x * p.y);
-      }, 0) / 2,
-    );
-    expect(area).toBeCloseTo(1.045 * 1.879, 6);
+    expect(shoelace(corners)).toBeCloseTo(W * H, 6);
+  });
+
+  it("LANDSCAPE puts the module's long edge across the slope, not down it", () => {
+    // South-facing: down-slope is due south (0,-1); across-slope is east (1,0).
+    const corners = panelCorners({
+      center: origin,
+      origin,
+      widthMeters: W,
+      heightMeters: H,
+      orientation: "LANDSCAPE",
+      azimuthDegrees: 180,
+      pitchDegrees: 0,
+    });
+    expect(extentAlong(corners, 0, 1)).toBeCloseTo(W, 6); // down-slope = SHORT
+    expect(extentAlong(corners, 1, 0)).toBeCloseTo(H, 6); // across-slope = LONG
+  });
+
+  it("PORTRAIT is the reverse of LANDSCAPE", () => {
+    const corners = panelCorners({
+      center: origin,
+      origin,
+      widthMeters: W,
+      heightMeters: H,
+      orientation: "PORTRAIT",
+      azimuthDegrees: 180,
+      pitchDegrees: 0,
+    });
+    expect(extentAlong(corners, 0, 1)).toBeCloseTo(H, 6);
+    expect(extentAlong(corners, 1, 0)).toBeCloseTo(W, 6);
+  });
+
+  it("foreshortens down-slope by cos(pitch) and leaves across-slope alone", () => {
+    // This is what stops panels overhanging the roof in an overhead view.
+    for (const pitch of [15, 25, 35, 45]) {
+      const corners = panelCorners({
+        center: origin,
+        origin,
+        widthMeters: W,
+        heightMeters: H,
+        orientation: "PORTRAIT",
+        azimuthDegrees: 180,
+        pitchDegrees: pitch,
+      });
+      const cos = Math.cos((pitch * Math.PI) / 180);
+      expect(extentAlong(corners, 0, 1)).toBeCloseTo(H * cos, 6);
+      expect(extentAlong(corners, 1, 0)).toBeCloseTo(W, 6);
+      // Plan-view area shrinks by exactly cos(pitch).
+      expect(shoelace(corners)).toBeCloseTo(W * H * cos, 6);
+    }
+  });
+
+  it("never collapses or inverts on an out-of-range pitch", () => {
+    for (const pitch of [-30, 95, 180]) {
+      const area = shoelace(
+        panelCorners({
+          center: origin,
+          origin,
+          widthMeters: W,
+          heightMeters: H,
+          orientation: "LANDSCAPE",
+          azimuthDegrees: 180,
+          pitchDegrees: pitch,
+        }),
+      );
+      expect(area).toBeGreaterThan(0);
+      expect(area).toBeLessThanOrEqual(W * H + 1e-9);
+    }
+  });
+
+  it("area is rotation-invariant across every azimuth", () => {
+    for (let az = 0; az < 360; az += 30) {
+      const area = shoelace(
+        panelCorners({
+          center: origin,
+          origin,
+          widthMeters: W,
+          heightMeters: H,
+          orientation: "LANDSCAPE",
+          azimuthDegrees: az,
+          pitchDegrees: 25,
+        }),
+      );
+      expect(area).toBeCloseTo(W * H * Math.cos((25 * Math.PI) / 180), 6);
+    }
   });
 
   it("gives a viewBox that covers the whole extent", () => {

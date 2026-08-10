@@ -107,25 +107,46 @@ export function boundingBoxCorners(box: BoundingBox, origin: LatLng): PlanarPoin
 }
 
 /**
- * Corner points of one panel rectangle, rotated to sit square with the roof
- * plane it belongs to.
+ * Corner points of one panel as it appears **from directly overhead**, which
+ * is the only view satellite imagery gives us.
  *
- * A panel's long axis runs across the slope for LANDSCAPE and up it for
- * PORTRAIT. The plane's downslope direction is its azimuth, so rotating the
- * rectangle by the azimuth puts it on the roof the way it would really sit.
+ * Two things decide the footprint, and getting either wrong makes panels
+ * visibly overhang the roof:
+ *
+ * 1. **Which module edge runs down the slope.** The local `lx` axis of the
+ *    rotation below points down-slope (verified: at azimuth 180 it maps to
+ *    south). `LANDSCAPE` means the long edge lies horizontally *across* the
+ *    slope, so the down-slope extent is the module's SHORT dimension.
+ *    `PORTRAIT` is the reverse.
+ *
+ * 2. **Foreshortening.** A panel lying on a pitched roof is compressed along
+ *    the slope when seen from above, by cos(pitch). The across-slope extent is
+ *    horizontal and therefore unaffected. On a 25° roof that is a 10%
+ *    compression; at 45° it is 29%.
  */
 export function panelCorners(opts: {
   center: LatLng;
   origin: LatLng;
+  /** Module short dimension, metres. */
   widthMeters: number;
+  /** Module long dimension, metres. */
   heightMeters: number;
   orientation: "LANDSCAPE" | "PORTRAIT";
   azimuthDegrees: number;
+  /** Roof plane pitch. 0 (flat) renders the true module footprint. */
+  pitchDegrees?: number;
 }): PlanarPoint[] {
   const c = toPlanar(opts.center, opts.origin);
-  // In LANDSCAPE the module's long edge is horizontal across the slope.
-  const along = opts.orientation === "LANDSCAPE" ? opts.heightMeters : opts.widthMeters;
-  const across = opts.orientation === "LANDSCAPE" ? opts.widthMeters : opts.heightMeters;
+
+  const isLandscape = opts.orientation === "LANDSCAPE";
+  const downSlopeMeters = isLandscape ? opts.widthMeters : opts.heightMeters;
+  const acrossSlopeMeters = isLandscape ? opts.heightMeters : opts.widthMeters;
+
+  // Only the down-slope axis foreshortens. Clamp so a bad pitch can never
+  // collapse or invert the rectangle.
+  const pitch = Math.min(89, Math.max(0, opts.pitchDegrees ?? 0));
+  const along = downSlopeMeters * Math.cos((pitch * Math.PI) / 180);
+  const across = acrossSlopeMeters;
 
   const halfAlong = along / 2;
   const halfAcross = across / 2;

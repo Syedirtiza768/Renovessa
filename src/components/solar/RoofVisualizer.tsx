@@ -95,6 +95,9 @@ export function RoofVisualizer({
           heightMeters: analysis.panelSpec.heightMeters,
           orientation: p.orientation,
           azimuthDegrees: segment?.azimuthDegrees ?? 180,
+          // Without the plane's pitch the panel is drawn at full length and
+          // overhangs the roof edge in this overhead view.
+          pitchDegrees: segment?.pitchDegrees ?? 0,
         }),
       };
     });
@@ -213,31 +216,45 @@ export function RoofVisualizer({
             />
           )}
 
-          {/* Roof planes */}
+          {/* Roof planes.
+              The provider gives an axis-aligned lat/lng bounding box, not the
+              plane's true outline, so over a real photo these rectangles can
+              never line up with a diagonal ridge. They are drawn only when
+              they carry information the photo doesn't — the sunlight ramp, an
+              excluded face, or the one being hovered. */}
           {geometry.segmentShapes.map(({ segment, corners }) => {
             const excluded = excludedSegments.has(segment.index);
             const sunlightLayer = layer === "sunlight" && hasSunlightData;
+            const hovered = hoveredSegment === segment.index;
+            // Over the photo the box is muted to nothing unless it is carrying
+            // information the image cannot: the sunlight ramp, an excluded
+            // face, or the one under the cursor. It stays in the DOM either
+            // way so it remains hoverable and clickable.
+            const muted = imageryVisible && !sunlightLayer && !excluded && !hovered;
             const fill = sunlightLayer ? sunlightFill(segment, sunshineRange.min, sunshineRange.max) : "#efebe2";
-            // Over the photo the plane fills become a tint, not a mask —
-            // hiding the homeowner's actual roof would defeat the point.
-            const fillOpacity = imageryVisible
-              ? excluded
-                ? 0.12
-                : sunlightLayer
-                  ? 0.55
-                  : 0
-              : excluded
-                ? 0.3
-                : 1;
+            const fillOpacity = muted
+              ? 0
+              : imageryVisible
+                ? excluded
+                  ? 0.12
+                  : sunlightLayer
+                    ? 0.55
+                    : 0
+                : excluded
+                  ? 0.3
+                  : 1;
             return (
               <polygon
                 key={`seg-${segment.index}`}
                 points={toSvgPoints(corners)}
                 fill={fill}
                 fillOpacity={fillOpacity}
-                stroke={hoveredSegment === segment.index ? "#c17a2a" : imageryVisible ? "#ffffff" : "#8a8a8a"}
-                strokeWidth={hoveredSegment === segment.index ? 0.35 : imageryVisible ? 0.1 : 0.15}
-                strokeOpacity={imageryVisible && hoveredSegment !== segment.index ? 0.5 : 1}
+                stroke={hovered ? "#c17a2a" : imageryVisible ? "#ffffff" : "#8a8a8a"}
+                strokeWidth={hovered ? 0.35 : imageryVisible ? 0.1 : 0.15}
+                strokeOpacity={muted ? 0 : imageryVisible && !hovered ? 0.5 : 1}
+                // Keep the invisible box interactive so roof faces stay
+                // selectable directly on the photo.
+                pointerEvents="all"
                 strokeDasharray={excluded ? "0.6 0.4" : undefined}
                 onMouseEnter={() => setHoveredSegment(segment.index)}
                 onMouseLeave={() => setHoveredSegment(null)}
