@@ -66,7 +66,16 @@ function strategyForGoal(goal: string): { strategy: LayoutStrategy; targetOffset
   }
 }
 
-export function SolarPlanner({ flags, imageryStaleYears = 3 }: { flags: SolarFlags; imageryStaleYears?: number }) {
+export function SolarPlanner({
+  flags,
+  imageryStaleYears = 3,
+  secondModelLabel = null,
+}: {
+  flags: SolarFlags;
+  imageryStaleYears?: number;
+  /** Label of the independent production model that will actually run, or null. */
+  secondModelLabel?: string | null;
+}) {
   const [state, setState] = useState<SolarPlannerState>(INITIAL_SOLAR_STATE);
   const [hydrated, setHydrated] = useState(false);
   const [saveNonce, setSaveNonce] = useState(0);
@@ -723,9 +732,12 @@ export function SolarPlanner({ flags, imageryStaleYears = 3 }: { flags: SolarFla
           </nav>
         )}
 
-        {!flags.pvwatts && (
+        {/* Reflects the model that will actually run, not a flag. PVWatts being
+            off is not the same as having no second model — PVGIS covers it and
+            needs no credential. */}
+        {!secondModelLabel && (
           <p className="mt-6 text-xs text-ink-40">
-            Independent production modelling is switched off in this environment, so production is shown from a single
+            No independent production model is available in this environment, so production is shown from a single
             model with a wider range.
           </p>
         )}
