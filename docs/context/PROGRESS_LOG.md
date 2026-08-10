@@ -328,3 +328,5 @@
 - Root cause: `EstimateStep.tsx` auto-brief `useEffect` had `briefGenerating` in its deps and set it synchronously inside the effect → self-retrigger → cleanup aborted its own in-flight fetch → `finally` skipped the reset → spinner forever; brief POST actually completed server-side
 - Fix: `useRef` per-project guard, `briefGenerating` removed from deps, retryable error surfaced on failure (manual button stays as fallback); suite 216/216 green, tsc clean
 - Gap noted: all prior E2E drove the API via curl — the browser effect path was never exercised; this class of bug needs a browser-level smoke check
+- Deployed `d44d74c`: server pulled, rebuilt, `renovessa-app-1` healthy; live bundle verification — served planner chunk `9587-6c763593e177814b.js` contains the fix marker string; API flow re-verified green via curl (brief POST 201 in 0.02s)
+- Browser-path verification via WebBridge attempted but the browser extension was not connected; owner asked to hard-refresh and retry. New test rows from today's repro (`RNV-2026-96632`, `RNV-2026-47518`) join the pending prod-DB cleanup list
