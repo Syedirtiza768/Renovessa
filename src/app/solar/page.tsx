@@ -5,7 +5,8 @@ import { SolarLandingPage } from "@/components/solar/SolarLandingPage";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Residential Solar Planner | See Panels on Your Roof | Renovessa",
+  // No "| Renovessa" suffix: the root layout applies template "%s | Renovessa".
+  title: "Residential Solar Planner — See Panels on Your Roof",
   description:
     "Enter your address to explore your roof's solar potential, visualise panels on it, estimate production and cost, and prepare a project qualified installers can quote.",
   path: "/solar",

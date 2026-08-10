@@ -6,7 +6,7 @@ import { resolvePricingConfig } from "@/lib/solar/config-loader";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Solar Planner | Renovessa",
+  title: "Solar Planner",
   description:
     "Plan a residential solar system: roof analysis, panel layout, production modelling, cost range and a contractor-ready project brief.",
   path: "/solar/planner",

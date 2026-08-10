@@ -10,7 +10,7 @@ import { calculationVersionSnapshot } from "@/lib/solar/versions";
 import { DEFAULT_AGREEMENT_THRESHOLDS } from "@/lib/solar/production";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Solar Estimate Methodology | Renovessa",
+  title: "Solar Estimate Methodology",
   description:
     "How Renovessa's solar planner derives roof geometry, models production, estimates cost, handles incentives, scores confidence, and where AI is and is not used.",
   path: "/solar/methodology",

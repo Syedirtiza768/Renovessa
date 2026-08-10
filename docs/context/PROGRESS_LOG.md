@@ -1,4 +1,17 @@
 
+# 2026-08-10 — Renovessa Solar phase 1: built, deployed, landing live
+
+- Audited the existing bathroom planner, estimator, anonymous-draft, RFQ, admin-config and design-system architecture before writing any solar code; reused the *shape* (pure versioned engines, immutable input snapshots, fail-closed public numbers, `clientGeneratedId` drafts, shared `ProjectRequest` pipeline) while isolating solar domain logic in `src/lib/solar/`.
+- Built the provider-adapter layer (Google Geocoding, Google Solar buildingInsights, PVWatts v8, OpenEI URDB, reviewed incentive register) so third-party JSON never escapes `providers/`, plus timeout/bounded-retry/typed-failure HTTP plumbing.
+- Built the deterministic engines: panel layout, system sizing, **two-model production reconciliation** (per-roof-segment PVWatts, never "pick the larger"), consumption hierarchy, $/W cost engine with objective adder triggers, five-dimension confidence, plan composer, contractor brief, manual-roof fallback.
+- Added the `Tracked<T>` provenance system so every displayed number carries its source, confidence and "Why this number?" text, and unconfirmed AI extraction is structurally barred from financial calculations.
+- Schema: 11 models, 6 enums, 16 `SOLAR_*` audit events, `AuditEvent.solarProjectId`. Licensed provider payloads isolated behind `providerDataExpiresAt` so they purge on their own retention clock.
+- 74 new tests (numerical identities, no-dead-end fallback matrix, provenance rules, geographic projection). Suite 144/144, `tsc` clean, green build.
+- **Deployed to production** (`816d882`). Verified the migration was purely additive *before* applying it (11 CREATE TABLE, 6 CREATE TYPE, one nullable column, zero DROP/TRUNCATE/DELETE) rather than trusting `db push --accept-data-loss` on a live database.
+- Enabled `SOLAR_LANDING_ENABLED` only: `/solar` and `/solar/methodology` are live and fully functional without API keys; `/solar/planner` stays 404 because without `GOOGLE_MAPS_API_KEY` a homeowner cannot even look up an address and without `NREL_API_KEY` there is no production model at all.
+- **Found and fixed two bugs via live verification:** (1) `sitemap.ts` is statically prerendered, so it had frozen the build-time flag values — enabling the landing flag made the pages reachable but never added them to the sitemap; now `force-dynamic`, and the same latent issue on `BATHROOM_*` flags is recorded in `DECISION_LOG`. (2) All three solar page titles appended "| Renovessa" while the root layout already applies that template, producing doubled titles.
+- Cost ranges remain withheld by design — the built-in $/W config is `sampleCount: 0` and `NEXT_PUBLIC_APPROVED_SOLAR_PRICING_VERSION` is unset. Incentives show nothing until reviewed register rows exist. Both are correct behaviour, not gaps.
+
 # 2026-08-04 — Public Renovessa SVG logo
 
 - Added `public/renovessa-logo.svg`: a transparent, scalable Renovessa wordmark using the established ascending architectural-bar mark and the existing charcoal brand color.

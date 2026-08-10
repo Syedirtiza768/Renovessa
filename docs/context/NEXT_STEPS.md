@@ -1,5 +1,16 @@
 # Next Steps
 
+## Solar — switch on the planner (blocked on API keys)
+
+Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live**; `/solar/planner` is deliberately 404 until the three provider keys exist. Full context: `docs/planning/SOLAR_IMPLEMENTATION_NOTE.md`.
+
+1. **Get an NREL key** (free, instant, `developer.nrel.gov/signup`) — one key serves both `NREL_API_KEY` and `OPENEI_API_KEY`. Without it there is **no** production model at all and production is withheld entirely.
+2. **Get a Google Maps Platform key** — enable *both* Geocoding API and Solar API, link billing (Solar API will not work without it), then **set a daily quota cap** before going live: `/solar/planner` is public, Building Insights is billed per request, and the in-app rate limiter is per-container, not global. Restrict the key to IP `23.21.67.7` *after* testing.
+3. **Flip four flags** already present as `false` in `/opt/renovessa/.env`: `SOLAR_PLANNER_ENABLED`, `SOLAR_GEOSPATIAL_ENABLED`, `SOLAR_PVWATTS_ENABLED`, `SOLAR_PROJECT_BRIEF_ENABLED`. Then `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d app` — `up -d`, not `restart`, or the container will not re-read `.env`. No rebuild needed; flags are read per request.
+4. **Verify** at `/solar/methodology` — that page reports live provider availability, so all five sources should flip to "Active".
+5. **Cost ranges stay withheld** until a reviewed pricing configuration built from real solar proposals is published *and* `NEXT_PUBLIC_APPROVED_SOLAR_PRICING_VERSION` is set to its exact version. The built-in default is `sampleCount: 0` and must never be approved. Collect proposals first via `/portal/admin/solar/pricing`.
+6. **Incentives** show nothing until reviewed `SolarIncentiveProgram` rows exist (API: `/api/solar/admin/pricing-config` pattern; register CRUD UI is Phase 2). Do not hard-code a federal credit.
+
 ## Rockville bathroom campaign — launch preparation
 
 - **Use the public logo where an SVG asset is needed** — `public/renovessa-logo.svg` is the reusable transparent wordmark; retain the existing brand-system variants for campaign-specific exports.

@@ -118,6 +118,31 @@ No queue infrastructure exists yet. Actions are processed synchronously in Route
 | `docker-compose.yml` | Implemented |
 | CI config | Planned |
 
+## Solar module map (`src/lib/solar/`, `src/components/solar/`)
+
+Deployed 2026-08-10, flags mostly OFF. Isolated from bathroom; shares only `db`, `auth`, `audit`, `seo`, `compliance`, `feature-flags` and the design tokens, and promotes into the shared `ProjectRequest` lead pipeline.
+
+| Path | Role |
+|------|------|
+| `lib/solar/providers/` | **The only place third-party JSON exists.** `google-geocoding`, `google-solar`, `pvwatts`, `openei`, `configured-incentives`, `http` (timeout/retry/typed failure), `index` (registry + availability report) |
+| `lib/solar/types.ts` | Renovessa's domain vocabulary — everything downstream speaks this |
+| `lib/solar/provenance.ts` | `Tracked<T>` value wrapper; blocks unconfirmed AI extraction from financial use |
+| `lib/solar/versions.ts` | Immutable calculation version ids stored on every estimate |
+| `lib/solar/layout-engine.ts` | Deterministic panel selection from provider candidates; system sizing |
+| `lib/solar/production.ts` | Two-model reconciliation (never "pick the larger") |
+| `lib/solar/consumption.ts` | Strict input hierarchy; returns null rather than a national average |
+| `lib/solar/cost-engine.ts` + `pricing-config.ts` | Deterministic $/W + adders; fail-closed public display |
+| `lib/solar/confidence.ts` | Five dimensions → overall + improvement actions |
+| `lib/solar/plan.ts` | Composes the engines into one `SolarPlanResult` |
+| `lib/solar/manual-roof.ts` | No-dead-end path when geospatial coverage is missing |
+| `lib/solar/brief.ts` | Contractor-ready Solar Project Brief |
+| `lib/solar/geo.ts` | Equirectangular projection for the roof visualizer |
+| `components/solar/RoofVisualizer.tsx` | SVG render of real provider geometry + accessible textual equivalent |
+| `components/solar/SolarPlanner.tsx` | Step machine, anonymous draft, debounced autosave, live replan |
+| `app/api/solar-projects/*`, `app/api/solar/*` | Route handlers; keys never reach the browser |
+| `app/solar/*` | Landing, planner, methodology — all `force-dynamic` |
+| `app/portal/admin/solar/*` | Funnel/failure dashboard + pricing configuration |
+
 ## Current Implementation Status
 
 | Layer | Status |
