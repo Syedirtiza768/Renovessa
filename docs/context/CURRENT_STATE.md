@@ -151,6 +151,46 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - Client-side analytics funnel events for the bathroom planner (server-side audit events exist for major transitions)
 - Search Console verification and privacy-safe organic conversion analytics for bathroom pages
 
+## Solar Experience (Phase 1 — Implemented + deployed dormant 2026-08-10)
+
+A specialized residential-solar sub-product. **Deployed to production on 2026-08-10 (commit `816d882`) with every `SOLAR_*` flag OFF** — the code and schema are live, the routes 404 by design, and nothing is user-visible. See `docs/planning/SOLAR_IMPLEMENTATION_NOTE.md` for the full audit, architecture, data-source matrix, calculation methodology, AI matrix and fallback matrix.
+
+### Implemented (Phase 1)
+- **Prisma schema** — `SolarProject`, `SolarRoofAnalysis`, `SolarPanelLayout`, `SolarProductionEstimate`, `SolarEnergyProfile`, `SolarTariffSnapshot`, `SolarCostEstimate`, `SolarEstimatorConfiguration`, `SolarIncentiveProgram`, `SolarDocument`, `SolarProjectBrief` + 6 enums, 16 `SOLAR_*` audit event types, `AuditEvent.solarProjectId`. Migration verified purely additive before applying (11 CREATE TABLE, 6 CREATE TYPE, one nullable column on `AuditEvent`, zero DROP/TRUNCATE/DELETE).
+- **Provider adapters** (`src/lib/solar/providers/`) — `GoogleGeocodingProvider`, `GoogleSolarProvider` (buildingInsights), `PVWattsProvider` (v8, per roof segment), `OpenEIUtilityRateProvider`, `ConfiguredIncentiveProvider`. Third-party JSON never escapes this directory. Phase-2 interfaces declared for bill extraction and imagery.
+- **Deterministic engines** (`src/lib/solar/`) — `layout-engine`, `production` (two-model reconciliation), `consumption`, `cost-engine`, `confidence`, `plan`, `brief`, `manual-roof`, `geo`, `provenance`, `versions`.
+- **APIs** — `POST/GET /api/solar-projects`, `GET/PATCH /api/solar-projects/[id]`, `roof-analysis`, `plan`, `energy`, `brief`, `rfp`; `POST /api/solar/geocode`, `/api/solar/utility-rates`; `GET/POST/PATCH /api/solar/admin/pricing-config`. All rate-limited; provider keys stay server-side.
+- **Public routes** — `/solar` (landing + FAQ/Service JSON-LD), `/solar/methodology` (reports live provider availability and active calculation versions), `/solar/planner` (noindex). All `force-dynamic`.
+- **Planner UI** — address → building confirmation → electricity → goal → roof design → results → RFP. SVG roof visualizer renders real provider segment geometry and candidate panel positions with sunshine-based shading; full non-map textual equivalent for keyboard/screen-reader users.
+- **Admin** — `/portal/admin/solar/projects` (funnel, status distribution, model-discrepancy counter, provider failures), `/portal/admin/solar/pricing` (versioned configs + the display gate).
+- **Tests** — 74 new vitest cases (numerical identities, fallback/no-dead-end matrix, provenance rules, geographic projection). Suite: 144/144.
+
+### Accuracy controls (deliberate, load-bearing)
+- **Cost display is fail-closed** behind `NEXT_PUBLIC_APPROVED_SOLAR_PRICING_VERSION`, mirroring `NEXT_PUBLIC_APPROVED_ESTIMATE_MODEL_VERSION`. The built-in `$/W` config is `unvalidated_planning_default` with `sampleCount: 0`; **prices stay hidden until a reviewed config built from real solar proposals is published.** Everything else works without it.
+- **Incentives** come only from the reviewed `SolarIncentiveProgram` register. Empty renders as "could not be verified", never "none exist", and never reduces a net cost. No hard-coded federal credit.
+- **No usage input ⇒ no offset figure.** Never a national average.
+- **Homeowner must confirm the analysed building** before it is used.
+- **Two production models, reconciled** — never "pick the larger". Disagreement widens the range, lowers confidence, and logs `SOLAR_PRODUCTION_MODEL_DISCREPANCY`.
+- **Phase 1 uses no AI in the estimate path.**
+
+### To switch on (all currently absent in prod `.env`)
+1. `GOOGLE_MAPS_API_KEY` (Geocoding API + Solar API enabled, IP-restricted) — without it the planner is manual-roof only and cannot look up an address.
+2. `NREL_API_KEY` — without it there is **no** production model at all and production is withheld entirely.
+3. `OPENEI_API_KEY` — optional; without it, homeowner enters a blended rate.
+4. `SOLAR_LANDING_ENABLED=true`, `SOLAR_PLANNER_ENABLED=true`, `SOLAR_GEOSPATIAL_ENABLED=true`, `SOLAR_PVWATTS_ENABLED=true`, `SOLAR_PROJECT_BRIEF_ENABLED=true`.
+5. Restart the app container. Flags are read per request, so no rebuild is needed.
+
+### Not Yet Implemented (Phase 2+)
+- Imagery basemap under the roof geometry (needs Google attribution + TTL caching); `SolarImageryProvider` interface and `basemap` slot already exist
+- Utility-bill upload + AI extraction with homeowner confirmation
+- Detailed tariff economics (TOU, export compensation, escalation, 25-year projections)
+- Battery storage planner
+- Solar project brief PDF
+- Incentive register admin CRUD UI (API exists)
+- Roof/electrical photo upload
+- Equipment catalogs, structured contractor solar proposals, location pages
+- Shared-store rate limiting (currently per-process, as elsewhere in the app)
+
 ## Run
 
 ```bash
