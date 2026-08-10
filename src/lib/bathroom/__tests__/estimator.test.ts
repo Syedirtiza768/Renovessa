@@ -98,4 +98,59 @@ describe("estimator", () => {
     const result = generateEstimate(baseInputs, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
     expect(result.assumptions.some((a) => a.includes("does not yet have a published local configuration"))).toBe(false);
   });
+
+  describe("fixture_replacement (small-job branch)", () => {
+    const basinSwap: EstimateInputs = {
+      ...baseInputs,
+      objective: "fixture_replacement",
+      bathroomType: "powder",
+      floorAreaSqft: 30,
+      fixtureType: "sink_basin",
+    };
+
+    it("prices a powder-room basin swap far below a remodel", () => {
+      const result = generateEstimate(basinSwap, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      expect(result.lowAmount).toBeLessThan(5000);
+      expect(result.highComplexityAmount).toBeLessThan(8000);
+      expect(result.lowAmount).toBeGreaterThan(0);
+    });
+
+    it("omits remodel-only line items (shower, tile, flooring, permits)", () => {
+      const result = generateEstimate(basinSwap, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      const categories = result.lineItems.map((li) => li.category);
+      for (const remodelOnly of ["shower_or_tub", "glass_enclosure", "waterproofing", "tile_materials", "tile_labor", "flooring", "permits_and_inspections", "toilet", "painting"]) {
+        expect(categories).not.toContain(remodelOnly);
+      }
+      expect(categories).toContain("fixture_allowance");
+      expect(categories).toContain("plumbing_labor");
+    });
+
+    it("respects the small-job minimum charge", () => {
+      const faucetSwap: EstimateInputs = { ...basinSwap, fixtureType: "faucet", finishTier: "entry" };
+      const result = generateEstimate(faucetSwap, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      const min = DEFAULT_ESTIMATOR_CONFIG.fixtureReplacement.smallJobMinimumCharge;
+      const overhead = Math.round(min * DEFAULT_ESTIMATOR_CONFIG.overheadPercent);
+      const contingency = Math.round(min * DEFAULT_ESTIMATOR_CONFIG.contingencyPercent);
+      expect(result.lowAmount).toBeGreaterThanOrEqual(min + overhead + contingency);
+    });
+
+    it("scales the fixture allowance by finish tier", () => {
+      const standard = generateEstimate(basinSwap, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      const premium = generateEstimate({ ...basinSwap, finishTier: "premium" }, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      expect(premium.lowAmount).toBeGreaterThan(standard.lowAmount);
+    });
+
+    it("adds plumbing relocation cost when stated", () => {
+      const withReloc = generateEstimate({ ...basinSwap, plumbingRelocationFt: 5 }, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      const without = generateEstimate(basinSwap, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      expect(withReloc.lowAmount).toBeGreaterThan(without.lowAmount);
+      expect(withReloc.costDrivers.some((d) => d.includes("Moving plumbing"))).toBe(true);
+    });
+
+    it("uses the vanity cabinet allowance for vanity swaps", () => {
+      const result = generateEstimate({ ...basinSwap, fixtureType: "vanity_cabinet" }, DEFAULT_ESTIMATOR_CONFIG, mediumConfidence);
+      const fixtureItem = result.lineItems.find((li) => li.category === "fixture_allowance");
+      expect(fixtureItem?.description).toContain("Vanity cabinet");
+    });
+  });
 });

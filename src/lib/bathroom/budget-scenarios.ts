@@ -60,6 +60,9 @@ export function generateBudgetScenarios(
   config: EstimatorConfig = DEFAULT_ESTIMATOR_CONFIG,
   confidence: ConfidenceResult = { level: "MEDIUM", reasons: [], improvements: [] },
 ): BudgetScenario[] {
+  if (baseInputs.objective === "fixture_replacement") {
+    return generateFixtureSwapScenarios(baseInputs, config, confidence);
+  }
   const scenarios: BudgetScenario[] = [];
 
   const essentialInputs = adjustInputsForScenario(baseInputs, "essential");
@@ -124,6 +127,49 @@ export function generateBudgetScenarios(
   });
 
   return scenarios;
+}
+
+/**
+ * Scenario copy tuned for single-fixture swaps: the tiers only change the
+ * fixture selection, not the scope of work.
+ */
+function generateFixtureSwapScenarios(
+  baseInputs: EstimateInputs,
+  config: EstimatorConfig,
+  confidence: ConfidenceResult,
+): BudgetScenario[] {
+  const make = (id: ScenarioId): BudgetScenario => {
+    const estimate = generateEstimate(adjustInputsForScenario(baseInputs, id), config, confidence);
+    if (id === "essential") {
+      return {
+        id, label: "Essential",
+        description: "Functional like-for-like replacement with an entry-level fixture. Existing location and connections retained.",
+        estimate,
+        compromises: ["Entry-level fixture", "Basic finish options"],
+        benefits: ["Lowest cost", "Fastest scheduling", "Restores full function immediately"],
+        recommendedNextDecision: "Confirm the replacement fixture model and finish.",
+      };
+    }
+    if (id === "balanced") {
+      return {
+        id, label: "Balanced",
+        description: "Standard fixture with better durability and finish options, professional installation.",
+        estimate,
+        compromises: ["Standard (not premium) fixture"],
+        benefits: ["Better durability and warranty", "Wider style selection", "Strong value"],
+        recommendedNextDecision: "Choose between standard and premium fixture lines.",
+      };
+    }
+    return {
+      id, label: "Premium",
+      description: "Premium or designer fixture with upgraded finishes and professional installation.",
+      estimate,
+      compromises: ["Highest cost", "Possible lead time on specialty fixtures"],
+      benefits: ["Designer look", "Best materials and warranty"],
+      recommendedNextDecision: "Confirm availability and lead time for the premium fixture.",
+    };
+  };
+  return [make("essential"), make("balanced"), make("premium")];
 }
 
 /**

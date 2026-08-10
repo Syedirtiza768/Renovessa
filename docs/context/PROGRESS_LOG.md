@@ -286,3 +286,12 @@
 - Documented all findings in `docs/context/KNOWN_ISSUES.md` (3 new entries) and the pricing decision in `docs/context/DECISION_LOG.md`
 - 6 new estimator unit tests; full suite 199/199 green; `tsc --noEmit` clean
 - Production deploy pending; test records `RNV-2026-65405` / `RNV-2026-69061` still in prod DB awaiting cleanup decision
+
+# 2026-08-10 — Estimator consistency rewrite + GPT 5.6 Luna as AI model
+
+- Matrix audit (`scripts/matrix-audit.ts`) proved the v1 estimator was scope-invariant: full gut only ~3% above cosmetic refresh, powder ≈ guest, shower items charged in powder rooms, `repair_damage`/`unsure` on silent fallback rates
+- Rewrote the estimator main branch to calibrated `categoryShares` decomposition of the per-sqft baseline (reference scenario `remodel_same_layout` guest reproduces v1 totals; everything else now scales consistently); shower-only categories skipped via `includeShowerWork` (powder rooms, retained tub); explicit `repair_damage`/`unsure` rates; electrical mods 0 on explicit "No"
+- Switched default OpenRouter model to `openai/gpt-5.6-luna` in interpret + both advisor routes (model id verified on OpenRouter; prod already has an API key)
+- Added `estimator-consistency.test.ts` (11 tests: full-matrix validity, monotonic objective/type/tier/area ordering, shower-scope rules, electrical handling); full suite 210/210 green, `tsc --noEmit` clean
+- Post-fix matrix: fixture swap $865–$2.3k · cosmetic $4.5k–$13.5k · remodel $11.5k–$36.3k · full gut $16.2k–$52.1k · add bathroom $27.5k–$96.2k (40 sqft guest, standard tier)
+- Pending: production deploy incl. env changes (`OPENROUTER_MODEL=openai/gpt-5.6-luna`, `BATHROOM_AI_INTERPRETATION_ENABLED=true`) and live re-verification

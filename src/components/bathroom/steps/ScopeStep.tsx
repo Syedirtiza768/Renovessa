@@ -8,6 +8,7 @@ import {
   FLOORING_CHOICES,
   WALL_FINISH_CHOICES,
   FIXTURE_QUALITY_TIERS,
+  FIXTURE_REPLACEMENT_TYPES,
   ACCESSIBILITY_FEATURES,
 } from "@/lib/bathroom/config";
 
@@ -16,6 +17,7 @@ function toOptions(list: readonly string[]): { id: string; label: string }[] {
 }
 
 export function ScopeStep({ answers, setAnswer }: StepProps) {
+  const isFixtureSwap = answers.projectObjective === "fixture_replacement";
   return (
     <div className="space-y-6">
       <div>
@@ -23,46 +25,62 @@ export function ScopeStep({ answers, setAnswer }: StepProps) {
         <p className="mt-1 text-sm text-ink-70">Tell us what changes and the finish tier you have in mind.</p>
       </div>
 
-      <Field label="Shower / tub">
-        <ChoiceList
-          name="showerTub"
-          value={answers.showerTub}
-          options={toOptions(SHOWER_TUB_CHOICES)}
-          onChange={(v) => setAnswer("showerTub", v)}
-          columns
-        />
-      </Field>
-
-      <Field label="Vanity">
-        <ChoiceList
-          name="vanity"
-          value={answers.vanity}
-          options={toOptions(VANITY_CHOICES)}
-          onChange={(v) => setAnswer("vanity", v)}
-          columns
-        />
-      </Field>
-
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Flooring">
+      {isFixtureSwap && (
+        <Field label="Which fixture are you replacing?">
           <ChoiceList
-            name="flooring"
-            value={answers.flooring}
-            options={toOptions(FLOORING_CHOICES)}
-            onChange={(v) => setAnswer("flooring", v)}
+            name="fixtureType"
+            value={answers.fixtureType}
+            options={FIXTURE_REPLACEMENT_TYPES}
+            onChange={(v) => setAnswer("fixtureType", v)}
             columns
           />
         </Field>
-        <Field label="Wall finish">
-          <ChoiceList
-            name="wallFinish"
-            value={answers.wallFinish}
-            options={toOptions(WALL_FINISH_CHOICES)}
-            onChange={(v) => setAnswer("wallFinish", v)}
-            columns
-          />
-        </Field>
-      </div>
+      )}
+
+      {!isFixtureSwap && (
+        <>
+          <Field label="Shower / tub">
+            <ChoiceList
+              name="showerTub"
+              value={answers.showerTub}
+              options={toOptions(SHOWER_TUB_CHOICES)}
+              onChange={(v) => setAnswer("showerTub", v)}
+              columns
+            />
+          </Field>
+
+          <Field label="Vanity">
+            <ChoiceList
+              name="vanity"
+              value={answers.vanity}
+              options={toOptions(VANITY_CHOICES)}
+              onChange={(v) => setAnswer("vanity", v)}
+              columns
+            />
+          </Field>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Flooring">
+              <ChoiceList
+                name="flooring"
+                value={answers.flooring}
+                options={toOptions(FLOORING_CHOICES)}
+                onChange={(v) => setAnswer("flooring", v)}
+                columns
+              />
+            </Field>
+            <Field label="Wall finish">
+              <ChoiceList
+                name="wallFinish"
+                value={answers.wallFinish}
+                options={toOptions(WALL_FINISH_CHOICES)}
+                onChange={(v) => setAnswer("wallFinish", v)}
+                columns
+              />
+            </Field>
+          </div>
+        </>
+      )}
 
       <Field label="Fixture and finish quality tier">
         <ChoiceList
@@ -74,6 +92,7 @@ export function ScopeStep({ answers, setAnswer }: StepProps) {
         />
       </Field>
 
+      {!isFixtureSwap && (
       <Field label="Accessibility features (select all that apply)">
         <div className="grid gap-2 sm:grid-cols-2">
           {ACCESSIBILITY_FEATURES.map((f) => {
@@ -104,6 +123,7 @@ export function ScopeStep({ answers, setAnswer }: StepProps) {
           })}
         </div>
       </Field>
+      )}
     </div>
   );
 }

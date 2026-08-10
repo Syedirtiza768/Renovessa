@@ -76,7 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ reply: safeReply, routed: true });
     }
 
-    const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+    const model = process.env.OPENROUTER_MODEL || "openai/gpt-5.6-luna";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://renovessa.com";
 
     let upstream: Response;

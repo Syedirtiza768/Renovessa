@@ -127,6 +127,7 @@ export const estimateInputsSchema = z.object({
   waterDamageReported: z.boolean().default(false),
   locationId: z.string().max(60).default("unknown"),
   fixtureType: z.enum(["sink_basin", "faucet", "toilet", "vanity_cabinet", "shower_head"]).optional(),
+  includeShowerWork: z.boolean().optional(),
 });
 
 export const permitAnswersSchema = z.object({

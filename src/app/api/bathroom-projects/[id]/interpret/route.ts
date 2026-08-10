@@ -58,6 +58,15 @@ function heuristicInterpret(prompt: string) {
   } else if (lower.includes("walk-in") || lower.includes("walk in shower")) {
     out.projectObjective = "walk_in_shower";
     out.showerTub = "custom_tiled_shower";
+  } else if (/(replace|replacing|change|changing|swap|swapping|install|new)\b/.test(lower) &&
+    /(wash ?basin|basin|\bsink\b|\bfaucet\b|\btoilet\b|\bvanity\b|shower ?head)/.test(lower)) {
+    // Single-fixture swap, e.g. "change the wash basin in the powder room"
+    out.projectObjective = "fixture_replacement";
+    if (/(wash ?basin|basin|\bsink\b)/.test(lower)) out.fixtureType = "sink_basin";
+    else if (/\bfaucet\b/.test(lower)) out.fixtureType = "faucet";
+    else if (/\btoilet\b/.test(lower)) out.fixtureType = "toilet";
+    else if (/\bvanity\b/.test(lower)) out.fixtureType = "vanity_cabinet";
+    else if (/shower ?head/.test(lower)) out.fixtureType = "shower_head";
   } else if (lower.includes("full gut") || lower.includes("gut remodel")) out.projectObjective = "full_gut";
   else if (lower.includes("layout")) out.projectObjective = "layout_redesign";
   else if (lower.includes("refresh") || lower.includes("cosmetic") || lower.includes("update paint")) {
@@ -126,7 +135,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (aiEnabled() && apiKey) {
       try {
-        const model = process.env.OPENROUTER_MODEL || "google/gemini-2.5-flash";
+        const model = process.env.OPENROUTER_MODEL || "openai/gpt-5.6-luna";
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://renovessa.com";
         const upstream = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",

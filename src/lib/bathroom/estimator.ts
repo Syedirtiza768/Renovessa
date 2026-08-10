@@ -5,7 +5,6 @@
  */
 
 import { DEFAULT_ESTIMATOR_CONFIG } from "./config";
-import type { GeometryCalculations } from "./geometry";
 import type { ConfidenceResult } from "./confidence";
 
 export type EstimatorConfig = typeof DEFAULT_ESTIMATOR_CONFIG;
@@ -25,6 +24,9 @@ export interface EstimateInputs {
   locationId: string;
   /** For objective "fixture_replacement": which fixture is being swapped. */
   fixtureType?: string;
+  /** When false, shower/tub assembly, glass enclosure, and waterproofing are
+   * omitted (powder rooms, existing tub retained). Defaults to true. */
+  includeShowerWork?: boolean;
 }
 
 export interface LineItem {
@@ -209,7 +211,6 @@ export function generateEstimate(
   inputs: EstimateInputs,
   config: EstimatorConfig = DEFAULT_ESTIMATOR_CONFIG,
   confidence: ConfidenceResult = { level: "MEDIUM", reasons: [], improvements: [] },
-  geometry?: GeometryCalculations,
 ): EstimateResult {
   if (inputs.objective === "fixture_replacement") {
     return generateFixtureReplacementEstimate(inputs, config, confidence);
@@ -229,44 +230,44 @@ export function generateEstimate(
     lineItems.push({ ...item, sortOrder: sortOrder++ });
   };
 
-  // Core construction (design, demo, framing, subfloor) — bundled as ~40% of base
-  push({
-    category: "design_and_planning",
-    description: "Design and planning allowance",
-    quantity: 1, unit: "project", unitRate: baseLow * 0.05,
-    lowAmount: Math.round(baseLow * 0.05), highAmount: Math.round(baseHigh * 0.05),
-    multiplier: 1, calculationReference: "5% of base",
-  });
-  push({
-    category: "demolition",
-    description: "Demolition of existing bathroom",
-    quantity: area, unit: "sqft", unitRate: 4,
-    lowAmount: Math.round(area * 3), highAmount: Math.round(area * 6),
-    multiplier: 1, calculationReference: "$3-6/sqft demolition",
-  });
-  push({
-    category: "debris_removal",
-    description: "Debris removal and disposal",
-    quantity: 1, unit: "project", unitRate: 400,
-    lowAmount: 300, highAmount: 700, multiplier: 1,
-    calculationReference: "Flat allowance",
-  });
-  push({
-    category: "framing",
-    description: "Framing and rough carpentry allowance",
-    quantity: 1, unit: "project", unitRate: 500,
-    lowAmount: 200, highAmount: 1200, multiplier: 1,
-    calculationReference: "Allowance for minor framing",
-  });
-  push({
-    category: "subfloor_allowance",
-    description: "Subfloor repair allowance",
-    quantity: area, unit: "sqft", unitRate: 3,
-    lowAmount: Math.round(area * 1.5), highAmount: Math.round(area * 4),
-    multiplier: 1, calculationReference: "$1.50-4/sqft subfloor",
-  });
+  const shares = config.categoryShares as Record<string, { low: number; high: number; tier?: boolean; showerOnly?: boolean }>;
+  const includeShowerWork = inputs.includeShowerWork !== false;
+  const tileMult = inputs.tileFullHeightRoom ? config.complexityMultipliers.tileFullHeightRoomFactor : 1;
 
-  // Permits
+  /**
+   * Decompose the per-sqft baseline into a PRD §17.2 category line item.
+   * Tier-scaled categories are multiplied by the finish-tier factor;
+   * tileScaled categories by the full-height-tile multiplier.
+   */
+  const shareItem = (
+    shareKey: string,
+    category: string,
+    description: string,
+    opts: { tileScaled?: boolean; addLow?: number; addHigh?: number; calc?: string } = {},
+  ) => {
+    const share = shares[shareKey];
+    const tF = share.tier ? finishF : 1;
+    const tM = opts.tileScaled ? tileMult : 1;
+    const low = Math.round(baseLow * share.low * tF * tM) + (opts.addLow ?? 0);
+    const high = Math.round(baseHigh * share.high * tF * tM) + (opts.addHigh ?? 0);
+    push({
+      category, description,
+      quantity: 1, unit: "project", unitRate: low,
+      lowAmount: low, highAmount: high,
+      multiplier: tF * tM,
+      calculationReference:
+        opts.calc ?? `${Math.round(share.low * 100)}-${Math.round(share.high * 100)}% of per-sqft baseline`,
+    });
+  };
+
+  // Core construction
+  shareItem("designAndPlanning", "design_and_planning", "Design and planning allowance");
+  shareItem("demolition", "demolition", "Demolition of existing bathroom");
+  shareItem("debrisRemoval", "debris_removal", "Debris removal and disposal");
+  shareItem("framing", "framing", "Framing and rough carpentry allowance");
+  shareItem("subfloorAllowance", "subfloor_allowance", "Subfloor repair allowance");
+
+  // Permits — flat, scope-independent allowance
   const permitLow = config.permitAllowance.building + config.permitAllowance.plumbing + config.permitAllowance.electrical;
   push({
     category: "permits_and_inspections",
@@ -276,166 +277,57 @@ export function generateEstimate(
     calculationReference: "Configured permit allowances",
   });
 
-  // Plumbing
-  const plumbingReloc = inputs.plumbingRelocationFt * config.complexityMultipliers.plumbingRelocationPerFt;
-  push({
-    category: "plumbing_labor",
-    description: "Plumbing labor (rough + finish)",
-    quantity: 1, unit: "project", unitRate: 1500,
-    lowAmount: 1200 + Math.round(plumbingReloc), highAmount: 2800 + Math.round(plumbingReloc * 1.5),
-    multiplier: 1, calculationReference: "Base + relocation per foot",
+  // Plumbing (baseline share + relocation add-on)
+  const relocLow = Math.round(inputs.plumbingRelocationFt * config.complexityMultipliers.plumbingRelocationPerFt);
+  shareItem("plumbingLabor", "plumbing_labor", "Plumbing labor (rough + finish)", {
+    addLow: relocLow, addHigh: Math.round(relocLow * 1.5),
+    calc: "Baseline share + relocation per foot",
   });
-  push({
-    category: "plumbing_fixtures",
-    description: "Plumbing fixtures (toilet, faucets, shower system)",
-    quantity: 1, unit: "project", unitRate: 900 * finishF,
-    lowAmount: Math.round(600 * finishF), highAmount: Math.round(1800 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
+  shareItem("plumbingFixtures", "plumbing_fixtures", "Plumbing fixtures (toilet, faucets, shower system)");
 
-  // Electrical
-  const elecEach = config.complexityMultipliers.electricalModificationEach;
-  push({
-    category: "electrical_labor",
-    description: "Electrical labor",
-    quantity: 1 + inputs.electricalModifications, unit: "circuit", unitRate: elecEach,
-    lowAmount: Math.round(elecEach * 1.5), highAmount: Math.round(elecEach * (2 + inputs.electricalModifications)),
-    multiplier: 1, calculationReference: "Per-circuit allowance",
+  // Electrical (baseline share + per-modification add-on)
+  const elecAdd = inputs.electricalModifications * config.complexityMultipliers.electricalModificationEach;
+  shareItem("electricalLabor", "electrical_labor", "Electrical labor", {
+    addLow: elecAdd, addHigh: elecAdd,
+    calc: "Baseline share + per-modification allowance",
   });
-  push({
-    category: "lighting",
-    description: "Lighting fixtures",
-    quantity: 1, unit: "project", unitRate: 300 * finishF,
-    lowAmount: Math.round(200 * finishF), highAmount: Math.round(800 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
-  push({
-    category: "ventilation",
-    description: "Exhaust fan and ducting",
-    quantity: 1, unit: "project", unitRate: 250,
-    lowAmount: 200, highAmount: 500, multiplier: 1,
-    calculationReference: "Standard fan allowance",
-  });
+  shareItem("lighting", "lighting", "Lighting fixtures");
+  shareItem("ventilation", "ventilation", "Exhaust fan and ducting");
 
-  // Waterproofing
-  push({
-    category: "waterproofing",
-    description: "Shower waterproofing system",
-    quantity: 1, unit: "shower", unitRate: 450,
-    lowAmount: 350, highAmount: 800, multiplier: 1,
-    calculationReference: "Membrane + slope",
-  });
-
-  // Shower/tub
-  push({
-    category: "shower_or_tub",
-    description: inputs.curblessShower ? "Curbless shower base + linear drain" : "Shower or tub assembly",
-    quantity: 1, unit: "each", unitRate: 1500 * finishF,
-    lowAmount: Math.round(1000 * finishF), highAmount: Math.round(3500 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
-  if (inputs.curblessShower) {
-    push({
-      category: "structural_allowance",
-      description: "Curbless shower structural allowance (floor recess / drainage)",
-      quantity: 1, unit: "project", unitRate: config.complexityMultipliers.curblessShowerStructuralAllowance,
-      lowAmount: config.complexityMultipliers.curblessShowerStructuralAllowance,
-      highAmount: Math.round(config.complexityMultipliers.curblessShowerStructuralAllowance * 1.6),
-      multiplier: 1, calculationReference: "Curbless structural allowance",
-    });
+  // Shower / wet-area work — omitted entirely when the scope has none
+  // (powder rooms, existing tub retained), so those jobs are never charged
+  // for shower assemblies, enclosures, or waterproofing.
+  if (includeShowerWork) {
+    shareItem("waterproofing", "waterproofing", "Shower waterproofing system");
+    shareItem("showerOrTub", "shower_or_tub",
+      inputs.curblessShower ? "Curbless shower base + linear drain" : "Shower or tub assembly");
+    if (inputs.curblessShower) {
+      push({
+        category: "structural_allowance",
+        description: "Curbless shower structural allowance (floor recess / drainage)",
+        quantity: 1, unit: "project", unitRate: config.complexityMultipliers.curblessShowerStructuralAllowance,
+        lowAmount: config.complexityMultipliers.curblessShowerStructuralAllowance,
+        highAmount: Math.round(config.complexityMultipliers.curblessShowerStructuralAllowance * 1.6),
+        multiplier: 1, calculationReference: "Curbless structural allowance",
+      });
+    }
+    shareItem("glassEnclosure", "glass_enclosure", "Glass shower enclosure");
   }
 
-  push({
-    category: "glass_enclosure",
-    description: "Glass shower enclosure",
-    quantity: 1, unit: "each", unitRate: 900 * finishF,
-    lowAmount: Math.round(600 * finishF), highAmount: Math.round(2000 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
+  // Tile (full-height rooms scale via the tile multiplier)
+  shareItem("tileMaterials", "tile_materials", "Tile materials", { tileScaled: true });
+  shareItem("tileLabor", "tile_labor", "Tile installation labor", { tileScaled: true });
 
-  // Tile
-  const tileArea = geometry?.tileAreaSqft ?? area * 2.5;
-  const tileMult = inputs.tileFullHeightRoom ? config.complexityMultipliers.tileFullHeightRoomFactor : 1;
-  push({
-    category: "tile_materials",
-    description: "Tile materials",
-    quantity: tileArea, unit: "sqft", unitRate: 8 * finishF * tileMult,
-    lowAmount: Math.round(tileArea * 4 * finishF), highAmount: Math.round(tileArea * 18 * finishF * tileMult),
-    multiplier: tileMult, calculationReference: "Per-sqft tile",
-  });
-  push({
-    category: "tile_labor",
-    description: "Tile installation labor",
-    quantity: tileArea, unit: "sqft", unitRate: 10 * tileMult,
-    lowAmount: Math.round(tileArea * 6), highAmount: Math.round(tileArea * 18 * tileMult),
-    multiplier: tileMult, calculationReference: "Per-sqft labor",
-  });
-
-  // Flooring
-  push({
-    category: "flooring",
-    description: "Flooring materials + install",
-    quantity: area, unit: "sqft", unitRate: 9 * finishF,
-    lowAmount: Math.round(area * 5 * finishF), highAmount: Math.round(area * 16 * finishF),
-    multiplier: finishF, calculationReference: "Per-sqft flooring",
-  });
-
-  // Vanity / cabinetry / countertop / toilet / accessories
-  push({
-    category: "vanity_and_cabinetry",
-    description: "Vanity and cabinetry",
-    quantity: 1, unit: "each", unitRate: 1200 * finishF,
-    lowAmount: Math.round(500 * finishF), highAmount: Math.round(3500 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
-  push({
-    category: "countertop",
-    description: "Countertop",
-    quantity: 1, unit: "each", unitRate: 400 * finishF,
-    lowAmount: Math.round(250 * finishF), highAmount: Math.round(1200 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
-  push({
-    category: "toilet",
-    description: "Toilet",
-    quantity: 1, unit: "each", unitRate: 350 * finishF,
-    lowAmount: Math.round(200 * finishF), highAmount: Math.round(800 * finishF),
-    multiplier: finishF, calculationReference: "Finish-tier scaled",
-  });
-  push({
-    category: "mirrors_and_accessories",
-    description: "Mirrors and accessories",
-    quantity: 1, unit: "project", unitRate: 200 * finishF,
-    lowAmount: Math.round(100 * finishF), highAmount: Math.round(500 * finishF),
-    multiplier: finishF, calculationReference: "Allowance",
-  });
-
-  // Paint / trim / site protection / project management
-  push({
-    category: "painting",
-    description: "Painting",
-    quantity: 1, unit: "project", unitRate: 400,
-    lowAmount: 300, highAmount: 900, multiplier: 1, calculationReference: "Allowance",
-  });
-  push({
-    category: "trim_and_finish_carpentry",
-    description: "Trim and finish carpentry",
-    quantity: 1, unit: "project", unitRate: 350,
-    lowAmount: 250, highAmount: 900, multiplier: 1, calculationReference: "Allowance",
-  });
-  push({
-    category: "site_protection",
-    description: "Site protection and cleanup",
-    quantity: 1, unit: "project", unitRate: 250,
-    lowAmount: 200, highAmount: 600, multiplier: 1, calculationReference: "Allowance",
-  });
-  push({
-    category: "project_management",
-    description: "Project management",
-    quantity: 1, unit: "project", unitRate: baseLow * 0.08,
-    lowAmount: Math.round(baseLow * 0.06), highAmount: Math.round(baseHigh * 0.1),
-    multiplier: 1, calculationReference: "6-10% of base",
-  });
+  // Flooring, vanity, and remaining fixtures/finishes
+  shareItem("flooring", "flooring", "Flooring materials + install");
+  shareItem("vanityAndCabinetry", "vanity_and_cabinetry", "Vanity and cabinetry");
+  shareItem("countertop", "countertop", "Countertop");
+  shareItem("toilet", "toilet", "Toilet");
+  shareItem("mirrorsAndAccessories", "mirrors_and_accessories", "Mirrors and accessories");
+  shareItem("painting", "painting", "Painting");
+  shareItem("trimAndFinishCarpentry", "trim_and_finish_carpentry", "Trim and finish carpentry");
+  shareItem("siteProtection", "site_protection", "Site protection and cleanup");
+  shareItem("projectManagement", "project_management", "Project management");
 
   // Complexity adjustments
   let lowSum = lineItems.reduce((s, i) => s + i.lowAmount, 0);

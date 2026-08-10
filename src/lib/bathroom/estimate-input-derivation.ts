@@ -40,13 +40,29 @@ export function deriveEstimateInputs(a: Record<string, string>): EstimateInputs 
       ? "vanity_cabinet"
       : "sink_basin");
 
+  // Powder rooms have no shower/tub by definition; a retained tub means no
+  // shower/tub assembly, enclosure, or waterproofing is purchased.
+  const includeShowerWork =
+    (answers.bathroomType ?? "guest") !== "powder" &&
+    answers.showerTub !== "existing_tub_retained";
+
+  // Electrical: charge modifications only when the homeowner reports changes;
+  // an explicit "No" to both means zero, an unanswered question stays at 1.
+  const elecChanged =
+    answers.permit_electrical_wiring_changing === "Yes" ||
+    answers.permit_lighting_added_relocated === "Yes";
+  const elecExplicitNo =
+    answers.permit_electrical_wiring_changing === "No" &&
+    answers.permit_lighting_added_relocated === "No";
+  const electricalModifications = elecChanged ? 2 : elecExplicitNo ? 0 : 1;
+
   return {
     objective: answers.projectObjective ?? "remodel_same_layout",
     bathroomType: answers.bathroomType ?? "guest",
     finishTier: answers.fixtureTier ?? "standard",
     floorAreaSqft: floorArea,
     plumbingRelocationFt: permitFixturesMoving ? 6 : 0,
-    electricalModifications: answers.permit_lighting_added_relocated === "Yes" ? 2 : 1,
+    electricalModifications,
     tileFullHeightRoom,
     curblessShower,
     condoHighFloor,
@@ -54,5 +70,6 @@ export function deriveEstimateInputs(a: Record<string, string>): EstimateInputs 
     waterDamageReported,
     locationId,
     fixtureType,
+    includeShowerWork,
   };
 }

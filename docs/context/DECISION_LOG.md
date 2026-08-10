@@ -205,3 +205,69 @@ the default config, so the new pricing block survives a published override
 ### Status
 Accepted — implemented and tested (199/199 unit tests green, tsc clean);
 pending production deploy
+
+---
+
+## 2026-08-10 — Share-Based Estimator Decomposition (Consistency Rewrite)
+
+### Decision
+Replace the v1 estimator's flat per-category allowances with a calibrated
+`categoryShares` decomposition of the per-sqft baseline: every PRD §17.2
+category amount = baseline (area × objective rate × bathroom-type factor ×
+finish tier × location) × category share, with tier-scaled shares for fixture/
+finish categories and the tile multiplier for tile categories. Flat extras
+remain where scope-independent (permits) or additive (plumbing relocation per
+foot, electrical per modification, curbless structural allowance, minimum
+charge, overhead, contingency). Shower-only categories (shower/tub assembly,
+glass enclosure, waterproofing) are omitted when `includeShowerWork` is false
+(powder rooms, existing tub retained). Explicit `perSqft` rates added for
+`repair_damage` (70/160) and `unsure` (110/220 = remodel band).
+
+### Reason
+The 2026-08-10 matrix audit showed the v1 estimator was scope-invariant:
+flat allowances dominated, so full gut was only ~3% above a cosmetic refresh,
+powder ≈ guest despite the 0.55 factor, and every powder room was charged for
+a shower assembly, glass enclosure, and waterproofing. `repair_damage` and
+`unsure` silently fell back to generic 100/200 rates. Results were neither
+consistent nor explainable across the objective × type × tier matrix.
+
+### Alternatives Considered
+- Per-objective scope profiles (hand-tuned line-item subsets) — rejected:
+  large config surface, easy to drift, duplicates what the rate table says
+- Recalibrating the per-sqft rates upward so the base dominates — rejected:
+  changes published price meaning without fixing category composition
+
+### Impact
+`categoryShares` in `DEFAULT_ESTIMATOR_CONFIG` (admin-versionable via
+EstimatorConfiguration rows like the rest of the config), rewritten main
+branch in `estimator.ts` (dead `geometry` param removed), `includeShowerWork`
+in EstimateInputs/schema/derivation, electrical mods now 0 when the homeowner
+explicitly answers "No". Shares calibrated so `remodel_same_layout` guest
+reproduces v1 totals (~$11.5k–$36.3k for 40 sqft); every other scope now
+scales consistently (cosmetic ≈ $4.5k–$13.5k, full gut ≈ $16.2k–$52.1k,
+add_bathroom ≈ $27.5k–$96.2k at the same reference size).
+`scripts/matrix-audit.ts` prints the full matrix; `estimator-consistency.test.ts`
+locks ordering/monotonicity/scope rules.
+
+### Status
+Accepted — implemented and tested (210/210 unit tests green, tsc clean);
+pending production deploy
+
+---
+
+## 2026-08-10 — Default AI Model: openai/gpt-5.6-luna
+
+### Decision
+Default OpenRouter model for requirement interpretation and both advisor
+routes changed from `google/gemini-2.5-flash` to `openai/gpt-5.6-luna`
+(still overridable via `OPENROUTER_MODEL`).
+
+### Reason
+Owner direction: use GPT 5.6 Luna as the underlying model so freeform
+homeowner descriptions are interpreted into exact planner requirements, which
+the deterministic estimator then prices (AI never sets prices — unchanged).
+Model id verified present on the OpenRouter model list on 2026-08-10.
+
+### Status
+Accepted — code default changed; production env (`OPENROUTER_MODEL`,
+`BATHROOM_AI_INTERPRETATION_ENABLED=true`) to be applied at deploy

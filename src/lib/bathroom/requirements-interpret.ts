@@ -123,6 +123,7 @@ export function interpretedToPlannerAnswers(interpreted: InterpretedAnswers): Re
     ["flooring", "flooring"],
     ["wallFinish", "wallFinish"],
     ["fixtureTier", "fixtureTier"],
+    ["fixtureType", "fixtureType"],
     ["shapeNotes", "shapeNotes"],
     ["requirementsSummary", "requirementsSummary"],
   ];

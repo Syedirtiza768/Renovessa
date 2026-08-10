@@ -304,8 +304,47 @@ export const DEFAULT_ESTIMATOR_CONFIG = {
       curbless_shower: { low: 130, high: 280 },
       layout_redesign: { low: 180, high: 360 },
       accessibility_upgrade: { low: 120, high: 260 },
+      repair_damage: { low: 70, high: 160 },
       add_bathroom: { low: 280, high: 600 },
+      // "unsure" prices like a same-layout remodel until the scope is clarified
+      unsure: { low: 110, high: 220 },
     },
+  },
+  /**
+   * Decomposition of the per-sqft baseline into PRD §17.2 cost categories.
+   * Each share is a fraction of the objective baseline (area × per-sqft rate ×
+   * type × tier × location). Shares are calibrated so a `remodel_same_layout`
+   * guest bathroom reproduces the v1 flat-allowance totals, while every other
+   * objective/type/tier/area scales consistently. Categories marked tier:true
+   * are additionally multiplied by the finish-tier factor; showerOnly
+   * categories are omitted when the scope has no shower/tub work (e.g. powder
+   * rooms, existing tub retained).
+   */
+  categoryShares: {
+    designAndPlanning: { low: 0.05, high: 0.05 },
+    demolition: { low: 0.03, high: 0.03 },
+    debrisRemoval: { low: 0.07, high: 0.08 },
+    framing: { low: 0.05, high: 0.14 },
+    subfloorAllowance: { low: 0.015, high: 0.02 },
+    plumbingLabor: { low: 0.27, high: 0.32 },
+    plumbingFixtures: { low: 0.14, high: 0.20, tier: true },
+    electricalLabor: { low: 0.06, high: 0.06 },
+    lighting: { low: 0.045, high: 0.09, tier: true },
+    ventilation: { low: 0.045, high: 0.055 },
+    waterproofing: { low: 0.08, high: 0.09, showerOnly: true },
+    showerOrTub: { low: 0.23, high: 0.40, tier: true, showerOnly: true },
+    glassEnclosure: { low: 0.14, high: 0.23, tier: true, showerOnly: true },
+    tileMaterials: { low: 0.09, high: 0.20, tier: true },
+    tileLabor: { low: 0.14, high: 0.20 },
+    flooring: { low: 0.045, high: 0.07, tier: true },
+    vanityAndCabinetry: { low: 0.11, high: 0.40, tier: true },
+    countertop: { low: 0.06, high: 0.14, tier: true },
+    toilet: { low: 0.045, high: 0.09, tier: true },
+    mirrorsAndAccessories: { low: 0.02, high: 0.055, tier: true },
+    painting: { low: 0.07, high: 0.10 },
+    trimAndFinishCarpentry: { low: 0.055, high: 0.10 },
+    siteProtection: { low: 0.045, high: 0.07 },
+    projectManagement: { low: 0.06, high: 0.10 },
   },
   bathroomTypeFactor: {
     powder: 0.55,
@@ -364,7 +403,7 @@ export const DEFAULT_ESTIMATOR_CONFIG = {
     mechanical: 120,
   },
   methodology:
-    "Deterministic per-square-foot baseline by project objective, multiplied by bathroom type, finish tier, and location factor. Complexity multipliers add for plumbing relocation, electrical modifications, full-height tile, curbless shower structural allowance, condominium high-floor access, and older-home conditions. Contingency and GC overhead applied as percentages. Not a binding quote.",
+    "Deterministic per-square-foot baseline by project objective, multiplied by bathroom type, finish tier, and location factor. The baseline is decomposed into PRD cost categories via calibrated category shares (tier-scaled where noted); shower-only categories are omitted when the scope has no shower/tub work. Complexity multipliers add for plumbing relocation, electrical modifications, full-height tile, curbless shower structural allowance, condominium high-floor access, and older-home conditions. Single-fixture replacements use the itemized small-job branch (fixtureReplacement block). Contingency and GC overhead applied as percentages. Not a binding quote.",
   dataSourceNotes:
     "Internal baseline pending DMV evidence review. Numeric ranges are withheld from public display until a reviewer approves this configuration version.",
 } as const;
