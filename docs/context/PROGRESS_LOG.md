@@ -320,3 +320,4 @@
 - Config-driven (`srec` block in `SolarPricingConfig`, admin-versionable, deep-merged); unknown/no-production states return null; version stamp `solar-srec-2026-08-10-v1` added to the plan snapshot
 - 6 new unit tests (`srec-income.test.ts`); full suite 216/216 green, `tsc --noEmit` clean
 - Pending: production deploy + live verification on the MD test project `RNV-2026-66990`
+- Deployed `a1fc5d9`: server pulled, rebuilt, `renovessa-app-1` healthy; live-verified on MD test project `RNV-2026-66990` (135,561 kWh/yr): 135.6 SRECs/yr, $6,778–$12,200/yr, 10-yr $66,276–$119,296 (degradation-adjusted), Certified-SREC note present, provenance LOW; `/solar/planner` 200
