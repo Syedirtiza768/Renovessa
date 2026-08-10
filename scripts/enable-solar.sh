@@ -43,13 +43,21 @@ echo "Nothing is written until every required check passes."
 echo
 
 read -rsp "Google Maps Platform API key (Geocoding + Solar API): " GOOGLE_KEY; echo
-read -rsp "NREL API key (used for PVWatts and OpenEI): " NREL_KEY; echo
+read -rsp "NREL API key (PVWatts + OpenEI) — leave blank to skip: " NREL_KEY; echo
 echo
 
-if [ -z "$GOOGLE_KEY" ] || [ -z "$NREL_KEY" ]; then
-  red "Both keys are required. Nothing changed."
+if [ -z "$GOOGLE_KEY" ]; then
+  red "The Google key is required. Nothing changed."
   exit 1
 fi
+
+# NREL is optional on purpose. Without it the planner still produces a
+# production estimate from the geospatial provider's per-panel model; it is
+# reported as SINGLE_MODEL with a deliberately wider range and reduced
+# confidence. Requiring it would be a dead end the product itself doesn't have
+# — and nrel.gov has had outages that put it out of reach entirely.
+SKIP_NREL=0
+[ -z "$NREL_KEY" ] && SKIP_NREL=1
 
 # ---------------------------------------------------------------------------
 # Validate. Each check reports a specific, actionable failure.
@@ -94,29 +102,44 @@ else
   FAILED=1
 fi
 
-bold "3/4  NREL PVWatts v8"
-PV_BODY=$(curl -s --max-time 25 \
-  "https://developer.nrel.gov/api/pvwatts/v8.json?api_key=${NREL_KEY}&lat=${LAT}&lon=${LON}&system_capacity=8&azimuth=180&tilt=25&array_type=1&module_type=0&losses=14.08&timeframe=monthly" || true)
-
-if echo "$PV_BODY" | grep -q '"ac_annual"'; then
-  AC=$(echo "$PV_BODY" | grep -oE '"ac_annual":[0-9.]+' | grep -oE '[0-9.]+' | head -1)
-  green "     OK — 8 kW south-facing test array models ${AC%.*} kWh/year here"
+PVWATTS_OK=0
+bold "3/4  NREL PVWatts v8 (optional — second production model)"
+if [ "$SKIP_NREL" -eq 1 ]; then
+  printf '\033[33m     Skipped (no key given). Production will use a single model.\033[0m\n'
+elif ! getent hosts developer.nrel.gov >/dev/null 2>&1; then
+  printf '\033[33m     developer.nrel.gov does not resolve from this host.\033[0m\n'
+  printf '\033[33m     nrel.gov has had full-domain DNS outages; this is not a key problem.\033[0m\n'
+  printf '\033[33m     Continuing without the second model.\033[0m\n'
 else
-  red "     Failed. $(echo "$PV_BODY" | grep -oE '"errors":\[[^]]*\]' | head -1)"
-  red "     Get a free key at https://developer.nrel.gov/signup/"
-  FAILED=1
+  PV_BODY=$(curl -s --max-time 25 \
+    "https://developer.nrel.gov/api/pvwatts/v8.json?api_key=${NREL_KEY}&lat=${LAT}&lon=${LON}&system_capacity=8&azimuth=180&tilt=25&array_type=1&module_type=0&losses=14.08&timeframe=monthly" || true)
+  if echo "$PV_BODY" | grep -q '"ac_annual"'; then
+    AC=$(echo "$PV_BODY" | grep -oE '"ac_annual":[0-9.]+' | grep -oE '[0-9.]+' | head -1)
+    green "     OK — 8 kW south-facing test array models ${AC%.*} kWh/year here"
+    PVWATTS_OK=1
+  else
+    printf '\033[33m     Rejected: %s\033[0m\n' "$(echo "$PV_BODY" | grep -oE '"errors":\[[^]]*\]' | head -1)"
+    printf '\033[33m     Get a free key at https://developer.nrel.gov/signup/ — continuing without it.\033[0m\n'
+  fi
 fi
 
 # OpenEI shares the NREL key. Coverage is patchy by design, so a miss here is
 # not fatal — the planner falls back to a homeowner-entered blended rate.
+OPENEI_OK=0
 bold "4/4  OpenEI Utility Rate Database (optional)"
-UR_BODY=$(curl -s --max-time 25 \
-  "https://api.openei.org/utility_rates?version=latest&format=json&api_key=${NREL_KEY}&lat=${LAT}&lon=${LON}&sector=Residential&detail=full&limit=3" || true)
-
-if echo "$UR_BODY" | grep -q '"items"'; then
-  green "     OK"
+if [ "$SKIP_NREL" -eq 1 ]; then
+  printf '\033[33m     Skipped (OpenEI uses the NREL key).\033[0m\n'
 else
-  printf '\033[33m     No tariff match or key rejected — non-fatal, planner falls back to manual rate entry.\033[0m\n'
+  # api.openei.org sits on cloud.gov, separate from nrel.gov — it can be up
+  # while developer.nrel.gov is not.
+  UR_BODY=$(curl -s --max-time 25 \
+    "https://api.openei.org/utility_rates?version=latest&format=json&api_key=${NREL_KEY}&lat=${LAT}&lon=${LON}&sector=Residential&detail=full&limit=3" || true)
+  if echo "$UR_BODY" | grep -q '"items"'; then
+    green "     OK"
+    OPENEI_OK=1
+  else
+    printf '\033[33m     No tariff match or key rejected — planner falls back to manual rate entry.\033[0m\n'
+  fi
 fi
 
 echo
@@ -145,18 +168,30 @@ set_env() {
 }
 
 set_env GOOGLE_MAPS_API_KEY "$GOOGLE_KEY"
-set_env NREL_API_KEY "$NREL_KEY"
-set_env OPENEI_API_KEY "$NREL_KEY"
 set_env SOLAR_LANDING_ENABLED true
 set_env SOLAR_PLANNER_ENABLED true
 set_env SOLAR_GEOSPATIAL_ENABLED true
-set_env SOLAR_PVWATTS_ENABLED true
-set_env SOLAR_UTILITY_RATES_ENABLED true
 set_env SOLAR_PROJECT_BRIEF_ENABLED true
+set_env SOLAR_INCENTIVES_ENABLED true
+
+# Only enable a provider whose key actually validated. Enabling PVWatts with a
+# key that does not work would make every planner run pay the timeout cost
+# before falling back, instead of skipping the model cleanly.
+if [ "$SKIP_NREL" -eq 0 ]; then
+  set_env NREL_API_KEY "$NREL_KEY"
+  set_env OPENEI_API_KEY "$NREL_KEY"
+fi
+[ "$PVWATTS_OK" -eq 1 ] && set_env SOLAR_PVWATTS_ENABLED true || set_env SOLAR_PVWATTS_ENABLED false
+[ "$OPENEI_OK" -eq 1 ] && set_env SOLAR_UTILITY_RATES_ENABLED true || set_env SOLAR_UTILITY_RATES_ENABLED false
 
 unset GOOGLE_KEY NREL_KEY
 
 green "Keys written and flags enabled."
+if [ "$PVWATTS_OK" -eq 0 ]; then
+  printf '\033[33mNote: the second production model is off. Production will be reported as\033[0m\n'
+  printf '\033[33mSINGLE_MODEL with a wider range and reduced confidence — which is accurate,\033[0m\n'
+  printf '\033[33mnot broken. Re-run this script once you have a working NREL key.\033[0m\n'
+fi
 echo
 
 # `up -d` (not `restart`): restart does not re-read .env into the container.
