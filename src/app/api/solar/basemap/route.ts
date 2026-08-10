@@ -3,7 +3,7 @@ import { latLngSchema } from "@/lib/solar/schemas";
 import { z } from "zod";
 import { checkSolarRateLimit } from "@/lib/solar/rate-limit";
 import { solarPlannerUsable, solarImageryEnabled } from "@/lib/feature-flags";
-import { chooseBasemap } from "@/lib/solar/imagery";
+import { basemapAtZoom } from "@/lib/solar/imagery";
 
 /**
  * Satellite basemap proxy.
@@ -18,10 +18,19 @@ import { chooseBasemap } from "@/lib/solar/imagery";
  * licensed imagery.
  */
 
+/**
+ * The caller states the zoom explicitly rather than describing the footprint
+ * it wants.
+ *
+ * Both sides used to run the zoom selection independently, which meant any
+ * rounding in the value passed between them could land the server on a
+ * different zoom than the client assumed — producing an image covering twice
+ * the ground the overlay was drawn for. There is now exactly one place the
+ * zoom is chosen (the client), and it is transmitted, not re-derived.
+ */
 const requestSchema = z.object({
   location: latLngSchema,
-  widthMeters: z.number().finite().min(10).max(400),
-  heightMeters: z.number().finite().min(10).max(400),
+  zoom: z.number().int().min(15).max(21),
 });
 
 /** Matches the roof-analysis cadence: one basemap per analysed building. */
@@ -45,15 +54,14 @@ export async function GET(req: NextRequest) {
       latitude: Number(params.get("lat")),
       longitude: Number(params.get("lng")),
     },
-    widthMeters: Number(params.get("w")),
-    heightMeters: Number(params.get("h")),
+    zoom: Number(params.get("z")),
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid basemap request." }, { status: 400 });
   }
 
-  const { location, widthMeters, heightMeters } = parsed.data;
-  const basemap = chooseBasemap(location, widthMeters, heightMeters);
+  const { location, zoom } = parsed.data;
+  const basemap = basemapAtZoom(location, zoom);
 
   const url =
     `https://maps.googleapis.com/maps/api/staticmap?` +

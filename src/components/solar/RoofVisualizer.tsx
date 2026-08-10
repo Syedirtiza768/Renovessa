@@ -118,9 +118,11 @@ export function RoofVisualizer({
 
   const basemapUrl = useMemo(() => {
     if (!imageryEnabled) return null;
-    const b = geometry.basemapSpec;
-    return `/api/solar/basemap?lat=${origin.latitude}&lng=${origin.longitude}&w=${b.widthMeters.toFixed(1)}&h=${b.heightMeters.toFixed(1)}`;
-  }, [imageryEnabled, geometry.basemapSpec, origin]);
+    // Send the chosen zoom, not the footprint it implies: the server must not
+    // re-derive it, or a rounded metre value can push it to a different zoom
+    // and the photo will no longer line up with the panels.
+    return `/api/solar/basemap?lat=${origin.latitude}&lng=${origin.longitude}&z=${geometry.basemapSpec.zoom}`;
+  }, [imageryEnabled, geometry.basemapSpec.zoom, origin]);
 
   const imageryVisible = Boolean(basemapUrl) && showImagery && !imageryFailed;
 

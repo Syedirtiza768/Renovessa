@@ -10,6 +10,7 @@ import { describe, it, expect } from "vitest";
 import {
   metersPerPixel,
   chooseBasemap,
+  basemapAtZoom,
   viewBoxForBasemap,
   EQUATOR_METERS_PER_PIXEL_AT_ZOOM_0,
   MAX_IMAGE_PX,
@@ -74,6 +75,43 @@ describe("basemap selection", () => {
     expect(y).toBeCloseTo(-h / 2, 9);
     expect(w).toBeCloseTo(b.widthMeters, 9);
     expect(h).toBeCloseTo(b.heightMeters, 9);
+  });
+});
+
+describe("client/server basemap agreement", () => {
+  const center = { latitude: 39.0818, longitude: -77.1517 };
+
+  // The regression this guards: the client used to send the footprint its
+  // chosen zoom implied, and the server re-ran the zoom selection on that
+  // value. Any rounding pushed the server one zoom lower, so it returned an
+  // image covering twice the ground the overlay was drawn for — the photo and
+  // the panels visibly disagreed.
+  it("resolving by zoom reproduces the client's spec exactly", () => {
+    for (const roof of [12, 18.4, 25, 37.7, 60, 95.2]) {
+      const client = chooseBasemap(center, roof, roof);
+      const server = basemapAtZoom(center, client.zoom);
+      expect(server.zoom).toBe(client.zoom);
+      expect(server.metersPerPixel).toBeCloseTo(client.metersPerPixel, 12);
+      expect(server.widthMeters).toBeCloseTo(client.widthMeters, 12);
+      expect(server.heightMeters).toBeCloseTo(client.heightMeters, 12);
+    }
+  });
+
+  it("re-deriving from a rounded footprint can pick the wrong zoom", () => {
+    // Demonstrates why the footprint is no longer the wire format: rounding
+    // the exact footprint UP by a tenth of a metre is enough to fall through.
+    const client = chooseBasemap(center, 60, 60);
+    const rounded = Number(client.widthMeters.toFixed(1));
+    const naive = chooseBasemap(center, rounded, rounded);
+    if (rounded > client.widthMeters) {
+      expect(naive.zoom).toBe(client.zoom - 1);
+      expect(naive.widthMeters).toBeCloseTo(client.widthMeters * 2, 6);
+    }
+  });
+
+  it("the image footprint is square, so the overlay box cannot distort it", () => {
+    const b = basemapAtZoom(center, 20);
+    expect(b.widthMeters).toBeCloseTo(b.heightMeters, 12);
   });
 });
 

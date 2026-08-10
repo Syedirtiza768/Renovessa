@@ -75,6 +75,28 @@ export function chooseBasemap(
   return spec(center, minZoom, widthPx, heightPx, scale);
 }
 
+/**
+ * The spec for an already-chosen zoom.
+ *
+ * The overlay and the image must agree on the ground footprint exactly, so the
+ * zoom is decided once by the client and then passed around — never
+ * re-derived from a rounded footprint, which is how the two can silently
+ * diverge by a whole zoom level.
+ */
+export function basemapAtZoom(
+  center: LatLng,
+  zoom: number,
+  opts: { widthPx?: number; heightPx?: number; scale?: 1 | 2 } = {},
+): BasemapSpec {
+  return spec(
+    center,
+    zoom,
+    Math.min(opts.widthPx ?? MAX_IMAGE_PX, MAX_IMAGE_PX),
+    Math.min(opts.heightPx ?? MAX_IMAGE_PX, MAX_IMAGE_PX),
+    opts.scale ?? 2,
+  );
+}
+
 function spec(center: LatLng, zoom: number, widthPx: number, heightPx: number, scale: 1 | 2): BasemapSpec {
   const mpp = metersPerPixel(center.latitude, zoom);
   return {
