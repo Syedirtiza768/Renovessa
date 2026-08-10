@@ -32,6 +32,14 @@ export function deriveEstimateInputs(a: Record<string, string>): EstimateInputs 
 
   const locationId = resolveLocationId(answers);
 
+  // Single-fixture swaps: explicit fixtureType wins; otherwise infer from the
+  // vanity selection (a vanity cabinet swap vs. a basin/pedestal swap).
+  const fixtureType =
+    answers.fixtureType ||
+    (["stock_vanity", "semi_custom_vanity", "custom_vanity", "floating_vanity"].includes(answers.vanity ?? "")
+      ? "vanity_cabinet"
+      : "sink_basin");
+
   return {
     objective: answers.projectObjective ?? "remodel_same_layout",
     bathroomType: answers.bathroomType ?? "guest",
@@ -45,5 +53,6 @@ export function deriveEstimateInputs(a: Record<string, string>): EstimateInputs 
     homeAgeYears,
     waterDamageReported,
     locationId,
+    fixtureType,
   };
 }

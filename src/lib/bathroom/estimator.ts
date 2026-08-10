@@ -23,6 +23,8 @@ export interface EstimateInputs {
   homeAgeYears: number;
   waterDamageReported: boolean;
   locationId: string;
+  /** For objective "fixture_replacement": which fixture is being swapped. */
+  fixtureType?: string;
 }
 
 export interface LineItem {
@@ -75,12 +77,143 @@ function locationFactor(config: EstimatorConfig, locationId: string): number {
   return config.locationFactor;
 }
 
+/**
+ * Small-job branch: single-fixture replacement (basin, faucet, toilet, vanity,
+ * shower trim). Itemized flat allowances instead of the per-sqft remodel
+ * baseline — no shower/tub, tile, flooring, or permit line items.
+ */
+function generateFixtureReplacementEstimate(
+  inputs: EstimateInputs,
+  config: EstimatorConfig,
+  confidence: ConfidenceResult,
+): EstimateResult {
+  const fr = config.fixtureReplacement;
+  const finishF = finishFactor(config, inputs.finishTier || "standard");
+  const fixture = (fr.fixtures as any)[inputs.fixtureType ?? ""] ?? fr.fixtures.sink_basin;
+
+  const lineItems: LineItem[] = [];
+  let sortOrder = 0;
+  const push = (item: Omit<LineItem, "sortOrder">) => {
+    lineItems.push({ ...item, sortOrder: sortOrder++ });
+  };
+
+  push({
+    category: "demolition",
+    description: "Remove and dispose of existing fixture",
+    quantity: 1, unit: "project", unitRate: fr.removalDisposal.low,
+    lowAmount: fr.removalDisposal.low, highAmount: fr.removalDisposal.high,
+    multiplier: 1, calculationReference: "Flat removal allowance",
+  });
+  push({
+    category: "fixture_allowance",
+    description: fixture.label,
+    quantity: 1, unit: "each", unitRate: Math.round(fixture.low * finishF),
+    lowAmount: Math.round(fixture.low * finishF), highAmount: Math.round(fixture.high * finishF),
+    multiplier: finishF, calculationReference: "Finish-tier scaled",
+  });
+  const relocLow = Math.round(inputs.plumbingRelocationFt * config.complexityMultipliers.plumbingRelocationPerFt);
+  push({
+    category: "plumbing_labor",
+    description: "Plumbing labor (disconnect, reconnect, seal)",
+    quantity: 1, unit: "project", unitRate: fr.plumbingLabor.low,
+    lowAmount: fr.plumbingLabor.low + relocLow,
+    highAmount: fr.plumbingLabor.high + Math.round(relocLow * 1.5),
+    multiplier: 1, calculationReference: "Flat hookup labor + relocation per foot",
+  });
+  push({
+    category: "parts_and_materials",
+    description: "Supply lines, trap, sealant, and minor parts",
+    quantity: 1, unit: "project", unitRate: fr.partsAndMaterials.low,
+    lowAmount: fr.partsAndMaterials.low, highAmount: fr.partsAndMaterials.high,
+    multiplier: 1, calculationReference: "Flat allowance",
+  });
+  push({
+    category: "site_protection",
+    description: "Site protection and cleanup",
+    quantity: 1, unit: "project", unitRate: fr.siteProtectionCleanup.low,
+    lowAmount: fr.siteProtectionCleanup.low, highAmount: fr.siteProtectionCleanup.high,
+    multiplier: 1, calculationReference: "Flat allowance",
+  });
+
+  let lowSum = lineItems.reduce((s, i) => s + i.lowAmount, 0);
+  let highSum = lineItems.reduce((s, i) => s + i.highAmount, 0);
+  lowSum = Math.max(lowSum, fr.smallJobMinimumCharge);
+
+  const overheadLow = Math.round(lowSum * config.overheadPercent);
+  const overheadHigh = Math.round(highSum * config.overheadPercent);
+  const contingencyLow = Math.round(lowSum * config.contingencyPercent);
+  const contingencyHigh = Math.round(highSum * config.contingencyPercent);
+
+  push({
+    category: "general_contractor_overhead",
+    description: "General contractor overhead",
+    quantity: 1, unit: "project", unitRate: overheadLow,
+    lowAmount: overheadLow, highAmount: overheadHigh, multiplier: config.overheadPercent,
+    calculationReference: `${Math.round(config.overheadPercent * 100)}% of subtotal`,
+  });
+  push({
+    category: "contingency",
+    description: "Contingency for unknowns",
+    quantity: 1, unit: "project", unitRate: contingencyLow,
+    lowAmount: contingencyLow, highAmount: contingencyHigh, multiplier: config.contingencyPercent,
+    calculationReference: `${Math.round(config.contingencyPercent * 100)}% of subtotal`,
+  });
+
+  const totalLow = lowSum + overheadLow + contingencyLow;
+  const totalHigh = highSum + overheadHigh + contingencyHigh;
+  const expectedLow = Math.round(totalLow + (totalHigh - totalLow) * 0.33);
+  const expectedHigh = Math.round(totalLow + (totalHigh - totalLow) * 0.66);
+
+  const costDrivers: string[] = [];
+  if (inputs.plumbingRelocationFt > 0) costDrivers.push(`Moving plumbing ~${inputs.plumbingRelocationFt} ft adds labor and material`);
+  if (finishF >= 1.4) costDrivers.push("Premium/luxury fixture selections widen the cost range");
+  if (inputs.waterDamageReported) costDrivers.push("Reported leaks or water stains may add shutoff valve or supply-line repairs");
+
+  const assumptions: string[] = [
+    "Estimate is for a like-for-like single-fixture replacement in the same location.",
+    "Like-for-like replacement typically does not require permits; if plumbing or electrical is modified, permits may apply.",
+    "Estimate assumes standard DMV labor rates and contractor overhead.",
+    "Shutoff valves and supply lines are assumed serviceable; seized or corroded valves add cost.",
+  ];
+  if (inputs.locationId !== "rockville-md") {
+    assumptions.push(
+      "This location does not yet have a published local configuration. The range uses the Rockville baseline as a reference point and may differ from actual local costs.",
+    );
+  }
+
+  return {
+    lowAmount: totalLow,
+    expectedLowAmount: expectedLow,
+    expectedHighAmount: expectedHigh,
+    highComplexityAmount: totalHigh,
+    contingencyAmount: contingencyHigh,
+    confidenceLevel: confidence.level,
+    lineItems,
+    assumptions,
+    unknowns: [
+      "Condition of existing shutoff valves, trap, and supply connections",
+      "Hidden water damage in the vanity cabinet or wall behind the fixture",
+    ],
+    exclusions: [
+      "This is not a binding quote or contractor proposal",
+      "Excludes any work beyond the single fixture swap (tile, flooring, painting, other fixtures)",
+      "Excludes plumbing relocation beyond the stated distance and wall or floor repair",
+    ],
+    costDrivers,
+    configVersion: config.version,
+    calculationTimestamp: new Date().toISOString(),
+  };
+}
+
 export function generateEstimate(
   inputs: EstimateInputs,
   config: EstimatorConfig = DEFAULT_ESTIMATOR_CONFIG,
   confidence: ConfidenceResult = { level: "MEDIUM", reasons: [], improvements: [] },
   geometry?: GeometryCalculations,
 ): EstimateResult {
+  if (inputs.objective === "fixture_replacement") {
+    return generateFixtureReplacementEstimate(inputs, config, confidence);
+  }
   const area = Math.max(20, inputs.floorAreaSqft || 40);
   const base = factorForObjective(config, inputs.objective);
   const bTypeF = bathroomTypeFactor(config, inputs.bathroomType);

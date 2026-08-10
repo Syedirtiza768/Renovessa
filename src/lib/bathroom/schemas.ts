@@ -10,7 +10,7 @@ export const bathroomTypeSchema = z.enum([
 ]);
 
 export const projectObjectiveSchema = z.enum([
-  "cosmetic_refresh", "replace_fixtures_finishes", "remodel_same_layout", "full_gut",
+  "fixture_replacement", "cosmetic_refresh", "replace_fixtures_finishes", "remodel_same_layout", "full_gut",
   "tub_to_shower", "walk_in_shower", "curbless_shower", "layout_redesign",
   "accessibility_upgrade", "repair_damage", "add_bathroom", "unsure",
 ]);
@@ -126,6 +126,7 @@ export const estimateInputsSchema = z.object({
   homeAgeYears: z.number().int().nonnegative().max(300).default(20),
   waterDamageReported: z.boolean().default(false),
   locationId: z.string().max(60).default("unknown"),
+  fixtureType: z.enum(["sink_basin", "faucet", "toilet", "vanity_cabinet", "shower_head"]).optional(),
 });
 
 export const permitAnswersSchema = z.object({

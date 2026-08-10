@@ -16,6 +16,7 @@ export const BATHROOM_TYPES = [
 ] as const;
 
 export const PROJECT_OBJECTIVES = [
+  { id: "fixture_replacement", label: "Replace a single fixture", hint: "Sink/basin, vanity, faucet, or toilet swap — no remodel" },
   { id: "cosmetic_refresh", label: "Cosmetic refresh", hint: "Paint, hardware, fixtures surface update" },
   { id: "replace_fixtures_finishes", label: "Replace fixtures and finishes" },
   { id: "remodel_same_layout", label: "Complete remodel in the same layout" },
@@ -116,6 +117,17 @@ export const FIXTURE_QUALITY_TIERS = [
   { id: "luxury", label: "Luxury" },
   { id: "specific_brand", label: "Specific brand or model selected" },
   { id: "need_recommendations", label: "Need recommendations" },
+] as const;
+
+/**
+ * Fixture types for the `fixture_replacement` objective (single-fixture swaps).
+ */
+export const FIXTURE_REPLACEMENT_TYPES = [
+  { id: "sink_basin", label: "Sink / wash basin" },
+  { id: "faucet", label: "Faucet" },
+  { id: "toilet", label: "Toilet" },
+  { id: "vanity_cabinet", label: "Vanity cabinet" },
+  { id: "shower_head", label: "Shower head / trim" },
 ] as const;
 
 export const ACCESSIBILITY_FEATURES = [
@@ -324,6 +336,25 @@ export const DEFAULT_ESTIMATOR_CONFIG = {
     waterDamageContingencyAdd: 1500,
   },
   minimumCharge: 2500,
+  /**
+   * Single-fixture replacement (small-job) pricing. Used when the objective is
+   * `fixture_replacement` instead of the per-sqft remodel baseline.
+   * All amounts USD integers; fixture allowances are scaled by qualityTierFactor.
+   */
+  fixtureReplacement: {
+    removalDisposal: { low: 100, high: 250 },
+    plumbingLabor: { low: 250, high: 600 },
+    partsAndMaterials: { low: 50, high: 150 },
+    siteProtectionCleanup: { low: 50, high: 150 },
+    fixtures: {
+      sink_basin: { label: "Sink / wash basin fixture", low: 200, high: 600 },
+      faucet: { label: "Faucet fixture", low: 120, high: 450 },
+      toilet: { label: "Toilet fixture", low: 250, high: 700 },
+      vanity_cabinet: { label: "Vanity cabinet", low: 500, high: 2500 },
+      shower_head: { label: "Shower head / trim kit", low: 150, high: 600 },
+    },
+    smallJobMinimumCharge: 450,
+  },
   contingencyPercent: 0.15,
   overheadPercent: 0.18,
   permitAllowance: {
