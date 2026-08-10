@@ -233,7 +233,7 @@ required from `node_modules` at runtime instead of bundled; rebuild and redeploy
 the Docker image, then re-verify `/brief/pdf` returns 200 `application/pdf`.
 
 ### Status
-Fix implemented 2026-08-10 — `serverExternalPackages: ["pdfkit"]` added to `next.config.ts`. Pending production deploy and live re-verification of `/brief/pdf`.
+Resolved 2026-08-10 — `serverExternalPackages: ["pdfkit"]` deployed in `e81f112`; live re-verified: `/brief/pdf` returns 200 `application/pdf`.
 
 ---
 
@@ -265,7 +265,7 @@ to ~$1,500.
    the per-sqft remodel baseline
 
 ### Status
-Fixed in code 2026-08-10 — two-part fix. (1) New `fixture_replacement` objective: itemized small-job branch (per-fixture allowance × finish tier, flat hookup labor, small-job minimum charge 450), fixture-swap scenario copy, conditional UI picker in ScopeStep, and heuristic/AI interpret wiring (`fixtureType`). (2) Root-cause rewrite of the main estimator: flat allowances replaced by calibrated `categoryShares` decomposition of the per-sqft baseline, so objective/type/tier/area now propagate consistently through every category (v1 was scope-invariant: cosmetic ≈ full gut within ~3%; powder rooms charged for showers). Explicit rates added for `repair_damage`/`unsure` (previously silent fallback), shower-only categories skipped when scope has no shower/tub work. `estimator-consistency.test.ts` (11 tests) locks the matrix. Pending production deploy.
+Resolved 2026-08-10 — deployed in `e81f112`. Live verified: powder-room basin swap prices at $865–$2,328 (scope-relevant line items only); full matrix now scales consistently (cosmetic ≈ $4.5k–$13.5k → add_bathroom ≈ $27.5k–$96.2k at reference size).
 
 ---
 
@@ -300,4 +300,4 @@ admin queue (`ProjectRequest` status NEW) with no automatic contractor dispatch.
    admin queue is the intended operating model
 
 ### Status
-Partially fixed 2026-08-10 — the keyword heuristic now maps basin/sink/faucet/toilet/vanity swap language to `fixture_replacement` + `fixtureType`, and the default OpenRouter model is now `openai/gpt-5.6-luna` (code default in all three AI routes). Still open: enabling `BATHROOM_AI_INTERPRETATION_ENABLED=true` and setting `OPENROUTER_MODEL=openai/gpt-5.6-luna` in production env (API key already present), the saved-estimate confidence placeholder (HIGH confidence for approximate inputs), and the disabled contractor-matching decision.
+Resolved 2026-08-10 — deployed in `e81f112` with `BATHROOM_AI_INTERPRETATION_ENABLED=true` and `OPENROUTER_MODEL=openai/gpt-5.6-luna`. Live verified: the basin-swap prompt now returns `source: openrouter` with `fixture_replacement` + `sink_basin`, and the preview range is $865–$2,328 with only scope-relevant line items. Still open by design: saved-estimate confidence placeholder and the disabled contractor-matching decision.

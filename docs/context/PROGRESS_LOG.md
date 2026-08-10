@@ -295,3 +295,11 @@
 - Added `estimator-consistency.test.ts` (11 tests: full-matrix validity, monotonic objective/type/tier/area ordering, shower-scope rules, electrical handling); full suite 210/210 green, `tsc --noEmit` clean
 - Post-fix matrix: fixture swap $865–$2.3k · cosmetic $4.5k–$13.5k · remodel $11.5k–$36.3k · full gut $16.2k–$52.1k · add bathroom $27.5k–$96.2k (40 sqft guest, standard tier)
 - Pending: production deploy incl. env changes (`OPENROUTER_MODEL=openai/gpt-5.6-luna`, `BATHROOM_AI_INTERPRETATION_ENABLED=true`) and live re-verification
+
+# 2026-08-10 — Deployed: consistent estimator + Luna interpretation + PDF fix; solar pass
+
+- Committed `e81f112` (16 files) and pushed; server pulled, env updated (`OPENROUTER_MODEL=openai/gpt-5.6-luna`, `BATHROOM_AI_INTERPRETATION_ENABLED=true`), rebuilt via `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`; `renovessa-app-1` healthy on the new image
+- Live post-deploy verification: Luna interpretation of "change the wash basin in my powder room" → `source: openrouter`, `fixture_replacement` + `sink_basin` with sensible follow-ups; preview $865–$2,328 (7 scope-relevant categories only); estimate save 201; brief 201; **`/brief/pdf` now 200 `application/pdf`**; RFP `RNV-2026-44347` with `emailSent=true`; `/bathroom-remodeling/planner`, `/solar`, `/solar/planner` all 200
+- Solar pass (pre-deploy smoke test, code unchanged by this batch): geocode → project → Google roof analysis (HIGH imagery) → plan (316 panels, $292.5k–$423.5k installed for the large test roof) → PVGIS cross-check `agreement: HIGH` (1.36% diff) → brief → RFP `RNV-2026-74258` all green
+- Solar gaps are ops/content, not code: `SolarIncentiveProgram` table empty (net cost withheld by design until an admin enters verified programs), `SOLAR_PVWATTS_ENABLED=false` (no NREL key), `SOLAR_UTILITY_RATES_ENABLED=false` (no OpenEI key), zero `EstimatorConfiguration` rows (built-in defaults in use)
+- Test records left in prod DB pending cleanup decision: bathroom `RNV-2026-65405`/`RNV-2026-69061`, `cmsnbcc5m0001sz01c79o76pn`/`RNV-2026-44347`; solar `RNV-2026-66990`/`RNV-2026-74258`
