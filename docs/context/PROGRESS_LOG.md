@@ -303,3 +303,10 @@
 - Solar pass (pre-deploy smoke test, code unchanged by this batch): geocode → project → Google roof analysis (HIGH imagery) → plan (316 panels, $292.5k–$423.5k installed for the large test roof) → PVGIS cross-check `agreement: HIGH` (1.36% diff) → brief → RFP `RNV-2026-74258` all green
 - Solar gaps are ops/content, not code: `SolarIncentiveProgram` table empty (net cost withheld by design until an admin enters verified programs), `SOLAR_PVWATTS_ENABLED=false` (no NREL key), `SOLAR_UTILITY_RATES_ENABLED=false` (no OpenEI key), zero `EstimatorConfiguration` rows (built-in defaults in use)
 - Test records left in prod DB pending cleanup decision: bathroom `RNV-2026-65405`/`RNV-2026-69061`, `cmsnbcc5m0001sz01c79o76pn`/`RNV-2026-44347`; solar `RNV-2026-66990`/`RNV-2026-74258`
+
+# 2026-08-10 — Solar incentive register seeded (9 verified programs)
+
+- Researched current (Aug 2026) program status before writing anything: federal §25D is **terminated** for property placed in service after 2025-12-31 (P.L. 119-21; confirmed on the IRS page) — it is registered as RETIRED so stale "30% federal credit" claims have an authoritative correction
+- Inserted 9 rows into prod `SolarIncentiveProgram` via `scripts/seed-solar-incentives-2026-08-10.sql`: PUBLISHED informational — MD SRECs (incl. 1.5× Certified SREC window through 2028-01-01), MD sales-tax exemption, MD property-tax exemption, DC SRECs, DC Solar for All, §48E third-party-owned context; DRAFT — MSAP (FY26 window closed/funding exhausted, republish when FY27 opens), MD Bridge Fund (eligibility window passed)
+- Every row carries source URL + `lastVerifiedAt` 2026-08-10; stale filter (180 days) means re-verification is due by ~2027-02-06
+- Live-verified on the MD test project: plan now lists 4 applicable programs with honest exclusion reasons; net cost correctly stays hidden because no universally-applicable, calculable upfront incentive exists in Aug 2026 (post-25D) — the register informs, it does not fabricate savings
