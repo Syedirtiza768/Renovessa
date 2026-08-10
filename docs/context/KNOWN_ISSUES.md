@@ -207,3 +207,97 @@ webhook is also disabled, and `SENDGRID_WEBHOOK_VERIFICATION_KEY` is unset.
 
 ### Status
 Open — blocks all external contractor campaign sends
+
+---
+
+## Bathroom Brief PDF Returns 500 in Production
+
+### Type
+Deployment / Packaging Bug
+
+### Severity
+High
+
+### Description
+Verified live on 2026-08-10: `GET /api/bathroom-projects/[id]/brief/pdf` returns
+500 with `ENOENT: no such file or directory, open '/app/.next/server/chunks/data/Helvetica.afm'`.
+pdfkit is webpack-bundled into `.next/server/chunks`, so its runtime
+`__dirname + '/data/*.afm'` font lookup resolves to a directory that does not
+exist in the standalone Docker image. The AFM files are present at
+`/app/node_modules/pdfkit/js/data` in the container; they are just not reachable
+from the bundled chunk. Affects every pdfkit-based PDF (brief, proposal, etc.).
+
+### Suggested Fix or Mitigation
+Add `serverExternalPackages: ["pdfkit"]` to `next.config.ts` so pdfkit is
+required from `node_modules` at runtime instead of bundled; rebuild and redeploy
+the Docker image, then re-verify `/brief/pdf` returns 200 `application/pdf`.
+
+### Status
+Open — root cause confirmed in production on 2026-08-10
+
+---
+
+## Bathroom Estimator Is Scope-Invariant (Full-Remodel Line Items for Any Job)
+
+### Type
+Correctness / Estimate Accuracy
+
+### Severity
+High
+
+### Description
+Verified live on 2026-08-10: a homeowner request to "change the wash basin in
+the powder room" produces an estimate of $11,403–$37,150 including
+shower waterproofing, shower/tub assembly, glass enclosure, toilet, full tile,
+ventilation, and building+plumbing+electrical permit allowances — i.e. a full
+bathroom remodel. `generateEstimate` (`src/lib/bathroom/estimator.ts`) emits the
+same line-item list for every objective; only the per-sqft base rate and powder
+room factor (0.55) change. There is no "single fixture replacement" objective in
+`PROJECT_OBJECTIVES`, and `OUT_OF_SCOPE_INDICATORS` has no basin/sink
+replacement category. Market reality for a basin swap is roughly a few hundred
+to ~$1,500.
+
+### Suggested Fix or Mitigation
+1. Add a `fixture_replacement` (or per-fixture) objective with itemized pricing
+2. Filter line items by selected scope (e.g. no shower/tub/tile items for a
+   powder-room fixture swap; skip permit allowance when all permit answers are No)
+3. Route single-fixture requests through the estimator minimum charge instead of
+   the per-sqft remodel baseline
+
+### Status
+Open — confirmed with production preview and saved estimates on 2026-08-10
+
+---
+
+## Requirement Interpretation Defaults to Full Remodel; AI Parser Disabled
+
+### Type
+Correctness / Configuration
+
+### Severity
+Medium
+
+### Description
+Verified live on 2026-08-10: `BATHROOM_AI_INTERPRETATION_ENABLED=false` in
+production, so `/api/bathroom-projects/[id]/interpret` uses the keyword
+heuristic. "I just need to change the wash basin in my powder room" maps to
+`projectObjective=remodel_same_layout` (the fallback for unrecognized prompts),
+which prices the job at the $110–220/sqft full-remodel band. The heuristic has
+no keywords for basin/sink/vanity replacement. Separately, the saved-estimate
+endpoint (`/estimates`) uses a placeholder confidence derivation (see code
+comment "placeholder; real flow passes answers"), so a 30 sqft powder room with
+approximate inputs is persisted with `confidenceLevel=HIGH`.
+`BATHROOM_CONTRACTOR_MATCHING_ENABLED=false`, so submitted RFPs wait in the
+admin queue (`ProjectRequest` status NEW) with no automatic contractor dispatch.
+
+### Suggested Fix or Mitigation
+1. Enable OpenRouter interpretation (`BATHROOM_AI_INTERPRETATION_ENABLED=true`
+   with `OPENROUTER_API_KEY`) or extend the heuristic with basin/sink/vanity-swap
+   keywords mapping to a fixture-replacement objective
+2. Pass real planner answers into `deriveConfidenceInput` instead of the
+   placeholder
+3. Decide whether contractor matching should be enabled or whether the manual
+   admin queue is the intended operating model
+
+### Status
+Open — confirmed in production on 2026-08-10
