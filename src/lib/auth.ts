@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { UserRole } from "@prisma/client";
-import { bathroomRockvilleEnabled } from "./feature-flags";
+import { bathroomRockvilleEnabled, solarLandingEnabled } from "./feature-flags";
 
 const COOKIE_NAME = "renovessa_session";
 
@@ -118,6 +118,14 @@ export function getAdminNavItems(role: UserRole): AdminNavItem[] {
       { href: "/portal/admin/bathroom/estimator-config", label: "Estimator Config" },
       { href: "/portal/admin/bathroom/content", label: "Bathroom Content" },
       { href: "/portal/admin/bathroom/analytics", label: "Bathroom Analytics" },
+    );
+  }
+
+  // Solar admin screens (gated by feature flag)
+  if (solarLandingEnabled()) {
+    items.push(
+      { href: "/portal/admin/solar/projects", label: "Solar Projects" },
+      { href: "/portal/admin/solar/pricing", label: "Solar Pricing" },
     );
   }
 

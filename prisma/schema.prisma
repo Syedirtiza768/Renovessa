@@ -139,6 +139,22 @@ enum AuditEventType {
   BATHROOM_SHARE_LINK_REVOKED
   BATHROOM_RFP_SUBMITTED
   BATHROOM_RFP_DISPATCHED
+  SOLAR_PROJECT_CREATED
+  SOLAR_ADDRESS_RESOLVED
+  SOLAR_BUILDING_CONFIRMED
+  SOLAR_BUILDING_REJECTED
+  SOLAR_ROOF_ANALYSIS_COMPLETED
+  SOLAR_ROOF_ANALYSIS_FAILED
+  SOLAR_MANUAL_ROOF_ENTERED
+  SOLAR_LAYOUT_SAVED
+  SOLAR_PRODUCTION_MODELLED
+  SOLAR_PRODUCTION_MODEL_DISCREPANCY
+  SOLAR_USAGE_PROVIDED
+  SOLAR_TARIFF_SELECTED
+  SOLAR_ESTIMATE_GENERATED
+  SOLAR_BRIEF_GENERATED
+  SOLAR_RFP_SUBMITTED
+  SOLAR_PROVIDER_FAILURE
 }
 
 enum ConsentEventAction {
@@ -183,6 +199,7 @@ model User {
   suppressions            CommunicationSuppression[]
   bathroomProjects        BathroomProject[]          @relation("HomeownerBathroomProjects")
   bathroomContactReleases BathroomContactRelease[]   @relation("BathroomContactReleaser")
+  solarProjects           SolarProject[]             @relation("HomeownerSolarProjects")
 }
 
 model ContractorProfile {
@@ -301,6 +318,7 @@ model ProjectRequest {
   consentEvents   ConsentEvent[]
   suppressions    CommunicationSuppression[]
   bathroomProject BathroomProject?
+  solarProject    SolarProject?
 }
 
 model Appointment {
@@ -352,8 +370,10 @@ model AuditEvent {
   projectRequest  ProjectRequest?  @relation(fields: [projectRequestId], references: [id])
   appointment     Appointment?     @relation(fields: [appointmentId], references: [id])
   bathroomProject BathroomProject? @relation("BathroomProjectAudit", fields: [bathroomProjectId], references: [id], onDelete: SetNull)
+  solarProject    SolarProject?    @relation("SolarProjectAudit", fields: [solarProjectId], references: [id], onDelete: SetNull)
 
   bathroomProjectId String?
+  solarProjectId    String?
 }
 
 model Dispute {
@@ -807,16 +827,16 @@ model BathroomProject {
 
 /// Uploaded photo or sketch for a bathroom project (existing conditions, inspiration, plans).
 model BathroomMedia {
-  id           String   @id @default(cuid())
-  projectId    String
-  kind         String   @default("photo") // photo | sketch | plan | other
-  fileName     String
-  mimeType     String
-  sizeBytes    Int
-  storagePath  String
-  caption      String?
-  wallLabel    String? // e.g. "north wall", "ceiling above shower"
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  projectId   String
+  kind        String   @default("photo") // photo | sketch | plan | other
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  storagePath String
+  caption     String?
+  wallLabel   String? // e.g. "north wall", "ceiling above shower"
+  createdAt   DateTime @default(now())
 
   project BathroomProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -1028,69 +1048,69 @@ model ProjectBrief {
 /// Structured contractor proposal for a bathroom project. Does not duplicate
 /// Appointment; linked to it when an appointment is scheduled.
 model ContractorProposal {
-  id                  String                 @id @default(cuid())
-  projectId           String
-  contractorId        String
-  appointmentId       String?
+  id                     String                 @id @default(cuid())
+  projectId              String
+  contractorId           String
+  appointmentId          String?
   /// Optional link to the BathroomEstimate that seeded line items.
-  estimateId          String?
-  status              BathroomProposalStatus @default(SUBMITTED)
+  estimateId             String?
+  status                 BathroomProposalStatus @default(SUBMITTED)
   /// Studio version number; increments when a revised draft is created from an approved proposal.
-  version             Int                    @default(1)
+  version                Int                    @default(1)
   /// quick | detailed | site_verified
-  mode                String                 @default("detailed")
-  totalPrice          Int
+  mode                   String                 @default("detailed")
+  totalPrice             Int
   /// Internal direct cost total (materials + labor + other) before profit.
-  directCostTotal     Int?
-  overheadAmount      Int?
-  contingencyAmount   Int?
-  profitAmount        Int?
+  directCostTotal        Int?
+  overheadAmount         Int?
+  contingencyAmount      Int?
+  profitAmount           Int?
   /// Gross margin as percent of customer price (0–100).
-  grossMarginPercent  Float?
+  grossMarginPercent     Float?
   /// Markup applied as percent of direct cost (0–100).
-  markupPercent       Float?
+  markupPercent          Float?
   /// Editable contractor-priced line items (JSON array). Internal only.
-  lineItemsJson       Json?
+  lineItemsJson          Json?
   /// Snapshot of studio pricing settings at last recalc / approval.
-  pricingSnapshotJson Json?
-  includedScope       String
-  exclusions          String
-  materialAllowances  String?
-  fixtureAllowances   String?
-  permitHandling      String?
-  estimatedStartDate  String?
-  estimatedDuration   String?
-  paymentSchedule     String?
-  warranty            String?
-  changeOrderProcess  String?
-  optionalUpgrades    String?
+  pricingSnapshotJson    Json?
+  includedScope          String
+  exclusions             String
+  materialAllowances     String?
+  fixtureAllowances      String?
+  permitHandling         String?
+  estimatedStartDate     String?
+  estimatedDuration      String?
+  paymentSchedule        String?
+  warranty               String?
+  changeOrderProcess     String?
+  optionalUpgrades       String?
   /// Contractor-suggested scope/layout/price changes for the client to consider.
-  suggestedChanges    String?
-  expirationDate      DateTime?
-  proposalDocumentUrl String?
-  approvedAt          DateTime?
-  approvedByUserId    String?
+  suggestedChanges       String?
+  expirationDate         DateTime?
+  proposalDocumentUrl    String?
+  approvedAt             DateTime?
+  approvedByUserId       String?
   /// Secure homeowner share link (tokenized; no account required).
-  shareToken          String?                @unique
-  shareExpiresAt      DateTime?
-  sentAt              DateTime?
-  firstViewedAt       DateTime?
-  lastViewedAt        DateTime?
-  viewCount           Int                    @default(0)
-  acceptedAt          DateTime?
-  declinedAt          DateTime?
-  acceptanceName      String?
-  acceptanceEmail     String?
-  acceptanceIp        String?
+  shareToken             String?                @unique
+  shareExpiresAt         DateTime?
+  sentAt                 DateTime?
+  firstViewedAt          DateTime?
+  lastViewedAt           DateTime?
+  viewCount              Int                    @default(0)
+  acceptedAt             DateTime?
+  declinedAt             DateTime?
+  acceptanceName         String?
+  acceptanceEmail        String?
+  acceptanceIp           String?
   /// Immutable customer-facing snapshot at acceptance time.
   acceptanceSnapshotJson Json?
-  createdAt           DateTime               @default(now())
-  updatedAt           DateTime               @updatedAt
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
 
-  project     BathroomProject   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contractor  ContractorProfile @relation(fields: [contractorId], references: [id])
-  appointment Appointment?      @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
-  estimate    BathroomEstimate? @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+  project        BathroomProject             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractor     ContractorProfile           @relation(fields: [contractorId], references: [id])
+  appointment    Appointment?                @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  estimate       BathroomEstimate?           @relation(fields: [estimateId], references: [id], onDelete: SetNull)
   clientMessages ContractorProposalMessage[]
 
   @@index([projectId])
@@ -1101,14 +1121,14 @@ model ContractorProposal {
 
 /// Homeowner questions / revision requests against a shared proposal.
 model ContractorProposalMessage {
-  id           String   @id @default(cuid())
-  proposalId   String
-  kind         String   // question | revision_request | decline_note | contractor_reply
-  body         String   @db.Text
-  authorName   String?
-  authorEmail  String?
-  ipAddress    String?
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  proposalId  String
+  kind        String // question | revision_request | decline_note | contractor_reply
+  body        String   @db.Text
+  authorName  String?
+  authorEmail String?
+  ipAddress   String?
+  createdAt   DateTime @default(now())
 
   proposal ContractorProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
 
@@ -1156,4 +1176,381 @@ model BathroomContentVersion {
 
   @@index([slug])
   @@index([status])
+}
+
+// ===========================================================================
+// Solar experience â€” see docs/planning/SOLAR_IMPLEMENTATION_NOTE.md
+//
+// Design notes:
+//  - Licensed third-party source data lives in SolarRoofAnalysis.rawProviderPayload
+//    with providerDataExpiresAt, so it can be purged on its own retention clock
+//    without destroying the homeowner's project (Â§49, Â§52).
+//  - Every persisted estimate carries an input snapshot plus the calculation and
+//    pricing versions that produced it, so old results stay reproducible (Â§48).
+//  - Solar promotes into the shared ProjectRequest lead pipeline rather than
+//    forking contractor matching.
+// ===========================================================================
+
+enum SolarProjectStatus {
+  DRAFT
+  IN_PROGRESS
+  ANALYSIS_READY
+  PLAN_READY
+  BRIEF_READY
+  RFQ_SUBMITTED
+  CLOSED
+  WITHDRAWN
+}
+
+enum SolarRoofDataSource {
+  PROVIDER
+  MANUAL
+}
+
+enum SolarConfidenceLevel {
+  HIGH
+  MEDIUM
+  PRELIMINARY
+}
+
+enum SolarConfigStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum SolarIncentiveStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum SolarJurisdictionLevel {
+  FEDERAL
+  STATE
+  COUNTY
+  MUNICIPAL
+  UTILITY
+}
+
+/// Top-level solar project. Anonymous drafts carry clientGeneratedId, matching
+/// the bathroom planner's proven anonymous-draft pattern.
+model SolarProject {
+  id                String             @id @default(cuid())
+  referenceNumber   String             @unique
+  homeownerId       String?
+  projectRequestId  String?            @unique
+  status            SolarProjectStatus @default(DRAFT)
+  plannerMode       String             @default("quick")
+  currentStep       String?
+  clientGeneratedId String?
+
+  // Address / geocode (Renovessa-derived; safe to retain).
+  formattedAddress    String?
+  streetLine          String?
+  city                String?
+  state               String?
+  postalCode          String?
+  county              String?
+  latitude            Float?
+  longitude           Float?
+  geocodeQuality      String?
+  /// Homeowner explicitly confirmed the analysed building is theirs (Â§9).
+  buildingConfirmed   Boolean   @default(false)
+  buildingConfirmedAt DateTime?
+
+  propertyType     String?
+  ownershipStatus  String?
+  occupancyStatus  String?
+  projectGoal      String?
+  timelineCategory String?
+
+  /// Full planner answer blob for autosave; structured columns stay canonical.
+  answersJson Json?
+
+  isDemo    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  homeowner           User?                     @relation("HomeownerSolarProjects", fields: [homeownerId], references: [id], onDelete: Cascade)
+  projectRequest      ProjectRequest?           @relation(fields: [projectRequestId], references: [id], onDelete: SetNull)
+  roofAnalyses        SolarRoofAnalysis[]
+  layouts             SolarPanelLayout[]
+  productionEstimates SolarProductionEstimate[]
+  costEstimates       SolarCostEstimate[]
+  energyProfile       SolarEnergyProfile?
+  tariffs             SolarTariffSnapshot[]
+  documents           SolarDocument[]
+  briefs              SolarProjectBrief[]
+  auditEvents         AuditEvent[]              @relation("SolarProjectAudit")
+
+  @@index([homeownerId])
+  @@index([status])
+  @@index([clientGeneratedId])
+}
+
+/// One roof analysis run. Normalized fields are Renovessa-derived and retained;
+/// rawProviderPayload is licensed source data on its own retention clock.
+model SolarRoofAnalysis {
+  id         String              @id @default(cuid())
+  projectId  String
+  source     SolarRoofDataSource
+  providerId String
+  isActive   Boolean             @default(true)
+
+  buildingLatitude     Float
+  buildingLongitude    Float
+  imageryDate          String?
+  imageryProcessedDate String?
+  imageryQuality       String?
+
+  /// Normalized RoofSegment[] â€” Renovessa's own derived representation.
+  segmentsJson        Json
+  /// Normalized CandidatePanel[].
+  candidatePanelsJson Json
+  /// PanelSpecification actually used (never an assumed wattage).
+  panelSpecJson       Json
+
+  maxPanelCount              Int
+  maxArrayAreaMeters2        Float?
+  wholeRoofAreaMeters2       Float?
+  maxSunshineHoursPerYear    Float?
+  carbonOffsetFactorKgPerMwh Float?
+
+  /// Licensed third-party payload. Nullable and purgeable independently (Â§52).
+  rawProviderPayload    Json?
+  providerDataExpiresAt DateTime?
+
+  retrievedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isActive])
+  @@index([providerDataExpiresAt])
+}
+
+/// A saved panel arrangement. Stores the homeowner's selection rather than a
+/// re-derived layout, so their edits survive a provider re-analysis.
+model SolarPanelLayout {
+  id                     String   @id @default(cuid())
+  projectId              String
+  roofAnalysisId         String?
+  version                Int      @default(1)
+  strategy               String
+  selectedPanelIds       String[]
+  excludedSegmentIndices Int[]
+  targetOffsetFraction   Float?
+  panelCount             Int
+  panelCapacityWatts     Float
+  dcSystemSizeKw         Float
+  isActive               Boolean  @default(true)
+  calculationVersion     String
+  createdAt              DateTime @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isActive])
+}
+
+/// A production modelling run: both models plus the reconciliation outcome.
+model SolarProductionEstimate {
+  id                 String   @id @default(cuid())
+  projectId          String
+  layoutId           String?
+  annualAcKwh        Float?
+  rangeLowKwh        Float?
+  rangeHighKwh       Float?
+  monthlyAcKwhJson   Json?
+  agreement          String
+  differencePercent  Float?
+  /// Each model's raw output plus notes â€” the discrepancy log (Â§17).
+  modelsJson         Json
+  failuresJson       Json
+  assumptionsJson    Json
+  calculationVersion String
+  createdAt          DateTime @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+/// Household energy profile. Confirmed values stay distinct from extracted ones.
+model SolarEnergyProfile {
+  id                        String   @id @default(cuid())
+  projectId                 String   @unique
+  basis                     String
+  annualKwh                 Float?
+  monthlyKwhJson            Json?
+  averageMonthlyBillDollars Float?
+  blendedRateDollarsPerKwh  Float?
+  fixedMonthlyChargeDollars Float?
+  /// Homeowner-declared future loads (EV, heat pump, ...). Never inferred.
+  futureLoadsJson           Json?
+  assumptionsJson           Json?
+  anomaliesJson             Json?
+  calculationVersion        String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+/// A tariff we retrieved, with its freshness and whether the homeowner owned it.
+model SolarTariffSnapshot {
+  id                             String   @id @default(cuid())
+  projectId                      String
+  providerId                     String
+  tariffId                       String
+  utilityName                    String
+  tariffName                     String
+  effectiveDate                  String?
+  blendedEnergyRateDollarsPerKwh Float?
+  fixedMonthlyChargeDollars      Float?
+  hasComplexStructure            Boolean  @default(true)
+  sourceUri                      String?
+  retrievedAt                    DateTime
+  homeownerConfirmed             Boolean  @default(false)
+  isActive                       Boolean  @default(true)
+  createdAt                      DateTime @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, isActive])
+}
+
+/// Versioned solar cost estimate. inputSnapshotJson plus the version columns
+/// are what keep a historical estimate explainable after the rules change.
+model SolarCostEstimate {
+  id                      String               @id @default(cuid())
+  projectId               String
+  layoutId                String?
+  configurationId         String?
+  installedCostLow        Int
+  installedCostHigh       Int
+  netCostLow              Int?
+  netCostHigh             Int?
+  dollarsPerWattLow       Float
+  dollarsPerWattHigh      Float
+  /// False when the pricing config was not approved for public display.
+  displayable             Boolean              @default(false)
+  withheldReason          String?
+  confidenceLevel         SolarConfidenceLevel
+  lineItemsJson           Json
+  appliedIncentivesJson   Json
+  assumptionsJson         Json
+  exclusionsJson          Json
+  costDriversJson         Json
+  confidenceJson          Json
+  inputSnapshotJson       Json
+  pricingConfigVersion    String
+  calculationVersionsJson Json
+  createdAt               DateTime             @default(now())
+
+  project       SolarProject                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  configuration SolarEstimatorConfiguration? @relation(fields: [configurationId], references: [id])
+
+  @@index([projectId])
+  @@index([configurationId])
+}
+
+/// Versioned, reviewable pricing + model configuration (Â§47).
+model SolarEstimatorConfiguration {
+  id                   String            @id @default(cuid())
+  name                 String
+  version              String            @unique
+  market               String
+  /// unvalidated_planning_default | renovessa_market_data | reviewed_external_benchmark
+  dataBasis            String            @default("unvalidated_planning_default")
+  sampleCount          Int               @default(0)
+  mostRecentSampleDate DateTime?
+  validFrom            DateTime
+  validTo              DateTime?
+  status               SolarConfigStatus @default(DRAFT)
+  configurationJson    Json
+  methodology          String?
+  createdBy            String?
+  approvedBy           String?
+  createdAt            DateTime          @default(now())
+  publishedAt          DateTime?
+
+  estimates SolarCostEstimate[]
+
+  @@index([status])
+  @@index([version])
+}
+
+/// Reviewed incentive register. Nothing is displayed unless a row exists here
+/// with a source, effective dates and a verification stamp (Â§26â€“28).
+model SolarIncentiveProgram {
+  id                    String                 @id @default(cuid())
+  name                  String
+  jurisdiction          String
+  jurisdictionLevel     SolarJurisdictionLevel
+  stateCode             String?
+  countyName            String?
+  administrator         String?
+  technology            String                 @default("Solar Photovoltaic")
+  incentiveType         String
+  /// PERCENT_OF_COST | DOLLARS_PER_WATT | FLAT_AMOUNT | OTHER
+  valueType             String
+  value                 Float?
+  maximumAmount         Float?
+  eligibilitySummary    String                 @db.Text
+  /// POTENTIALLY_APPLICABLE | LIKELY_APPLICABLE | REQUIRES_VERIFICATION
+  applicability         String                 @default("REQUIRES_VERIFICATION")
+  homeownerRequirements Json?
+  effectiveFrom         DateTime?
+  expiresOn             DateTime?
+  sourceName            String
+  sourceUrl             String
+  lastVerifiedAt        DateTime
+  verifiedBy            String?
+  status                SolarIncentiveStatus   @default(DRAFT)
+  notes                 String?                @db.Text
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  @@index([status, jurisdictionLevel])
+  @@index([stateCode])
+}
+
+/// Homeowner-uploaded documents (utility bills, panel/meter/roof photos).
+/// Stored outside the public web root and served through an authorized route.
+model SolarDocument {
+  id                   String   @id @default(cuid())
+  projectId            String
+  /// utility_bill | main_panel_photo | meter_photo | roof_photo | attic_photo | existing_solar | other
+  kind                 String
+  fileName             String
+  mimeType             String
+  sizeBytes            Int
+  storagePath          String
+  caption              String?
+  /// AI extraction draft, if any. Never used unconfirmed in a calculation (Â§19).
+  extractionJson       Json?
+  extractionConfidence Float?
+  homeownerConfirmed   Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+/// Contractor-ready Solar Project Brief snapshot.
+model SolarProjectBrief {
+  id             String    @id @default(cuid())
+  projectId      String
+  version        Int       @default(1)
+  briefJson      Json
+  schemaVersion  String
+  shareToken     String?   @unique
+  shareExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  project SolarProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }

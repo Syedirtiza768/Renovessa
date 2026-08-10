@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
-import { bathroomRockvilleEnabled, bathroomLandingEnabled } from "@/lib/feature-flags";
+import { bathroomRockvilleEnabled, bathroomLandingEnabled, solarLandingEnabled } from "@/lib/feature-flags";
 
 const routes = [
   "/",
@@ -44,10 +44,19 @@ const genericBathroomRoutes = [
   "/bathroom-remodeling",
 ];
 
+// The planner itself is intentionally absent: it is a private planning session
+// and is served noindex. Location pages are added only where genuinely
+// localized content exists — no mass-generated thin pages.
+const solarRoutes = [
+  "/solar",
+  "/solar/methodology",
+];
+
 export default function sitemap(): MetadataRoute.Sitemap {
   let allRoutes = [...routes];
   if (bathroomRockvilleEnabled()) allRoutes = [...allRoutes, ...bathroomRoutes];
   if (bathroomLandingEnabled()) allRoutes = [...allRoutes, ...genericBathroomRoutes];
+  if (solarLandingEnabled()) allRoutes = [...allRoutes, ...solarRoutes];
   return allRoutes.map((route) => ({
     url: absoluteUrl(route),
     lastModified: new Date("2026-07-26"),
@@ -57,7 +66,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ? 1
         : route === "/estimate"
         ? 0.9
-        : route.startsWith("/bathroom-remodeling")
+        : route.startsWith("/bathroom-remodeling") || route.startsWith("/solar")
         ? 0.85
         : 0.7,
   }));

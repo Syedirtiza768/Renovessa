@@ -75,47 +75,69 @@ export const BATHROOM_DEMO_MODE = flag("BATHROOM_DEMO_MODE");
 // Independent of the bathroom flags. Defaults OFF.
 // ---------------------------------------------------------------------------
 
-export const SOLAR_LANDING_ENABLED = flag("SOLAR_LANDING_ENABLED");
-export const SOLAR_PLANNER_ENABLED = flag("SOLAR_PLANNER_ENABLED");
-/** Google Solar API roof analysis. When off, the planner runs in manual-roof mode only. */
-export const SOLAR_GEOSPATIAL_ENABLED = flag("SOLAR_GEOSPATIAL_ENABLED");
-/** NREL PVWatts v8 second production model. */
-export const SOLAR_PVWATTS_ENABLED = flag("SOLAR_PVWATTS_ENABLED");
-/** OpenEI utility rate lookup. */
-export const SOLAR_UTILITY_RATES_ENABLED = flag("SOLAR_UTILITY_RATES_ENABLED");
-/** Incentive display. Even when on, nothing shows unless verified programs exist. */
-export const SOLAR_INCENTIVES_ENABLED = flag("SOLAR_INCENTIVES_ENABLED");
-/** Battery / storage branch (Phase 3). */
-export const SOLAR_STORAGE_ENABLED = flag("SOLAR_STORAGE_ENABLED");
-/** Contractor-ready brief + RFP promotion. */
-export const SOLAR_PROJECT_BRIEF_ENABLED = flag("SOLAR_PROJECT_BRIEF_ENABLED");
-/** Forces every solar flag on for local dev / demo. */
-export const SOLAR_DEMO_MODE = flag("SOLAR_DEMO_MODE");
+/**
+ * Solar flags are read at CALL time, not module-load time.
+ *
+ * The bathroom flags above are module-level constants, which Next inlines when
+ * it statically prerenders a page — so a page gated on them bakes whatever the
+ * env was during `next build`. Renovessa builds one Docker image and supplies
+ * env at container start, so that would freeze the flag at image-build time.
+ * Reading per call keeps the runtime env authoritative in any rendering mode.
+ */
+function solarDemoMode(): boolean {
+  return flag("SOLAR_DEMO_MODE");
+}
 
 export function solarLandingEnabled(): boolean {
-  return SOLAR_LANDING_ENABLED || SOLAR_DEMO_MODE;
+  return flag("SOLAR_LANDING_ENABLED") || solarDemoMode();
 }
 
 /** Is the planner reachable at all? The landing page can be live while it is not. */
 export function solarPlannerUsable(): boolean {
-  return SOLAR_PLANNER_ENABLED || SOLAR_DEMO_MODE;
+  return flag("SOLAR_PLANNER_ENABLED") || solarDemoMode();
 }
 
+/** Google Solar API roof analysis. When off, the planner runs manual-roof only. */
+export function solarGeospatialEnabled(): boolean {
+  return flag("SOLAR_GEOSPATIAL_ENABLED") || solarDemoMode();
+}
+
+/** NREL PVWatts v8, the second production model. */
+export function solarPvwattsEnabled(): boolean {
+  return flag("SOLAR_PVWATTS_ENABLED") || solarDemoMode();
+}
+
+/** OpenEI utility rate lookup. */
+export function solarUtilityRatesEnabled(): boolean {
+  return flag("SOLAR_UTILITY_RATES_ENABLED") || solarDemoMode();
+}
+
+/** Incentive display. Even when on, nothing shows unless verified programs exist. */
+export function solarIncentivesEnabled(): boolean {
+  return flag("SOLAR_INCENTIVES_ENABLED") || solarDemoMode();
+}
+
+/** Battery / storage branch (Phase 3). */
+export function solarStorageEnabled(): boolean {
+  return flag("SOLAR_STORAGE_ENABLED");
+}
+
+/** Contractor-ready brief + RFP promotion. */
 export function solarBriefEnabled(): boolean {
-  return SOLAR_PROJECT_BRIEF_ENABLED || SOLAR_DEMO_MODE;
+  return flag("SOLAR_PROJECT_BRIEF_ENABLED") || solarDemoMode();
 }
 
 export function solarFlagSnapshot() {
   return {
     landing: solarLandingEnabled(),
     planner: solarPlannerUsable(),
-    geospatial: SOLAR_GEOSPATIAL_ENABLED || SOLAR_DEMO_MODE,
-    pvwatts: SOLAR_PVWATTS_ENABLED || SOLAR_DEMO_MODE,
-    utilityRates: SOLAR_UTILITY_RATES_ENABLED || SOLAR_DEMO_MODE,
-    incentives: SOLAR_INCENTIVES_ENABLED || SOLAR_DEMO_MODE,
-    storage: SOLAR_STORAGE_ENABLED,
+    geospatial: solarGeospatialEnabled(),
+    pvwatts: solarPvwattsEnabled(),
+    utilityRates: solarUtilityRatesEnabled(),
+    incentives: solarIncentivesEnabled(),
+    storage: solarStorageEnabled(),
     projectBrief: solarBriefEnabled(),
-    demoMode: SOLAR_DEMO_MODE,
+    demoMode: solarDemoMode(),
   };
 }
 

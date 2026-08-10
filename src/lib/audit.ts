@@ -8,6 +8,7 @@ export async function logAuditEvent(params: {
   projectRequestId?: string;
   appointmentId?: string;
   bathroomProjectId?: string;
+  solarProjectId?: string;
   metadata?: Prisma.InputJsonValue;
 }) {
   return prisma.auditEvent.create({
@@ -18,6 +19,7 @@ export async function logAuditEvent(params: {
       projectRequestId: params.projectRequestId,
       appointmentId: params.appointmentId,
       bathroomProjectId: params.bathroomProjectId,
+      solarProjectId: params.solarProjectId,
       metadata: params.metadata,
     },
   });
