@@ -88,7 +88,12 @@ export function providerAvailabilityReport(): ProviderAvailability[] {
   };
 
   push(getGeospatialProvider(), "google-solar", "Google Solar API (Building Insights)", "Disabled by feature flag");
-  push(getProductionModelProvider(), "pvwatts-v8", "NREL PVWatts v8", "Disabled by feature flag");
+  push(
+    getProductionModelProvider(),
+    "second-production-model",
+    "Independent production model (PVGIS / PVWatts)",
+    "Disabled by feature flag",
+  );
   push(getUtilityRateProvider(), "openei-urdb", "OpenEI Utility Rate Database", "Disabled by feature flag");
   push(
     getIncentiveProvider(),

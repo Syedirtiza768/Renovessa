@@ -4,7 +4,7 @@ import Link from "next/link";
 import { PublicPage, InfoCard } from "@/components/marketing/PublicPage";
 import { pageMetadata } from "@/lib/seo";
 import { solarLandingEnabled } from "@/lib/feature-flags";
-import { providerAvailabilityReport } from "@/lib/solar/providers";
+import { providerAvailabilityReport, getProductionModelProvider } from "@/lib/solar/providers";
 import { resolvePricingConfig } from "@/lib/solar/config-loader";
 import { calculationVersionSnapshot } from "@/lib/solar/versions";
 import { DEFAULT_AGREEMENT_THRESHOLDS } from "@/lib/solar/production";
@@ -32,6 +32,10 @@ export default async function SolarMethodologyPage() {
   if (!solarLandingEnabled()) notFound();
 
   const providers = providerAvailabilityReport();
+  // Name the model that is actually running, not the one we happen to prefer:
+  // this page's whole purpose is that it cannot drift from the system.
+  const secondModel = getProductionModelProvider();
+  const secondModelLabel = secondModel?.availability.label ?? "no second model (currently unavailable)";
   const { config } = await resolvePricingConfig();
   const versions = calculationVersionSnapshot();
   const t = config.production.agreementThresholds ?? DEFAULT_AGREEMENT_THRESHOLDS;
@@ -101,7 +105,7 @@ export default async function SolarMethodologyPage() {
               {(config.production.dcToAcDerate * 100).toFixed(0)}% DC-to-AC ratio so it&rsquo;s comparable.
             </li>
             <li>
-              <strong className="text-ink-100">Model B</strong> runs NREL PVWatts v8 against each roof face
+              <strong className="text-ink-100">Model B</strong> runs {secondModelLabel} against each roof face
               separately, using that face&rsquo;s own tilt and orientation at {config.production.systemLossesPercent}%
               system losses, then aggregates. We never send an averaged tilt or orientation, because averaging
               materially different roof planes loses real accuracy.
@@ -260,8 +264,8 @@ export default async function SolarMethodologyPage() {
             </table>
           </div>
           <p className="mt-3 text-sm text-ink-40">
-            Production modelling uses NREL&rsquo;s PVWatts® v8. Utility rate data, where available, comes from the
-            OpenEI Utility Rate Database. Roof analysis uses the Google Solar API.
+            Independent production modelling currently uses {secondModelLabel}. Utility rate data, where available,
+            comes from the OpenEI Utility Rate Database. Roof analysis and aerial imagery use Google Maps Platform.
           </p>
         </section>
 
