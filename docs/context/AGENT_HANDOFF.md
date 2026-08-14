@@ -1,5 +1,20 @@
 # Agent Handoff
 
+## 2026-08-14 - Public 10-trade estimator catalog and logo refresh
+
+### Done
+
+- Public catalog narrowed to Bathroom Remodeling, Solar, Kitchen Remodeling, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing.
+- Added `/estimate/kitchen`, `/estimate/roofing`, `/estimate/siding`, `/estimate/windows`, `/estimate/flooring`, `/estimate/hvac`, `/estimate/electrical`, and `/estimate/plumbing` dedicated entries.
+- Added Siding wizard questions and pricing logic; Bathroom/Solar cards route to their existing dedicated experiences.
+- Updated the shared inline wordmark, public SVG logo, and standard public header/footer to the roofline-and-doorway mark.
+
+### Verification
+
+- `npx.cmd tsc --noEmit` clean.
+- `npm.cmd test` passes: 223/223.
+- Production build compiles and reaches page generation, but the local configured PostgreSQL server is unavailable and the Next build does not complete in this environment.
+
 ## 2026-08-14 - RFQ confirmation email and homeowner portal access
 
 ### Done

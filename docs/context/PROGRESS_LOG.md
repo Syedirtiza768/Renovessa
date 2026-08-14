@@ -1,4 +1,12 @@
 
+# 2026-08-14 — Public 10-trade estimator catalog and logo refresh
+
+- Narrowed the public trade source of truth to the requested 10 trades: Bathroom Remodeling, Solar, Kitchen Remodeling, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Legacy categories remain out of the public website catalog.
+- Added dedicated `/estimate/{trade}` routes for Kitchen, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Added Siding-specific scope questions and DMV planning-range logic.
+- Routed Bathroom Remodeling and Solar catalog entries to their existing dedicated experiences; corrected the interactive house selector so Solar and Siding map to their own estimators.
+- Replaced the ascending-bar logo with a roofline-and-doorway mark across the inline wordmark, public header/footer, and reusable SVG asset.
+- Verification: `npx.cmd tsc --noEmit` clean; `npm.cmd test` 223/223 passing. `npm.cmd run build` compiles and generates pages but cannot complete in this workspace because the configured local PostgreSQL server is not running.
+
 # 2026-08-10 — Bathroom Remodeling: canonical schema, real location, landing + planner UX improvements
 
 - **Canonical answer schema** — Added `src/lib/bathroom/answer-normalization.ts` with canonical keys (`lengthFt`, `widthFt`, `ceilingFt`, `measurementMethod`, `zipCode`, `city`, `locationId`) and bidirectional legacy migration. All ingress points (planner-types on load, preview API, RequirementsPromptStep, estimator input derivation) normalize before use.

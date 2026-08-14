@@ -1,6 +1,6 @@
 # Routes and Screens
 
-> **Status:** Implemented in the Next.js App Router. Last reviewed 2026-07-23.
+> **Status:** Implemented in the Next.js App Router. Last reviewed 2026-08-14.
 
 ## Public acquisition and SEO routes
 
@@ -8,6 +8,7 @@
 |---|---|---|
 | `/` | DMV estimator + managed RFQ landing page | Index |
 | `/estimate` | Crawlable estimate-wizard entry | Index |
+| `/estimate/kitchen`, `/estimate/roofing`, `/estimate/siding`, `/estimate/windows`, `/estimate/flooring`, `/estimate/hvac`, `/estimate/electrical`, `/estimate/plumbing` | Dedicated trade estimator entries backed by the shared scoped wizard | Index |
 | `/how-it-works` | Estimate -> RFQ -> contractor-response process | Index |
 | `/for-homeowners` | Homeowner explanation and embedded estimator | Index |
 | `/for-contractors` | Contractor RFQ application | Index |

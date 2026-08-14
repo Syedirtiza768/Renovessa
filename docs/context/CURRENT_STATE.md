@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-08-10
+> Last updated: 2026-08-14
 
 ## Phase
 
@@ -13,11 +13,12 @@
 - PostgreSQL schema via Prisma (`prisma/schema.prisma`)
 - Demo seed data (`prisma/seed.ts`) aligned with blueprint demo accounts
 - Docker deployment on port **7090** (`docker-compose.yml`, `Dockerfile`)
-- Reusable public SVG logo at `public/renovessa-logo.svg`, aligned to the existing architectural-bar brand motif
+- Reusable public SVG logo at `public/renovessa-logo.svg`, using the current roofline-and-doorway Renovessa mark
 
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
 - **Estimate wizard** — sole homeowner request path: trade scoping → DMV ballpark → RFQ preview → submit → contractor bids
+- **Public trade scope (2026-08-14)** — the website now presents only 10 trades: Bathroom Remodeling, Solar, Kitchen Remodeling, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Bathroom and Solar route to their dedicated experiences; the other eight have dedicated `/estimate/{trade}` entry routes backed by the shared scoped wizard.
 - **Mobile:** fullscreen immersive RFQ wizard (&lt;768px) with sticky progress/footer, one-question sub-steps, session draft resume
 - RFQ submit sends **homeowner confirmation email** (SendGrid); contractor apply sends **application confirmation email**
 - Ops phone: **(571) 460-0006**
