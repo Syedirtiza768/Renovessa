@@ -76,7 +76,7 @@
 
 ### Core Workflows
 - RFQ / project request submission with audit trail events + confirmation email
-- Public RFQs never create/reset accounts; AI advisor submissions create only unassigned RFQs, not appointments
+- Public RFQs provision or reuse a homeowner portal account so the confirmation email can link to the generated request; AI advisor submissions still create only RFQs, not appointments
 - Required versioned Terms/Privacy clickwrap plus optional, unchecked communication consent with immutable evidence
 - Durable email/phone/SMS suppressions enforced before bulk email and outbound calls
 - Public estimator numeric ranges fail closed until the exact claim-evidence model version is approved

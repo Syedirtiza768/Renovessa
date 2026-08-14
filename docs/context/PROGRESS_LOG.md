@@ -337,3 +337,10 @@
 - Added `segmentPlaneCorners()` in `src/lib/solar/geo.ts`: recovers the across-slope × down-slope dimensions by inverting the exact bbox↔azimuth 2×2 system and redraws the face outline rotated about the bbox centre — exact for rectangular planes, same-centre axis-aligned fallback near 45°+k·90° (W/H inseparable) and for degenerate inputs
 - `RoofVisualizer` now draws every roof-face polygon (sunlight ramp, hover, excluded) in the azimuth-aligned frame the panels use; hover/click targets follow the roof edges too
 - 5 new geometry tests (`segment-plane.test.ts`): dimension/orientation recovery across 7 azimuths, centre preservation, exact bbox match at due-south, 45° fallback, no collapse/inversion; full suite 221/221 green, tsc clean
+# 2026-08-14 - RFQ confirmation email and homeowner portal access
+
+- Changed the homeowner RFQ confirmation email to include only initial request information (reference, project type, ZIP), the direct generated-request link, and portal login details instead of the full request description.
+- Added transactional homeowner account provisioning for anonymous standard, advisor, bathroom, and solar RFQ submissions. New accounts receive a random temporary password in the email; existing accounts are reused without password reset.
+- Linked promoted bathroom and solar planner projects to the homeowner account alongside the shared `ProjectRequest`.
+- Plain-text email links now retain their URLs, so the request link works in text-only email clients too.
+- Validation: full suite 221/221 green; `tsc --noEmit` clean.

@@ -18,7 +18,7 @@ export type WizardQuestion = {
 };
 
 export type TradeWizardConfig = {
-  trade: LandingCategoryId;
+  trade: string;
   intro: string;
   questions: WizardQuestion[];
 };
@@ -88,7 +88,7 @@ export const SHARED_CONTEXT_QUESTIONS: WizardQuestion[] = [
   },
 ];
 
-export const TRADE_WIZARDS: Record<LandingCategoryId, TradeWizardConfig> = {
+export const TRADE_WIZARDS: Record<string, TradeWizardConfig> = {
   hvac: {
     trade: "hvac",
     intro: "We'll size the HVAC job the way a dispatcher would — what's broken, how big the home is, and whether you need a repair or a replacement.",
@@ -213,6 +213,77 @@ export const TRADE_WIZARDS: Record<LandingCategoryId, TradeWizardConfig> = {
           { value: "slate", label: "Slate" },
           { value: "match", label: "Match existing / undecided" },
         ],
+      },
+    ],
+  },
+  siding: {
+    trade: "siding",
+    intro: "Siding scope depends on the wall area, material, stories, and whether the existing cladding needs to come off first.",
+    questions: [
+      {
+        id: "job_type",
+        label: "What kind of siding work?",
+        type: "single",
+        required: true,
+        options: [
+          { value: "repair", label: "Repair a section" },
+          { value: "replace", label: "Replace existing siding" },
+          { value: "new", label: "New siding on an addition / new build" },
+        ],
+      },
+      {
+        id: "sqft",
+        label: "Approximate exterior wall area",
+        help: "If you do not know the wall area, use your home's heated square footage as a rough proxy.",
+        type: "number",
+        min: 500,
+        max: 10000,
+        step: 100,
+        suffix: "sq ft",
+        placeholder: "2000",
+        required: true,
+      },
+      {
+        id: "material",
+        label: "Preferred siding material",
+        type: "single",
+        required: true,
+        options: [
+          { value: "vinyl", label: "Vinyl" },
+          { value: "fiber_cement", label: "Fiber cement" },
+          { value: "engineered_wood", label: "Engineered wood" },
+          { value: "wood", label: "Wood" },
+          { value: "undecided", label: "Undecided" },
+        ],
+      },
+      {
+        id: "stories",
+        label: "How many stories?",
+        type: "single",
+        required: true,
+        options: [
+          { value: "1", label: "1 story" },
+          { value: "2", label: "2 stories" },
+          { value: "3+", label: "3+ stories / difficult access" },
+        ],
+      },
+      {
+        id: "remove_old",
+        label: "Remove the existing siding?",
+        type: "single",
+        required: true,
+        options: [
+          { value: "yes", label: "Yes — tear-off included" },
+          { value: "no", label: "No — install over / new construction" },
+          { value: "unsure", label: "Not sure" },
+        ],
+      },
+      {
+        id: "quality",
+        label: "Finish level",
+        type: "single",
+        required: true,
+        options: FINISH,
       },
     ],
   },
@@ -1013,8 +1084,8 @@ export const TRADE_WIZARDS: Record<LandingCategoryId, TradeWizardConfig> = {
   },
 };
 
-export function getTradeWizard(trade: LandingCategoryId): TradeWizardConfig {
-  return TRADE_WIZARDS[trade];
+export function getTradeWizard(trade: LandingCategoryId): TradeWizardConfig | null {
+  return TRADE_WIZARDS[trade] ?? null;
 }
 
 export function getWizardCategories() {
@@ -1024,7 +1095,7 @@ export function getWizardCategories() {
 /** Flat label map for RFQ text (question id → human label). */
 export function buildQuestionLabelMap(trade: LandingCategoryId): Record<string, string> {
   const map: Record<string, string> = {};
-  for (const q of TRADE_WIZARDS[trade].questions) map[q.id] = q.label;
+  for (const q of getTradeWizard(trade)?.questions ?? []) map[q.id] = q.label;
   for (const q of SHARED_CONTEXT_QUESTIONS) map[q.id] = q.label;
   return map;
 }

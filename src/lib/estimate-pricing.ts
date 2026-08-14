@@ -47,7 +47,7 @@ function mul(baseLow: number, baseHigh: number, factor: number) {
 }
 
 /** DMV-oriented ballpark engine driven by wizard answers. */
-function calculateRange(trade: LandingCategoryId, answers: EstimateAnswers): CalculatedRange {
+function calculateRange(trade: string, answers: EstimateAnswers): CalculatedRange {
   const drivers: string[] = [];
   const quality = answers.finish_level || answers.quality || "standard";
   const urgency = answers.urgency || "";
@@ -125,6 +125,32 @@ function calculateRange(trade: LandingCategoryId, answers: EstimateAnswers): Cal
       drivers.push(`~${sq} squares estimated`);
       drivers.push(`${material} material tier`);
       return range(perSqLow * sq, perSqHigh * sq, drivers, "Full roof replacement ballpark", "rough");
+    }
+
+    case "siding": {
+      const job = answers.job_type || "replace";
+      const sqft = clamp(Number(answers.sqft || "2000"), 500, 10000);
+      const material = answers.material || "vinyl";
+      const stories = answers.stories || "1";
+      const materialFactor =
+        material === "fiber_cement" ? 1.35 : material === "engineered_wood" ? 1.25 : material === "wood" ? 1.5 : 1;
+      const storyFactor = stories === "2" ? 1.1 : stories === "3+" ? 1.25 : 1;
+      const tearOffFactor = answers.remove_old === "yes" ? 1.2 : 1;
+
+      if (job === "repair") {
+        return range(600, 4500, drivers, "Siding repair / section replacement", "wide");
+      }
+
+      drivers.push(`~${sqft} sq ft of exterior wall area`);
+      drivers.push(`${material} siding material tier`);
+      if (answers.remove_old === "yes") drivers.push("Existing siding tear-off included");
+      return range(
+        sqft * 7 * materialFactor * storyFactor * tearOffFactor,
+        sqft * 15 * materialFactor * storyFactor * tearOffFactor * qualityFactor,
+        drivers,
+        job === "new" ? "New siding installation" : "Full siding replacement",
+        "rough",
+      );
     }
 
     case "kitchen": {

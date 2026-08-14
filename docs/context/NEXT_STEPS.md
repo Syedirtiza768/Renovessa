@@ -101,4 +101,4 @@ Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live*
 6. **Rotate the previously exposed SendGrid API key** — create a replacement key, update production without printing it, restart the app, then revoke the exposed key
 7. **Enable the signed SendGrid event webhook** — point it to `https://renovessa.com/api/webhooks/sendgrid/events`, enable delivery/bounce/drop/spam/unsubscribe events, enable signature verification, store the public verification key, and test the endpoint
 8. **Ops bid workflow for estimate-wizard RFQs** - review `source=estimate_wizard` leads, solicit contractor bids, return options to homeowner
-9. **UAT RFQ confirmations** - submit test RFQ + contractor application; confirm SendGrid emails arrive after key rotation
+9. **UAT RFQ confirmations** - submit a standard anonymous RFQ and an existing-homeowner RFQ; confirm SendGrid emails contain only initial information, the generated-request URL, and the appropriate portal credentials after key rotation

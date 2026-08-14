@@ -208,6 +208,20 @@ pending production deploy
 
 ---
 
+## 2026-08-14 - RFQ confirmation email and homeowner portal access
+
+### Decision
+RFQ confirmation emails now carry only initial request information (reference, project type, and ZIP), a direct link to the generated homeowner request, and portal login instructions. Anonymous RFQ submissions provision a HOMEOWNER account in the same transaction as the request and email a random temporary password for a new account. Existing homeowner accounts are reused without resetting or emailing their password. The shared behavior applies to the standard RFQ, advisor, bathroom, and solar request-promotion paths.
+
+### Reason
+The prior confirmation email duplicated the complete request description and public requests had no portal account, so the homeowner could not use the request link or receive portal credentials.
+
+### Impact
+Added `src/lib/homeowner-account.ts`; linked `ProjectRequest` (and promoted bathroom/solar projects) to the homeowner account; changed `sendRfqConfirmationEmail` to render the short confirmation, request link, and account access block; plain-text email links now retain their URLs. Temporary passwords are hashed before persistence and existing account passwords are never changed.
+
+### Status
+Accepted and implemented. Full suite: 221/221 tests pass; TypeScript clean.
+
 ## 2026-08-10 — Share-Based Estimator Decomposition (Consistency Rewrite)
 
 ### Decision

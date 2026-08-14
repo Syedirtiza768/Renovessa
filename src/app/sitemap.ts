@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
 import { bathroomRockvilleEnabled, bathroomLandingEnabled, solarLandingEnabled } from "@/lib/feature-flags";
+import { STANDARD_ESTIMATOR_IDS } from "@/lib/landing-data";
 
 /**
  * Generated per request, not prerendered.
@@ -16,6 +17,7 @@ export const dynamic = "force-dynamic";
 const routes = [
   "/",
   "/estimate",
+  ...STANDARD_ESTIMATOR_IDS.map((trade) => `/estimate/${trade}`),
   "/how-it-works",
   "/for-homeowners",
   "/for-contractors",

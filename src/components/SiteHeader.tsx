@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Wordmark } from "@/components/landing/Wordmark";
 
 const NAV_LINKS = [
   { href: "/estimate", label: "Estimate" },
@@ -18,8 +19,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-rule bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="text-xl font-bold tracking-tight text-slate">
-          Renovessa
+        <Link href="/" aria-label="Renovessa home">
+          <Wordmark />
         </Link>
 
         <nav className="hidden items-center gap-5 lg:flex" aria-label="Primary">

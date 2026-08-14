@@ -16,10 +16,11 @@ export type EstimateClaimRecord = {
 
 const EVIDENCE_FILE = "docs/compliance/substantiation/ESTIMATE_RANGE_REGISTER.md";
 
-function variant(trade: LandingCategoryId, answers: Record<string, string>) {
+function variant(trade: string, answers: Record<string, string>) {
   switch (trade) {
     case "hvac": return answers.job_type || "repair";
     case "roofing": return ["repair", "leak"].includes(answers.job_type || "repair") ? "repair" : answers.job_type || "repair";
+    case "siding": return answers.job_type || "replace";
     case "kitchen": return answers.scope || "refresh";
     case "bathroom": return answers.scope || "update";
     case "basement": return "finish";

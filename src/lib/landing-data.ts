@@ -1,27 +1,43 @@
 import { FIRST_JOB_MODE, PILOT_TRADE, OPS_PHONE } from "@/lib/first-job-config";
 
 export const LANDING_CATEGORIES = [
-  { id: "hvac", ref: "01", label: "HVAC", description: "Furnace, AC, heat pumps, ductwork, tune-ups", houseZone: "hvac" },
-  { id: "roofing", ref: "02", label: "Roofing", description: "Repairs, replacements, leak fixes, gutters", houseZone: "roofing" },
+  { id: "bathroom", ref: "01", label: "Bathroom Remodeling", description: "Tile, vanities, walk-in showers, soaking tubs", houseZone: "bathroom" },
+  { id: "solar", ref: "02", label: "Solar", description: "Roof potential, panels, production, and installer-ready planning", houseZone: "solar" },
   { id: "kitchen", ref: "03", label: "Kitchen Remodeling", description: "Cabinets, countertops, full renovations", houseZone: "kitchen" },
-  { id: "bathroom", ref: "04", label: "Bathroom Remodeling", description: "Tile, vanities, walk-in showers, soaking tubs", houseZone: "bathroom" },
-  { id: "basement", ref: "05", label: "Basement Finishing", description: "Framing, drywall, flooring, permits", houseZone: "plumbing" },
-  { id: "plumbing", ref: "06", label: "Plumbing", description: "Leaks, water heaters, repiping, fixtures", houseZone: "plumbing" },
-  { id: "electrical", ref: "07", label: "Electrical", description: "Panels, wiring, outlets, lighting, EV chargers", houseZone: "electrical" },
-  { id: "windows", ref: "08", label: "Windows & Doors", description: "Replacements, glass, frames, weather seals", houseZone: "windows" },
-  { id: "deck", ref: "09", label: "Deck & Patio", description: "New builds, repairs, staining, permits", houseZone: null },
-  { id: "flooring", ref: "10", label: "Flooring", description: "Hardwood, tile, LVP, carpet, refinishing", houseZone: "flooring" },
-  { id: "painting", ref: "11", label: "Painting", description: "Interior, exterior, trim, decks, cabinets", houseZone: null },
-  { id: "handyman", ref: "12", label: "General Repairs", description: "Drywall, doors, tile, fences, handyman tasks", houseZone: null },
-  { id: "design-build", ref: "13", label: "Design-Build", description: "Additions, ADUs, whole-home projects from concept through construction", houseZone: null },
-  { id: "general-contracting", ref: "14", label: "General Contracting", description: "Multi-trade project management, structural work, permits", houseZone: null },
-  { id: "hardscaping", ref: "15", label: "Hardscaping & Outdoor Living", description: "Patios, walkways, retaining walls, outdoor kitchens, fire pits", houseZone: null },
-  { id: "masonry", ref: "16", label: "Masonry & Concrete", description: "Brick, block, stone, chimneys, driveways, foundations", houseZone: null },
-  { id: "remodeling", ref: "17", label: "Remodeling", description: "Whole-home, multi-room, and addition remodeling", houseZone: null },
-  { id: "restoration", ref: "18", label: "Restoration", description: "Water, fire, mold, and storm damage repair", houseZone: null },
+  { id: "roofing", ref: "04", label: "Roofing", description: "Repairs, replacements, leak fixes, gutters", houseZone: "roofing" },
+  { id: "siding", ref: "05", label: "Siding", description: "Vinyl, fiber cement, wood, repairs, and replacement", houseZone: "siding" },
+  { id: "windows", ref: "06", label: "Windows & Doors", description: "Replacements, glass, frames, weather seals", houseZone: "windows" },
+  { id: "flooring", ref: "07", label: "Flooring", description: "Hardwood, tile, LVP, carpet, refinishing", houseZone: "flooring" },
+  { id: "hvac", ref: "08", label: "HVAC", description: "Furnace, AC, heat pumps, ductwork, tune-ups", houseZone: "hvac" },
+  { id: "electrical", ref: "09", label: "Electrical", description: "Panels, wiring, outlets, lighting, EV chargers", houseZone: "electrical" },
+  { id: "plumbing", ref: "10", label: "Plumbing", description: "Leaks, water heaters, repiping, fixtures", houseZone: "plumbing" },
 ] as const;
 
 export type LandingCategoryId = (typeof LANDING_CATEGORIES)[number]["id"];
+
+export type SpecializedEstimatorId = "bathroom" | "solar";
+export type StandardEstimatorId = Exclude<LandingCategoryId, SpecializedEstimatorId>;
+
+export const STANDARD_ESTIMATOR_IDS: StandardEstimatorId[] = [
+  "kitchen",
+  "roofing",
+  "siding",
+  "windows",
+  "flooring",
+  "hvac",
+  "electrical",
+  "plumbing",
+];
+
+export function isSpecializedEstimator(id: LandingCategoryId): id is SpecializedEstimatorId {
+  return id === "bathroom" || id === "solar";
+}
+
+export function getTradeEstimatorPath(id: LandingCategoryId): string {
+  if (id === "bathroom") return "/bathroom-remodeling";
+  if (id === "solar") return "/solar";
+  return `/estimate/${id}`;
+}
 
 export function getVisibleCategories() {
   if (!FIRST_JOB_MODE) return LANDING_CATEGORIES;
@@ -33,18 +49,16 @@ export function getVisibleCategories() {
 export const HERO_SERVICE_TAGS = FIRST_JOB_MODE
   ? [PILOT_TRADE]
   : [
+      "Bathroom Remodeling",
+      "Solar",
+      "Kitchen Remodeling",
       "Roofing",
-      "HVAC",
-      "Kitchens",
-      "Bathrooms",
-      "Windows",
-      "Plumbing",
-      "Electrical",
-      "Flooring",
-      "Painting",
       "Siding",
-      "Basement",
-      "Decks",
+      "Windows & Doors",
+      "Flooring",
+      "HVAC",
+      "Electrical",
+      "Plumbing",
     ];
 
 export const HOW_IT_WORKS_STEPS = [
@@ -135,8 +149,8 @@ export const FAQ_ITEMS = [
 
 export const HOUSE_ZONES = [
   { id: "roofing", marker: "1", label: "Roofing", example: "Shingles, leaks, gutters" },
-  { id: "solar", marker: "2", label: "Solar", example: "Panels, inverters", mapsTo: "roofing" as const },
-  { id: "siding", marker: "3", label: "Siding", example: "Vinyl, fiber cement", mapsTo: "handyman" as const },
+  { id: "solar", marker: "2", label: "Solar", example: "Panels, production" },
+  { id: "siding", marker: "3", label: "Siding", example: "Vinyl, fiber cement" },
   { id: "windows", marker: "4", label: "Windows & Doors", example: "Replacements, seals" },
   { id: "kitchen", marker: "5", label: "Kitchen", example: "Cabinets, counters" },
   { id: "bathroom", marker: "6", label: "Bathroom", example: "Tile, vanities" },

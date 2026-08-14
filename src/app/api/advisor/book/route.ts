@@ -8,12 +8,13 @@ import { recordProjectCompliance, requestEvidence } from "@/lib/compliance";
 import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
 import { LANDING_CATEGORIES } from "@/lib/landing-data";
 import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
+import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
 
 /**
  * Legacy advisor submission endpoint.
  *
  * Despite the historical `/book` path, this endpoint now creates only a
- * reviewed RFQ. It never resets/creates accounts, impersonates consent, assigns
+ * reviewed RFQ. It never resets existing accounts, impersonates consent, assigns
  * a contractor, or confirms an appointment from an unauthenticated chat.
  */
 const schema = z.object({
@@ -51,15 +52,25 @@ export async function POST(req: NextRequest) {
     const tradeId = data.categoryIds[0];
     const trade = LANDING_CATEGORIES.find((item) => item.id === tradeId)?.label || tradeId;
     const source = "ai_advisor";
-    const homeownerId = isLoggedInHomeowner ? session.id : undefined;
     const referenceNumber = generateReferenceNumber();
     const evidence = requestEvidence(req);
 
-    const project = await prisma.$transaction(async (tx) => {
+    const { project, portalAccess } = await prisma.$transaction(async (tx) => {
+      const access = isLoggedInHomeowner && session
+        ? {
+            userId: session.id,
+            email: session.email,
+            isNewAccount: false,
+          }
+        : await ensureHomeownerAccount(tx, {
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            phone: data.phone.replace(/\D/g, ""),
+          });
       const created = await tx.projectRequest.create({
         data: {
           referenceNumber,
-          homeownerId: homeownerId ?? null,
+          homeownerId: access.userId,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email.trim().toLowerCase(),
@@ -78,15 +89,16 @@ export async function POST(req: NextRequest) {
       });
       await recordProjectCompliance(tx, {
         projectRequestId: created.id,
-        userId: homeownerId,
+        userId: access.userId,
         email: data.email,
         phone: data.phone,
         source,
         communicationConsent: data.tcpaConsent,
         evidence,
       });
-      return created;
+      return { project: created, portalAccess: access };
     });
+    const homeownerId = portalAccess.userId;
 
     await logAuditEvent({
       eventType: "FORM_SUBMITTED",
@@ -110,11 +122,8 @@ export async function POST(req: NextRequest) {
       referenceNumber,
       trade,
       zipCode: data.zipCode,
-      urgency: data.urgency || "Just planning",
-      budgetRange: data.budget || "Not specified",
-      description: data.description,
       projectRequestId: project.id,
-      hasPortalAccess: isLoggedInHomeowner,
+      portalAccess,
     });
 
     return NextResponse.json({
@@ -127,6 +136,9 @@ export async function POST(req: NextRequest) {
       confirmationEmailSent,
     });
   } catch (error) {
+    if (error instanceof HomeownerAccountConflictError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
     }

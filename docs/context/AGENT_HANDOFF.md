@@ -1,5 +1,27 @@
 # Agent Handoff
 
+## 2026-08-14 - RFQ confirmation email and homeowner portal access
+
+### Done
+
+- RFQ confirmations now include only the reference, project type, ZIP, a direct generated-request link, and homeowner portal login details.
+- Anonymous standard, advisor, bathroom, and solar RFQ submissions provision a HOMEOWNER account transactionally and send a random temporary password for new accounts. Existing homeowner passwords are not reset or emailed.
+- Promoted bathroom and solar planner projects are linked to the homeowner account as well as the shared `ProjectRequest`.
+- Tests: 221/221 passing; `tsc --noEmit` clean.
+
+### Key files
+
+- `src/lib/homeowner-account.ts` - transactional account provisioning and temporary-password hashing
+- `src/lib/confirmationEmails.ts` - short RFQ confirmation template and request/login links
+- `src/app/api/project-requests/route.ts` - standard request account ownership
+- `src/app/api/advisor/book/route.ts` - advisor request account ownership
+- `src/app/api/bathroom-projects/[id]/rfq/route.ts` and `rfp/route.ts` - bathroom promotion account ownership
+- `src/app/api/solar-projects/[id]/rfp/route.ts` - solar promotion account ownership
+
+### Next
+
+- Run production build and UAT one standard anonymous RFQ plus one existing-homeowner RFQ after SendGrid key rotation; confirm the email contains the request URL and appropriate credential wording, and confirm the portal link opens after login.
+
 > Current session: 2026-08-10 — Bathroom Remodeling canonical schema, real location, landing + planner UX improvements
 
 ## Done

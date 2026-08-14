@@ -2,7 +2,7 @@
 
 ## Implemented public intake contracts (2026-07-23)
 
-- `POST /api/project-requests` creates a `NEW` RFQ. It requires `termsAccepted: true` and `privacyAcknowledged: true`; `tcpaConsent` defaults false. A public request never creates, links, or resets an account and never returns credentials.
+- `POST /api/project-requests` creates a `NEW` RFQ and provisions or reuses the submitted homeowner's portal account. It requires `termsAccepted: true` and `privacyAcknowledged: true`; `tcpaConsent` defaults false. A newly provisioned account receives a random temporary password in the confirmation email; existing account passwords are never reset or emailed.
 - `POST /api/advisor/book` is a legacy route name. It creates an unassigned RFQ after clickwrap and does not book, assign, or mutate an account.
 - `GET /api/unsubscribe?token=...` validates a signed one-click token, suppresses the email, and records revocation evidence.
 - `POST /api/webhooks/twilio/sms` validates the Twilio signature; STOP-family keywords suppress SMS and phone contact and append revocation evidence.

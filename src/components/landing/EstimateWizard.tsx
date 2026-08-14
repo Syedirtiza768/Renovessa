@@ -8,8 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import type { LandingCategoryId } from "@/lib/landing-data";
-import { LANDING_CATEGORIES, CONTACT_WINDOW_OPTIONS } from "@/lib/landing-data";
+import {
+  getTradeEstimatorPath,
+  isSpecializedEstimator,
+  LANDING_CATEGORIES,
+  CONTACT_WINDOW_OPTIONS,
+} from "@/lib/landing-data";
 import {
   SHARED_CONTEXT_QUESTIONS,
   buildQuestionLabelMap,
@@ -177,6 +183,7 @@ function validateQuestions(
 
 export type EstimateWizardProps = {
   variant?: "landing" | "embedded";
+  initialTrade?: LandingCategoryId;
   prefill?: { name?: string; email?: string; phone?: string };
   lockEmail?: boolean;
   onSubmitted?: (result: { id: string; referenceNumber: string }) => void;
@@ -184,14 +191,15 @@ export type EstimateWizardProps = {
 
 export function EstimateWizard({
   variant = "landing",
+  initialTrade,
   prefill,
   lockEmail = false,
   onSubmitted,
 }: EstimateWizardProps) {
   const categories = getWizardCategories();
   const { isMobile, ready } = useIsMobileMd();
-  const [phase, setPhase] = useState<Phase>("trade");
-  const [trade, setTrade] = useState<LandingCategoryId | null>(null);
+  const [phase, setPhase] = useState<Phase>(initialTrade ? "scope" : "trade");
+  const [trade, setTrade] = useState<LandingCategoryId | null>(initialTrade ?? null);
   const [answers, setAnswers] = useState<EstimateAnswers>({});
   const [notes, setNotes] = useState("");
   const [zip, setZip] = useState("");
@@ -1074,21 +1082,38 @@ function PhaseContent(props: {
         <div className="grid gap-2 sm:grid-cols-2">
           {categories.map((cat) => {
             const active = trade === cat.id;
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => onPickTrade(cat.id)}
-                className={`min-h-[44px] rounded-lg border p-3.5 text-left transition ${
-                  active
-                    ? "border-2 border-accent bg-accent-100"
-                    : "border-ink-15 bg-white hover:border-ink-40"
-                }`}
-                aria-pressed={active}
-              >
+            const specialized = isSpecializedEstimator(cat.id);
+            const card = (
+              <>
                 <p className="text-sm font-semibold text-ink-100">{cat.label}</p>
                 <p className="mt-0.5 line-clamp-2 text-xs text-ink-70">{cat.description}</p>
-              </button>
+                {specialized && <p className="mt-2 text-xs font-medium text-accent">Open dedicated estimator →</p>}
+              </>
+            );
+            return (
+              specialized ? (
+                <Link
+                  key={cat.id}
+                  href={getTradeEstimatorPath(cat.id)}
+                  className="min-h-[44px] rounded-lg border border-ink-15 bg-white p-3.5 text-left transition hover:border-ink-40"
+                >
+                  {card}
+                </Link>
+              ) : (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => onPickTrade(cat.id)}
+                  className={`min-h-[44px] rounded-lg border p-3.5 text-left transition ${
+                    active
+                      ? "border-2 border-accent bg-accent-100"
+                      : "border-ink-15 bg-white hover:border-ink-40"
+                  }`}
+                  aria-pressed={active}
+                >
+                  {card}
+                </button>
+              )
             );
           })}
         </div>
@@ -1524,7 +1549,7 @@ function PhaseContent(props: {
           </p>
           <p className="mt-2 text-sm text-ink-70">
             {emailSent
-              ? `A confirmation with this RFQ summary was sent to ${contact.email}.`
+              ? `A confirmation with initial information, your request link, and portal login details was sent to ${contact.email}.`
               : `We saved your RFQ, but the confirmation email may be delayed — keep this reference number.`}
           </p>
         </div>

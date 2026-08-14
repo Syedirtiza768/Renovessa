@@ -1,14 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 72" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 72" role="img" aria-labelledby="title desc">
   <title id="title">Renovessa</title>
-  <desc id="desc">Renovessa architectural wordmark</desc>
-  <!-- The ascending bars reference a home taking shape, from plans to completion. -->
-  <g fill="#1a1a1a" transform="translate(4 8)">
-    <rect x="5" y="31" width="5" height="22" rx="1.5"/>
-    <rect x="14" y="20" width="5" height="33" rx="1.5"/>
-    <rect x="23" y="8" width="5" height="45" rx="1.5"/>
-    <rect x="32" y="16" width="5" height="37" rx="1.5"/>
-    <rect x="41" y="24" width="5" height="29" rx="1.5"/>
-    <rect x="50" y="28" width="5" height="25" rx="1.5"/>
+  <desc id="desc">Renovessa roofline and doorway wordmark</desc>
+  <g transform="translate(5 8)">
+    <path d="M4 28.5 31 5l27 23.5" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12 26.5V57h38V26.5" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M25 57V38h12v19" fill="#b96b47"/>
+    <circle cx="49" cy="16" r="3" fill="#b96b47"/>
   </g>
-  <text x="82" y="47" fill="#1a1a1a" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="600" letter-spacing="-1.1">Renovessa</text>
+  <text x="88" y="49" fill="#1a1a1a" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="600" letter-spacing="-1.2">Renovessa</text>
 </svg>
