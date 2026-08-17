@@ -391,3 +391,10 @@
 - Bathroom homeowner project details now show read-only existing/proposed layout previews and authenticated uploaded photos. Added a feature-gated Solar homeowner plans list/detail view.
 - Added snapshot/legacy-fallback tests and the Bathroom contractor-count schema assertion. Validation: 228/228 tests green, `npx tsc --noEmit` clean, `npm run build` exit 0.
 - `npx prisma db push` could not run because the configured local PostgreSQL instance at `localhost:5436` is unavailable; run it before deployment.
+
+# 2026-08-18 — Deployed cross-estimator persistence and homeowner portal parity
+
+- Committed `ef0e28f` (`unify estimator submissions and homeowner portal`) and pushed `agent/deploy-latest-2026-08-14` to GitHub.
+- Ubuntu `/opt/renovessa` now tracks that branch and rebuilt with `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
+- Production verification: app and database containers healthy, `https://renovessa.com/api/health` returned `{"ok":true}`, and PostgreSQL contains `ProjectRequest.estimatorSnapshotJson`.
+- The server's pre-existing `scripts/enable-solar.sh` executable-bit change and environment backup files were preserved; they were not included in the release commit.

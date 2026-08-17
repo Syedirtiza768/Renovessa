@@ -23,7 +23,7 @@ The estimators had different contact fields and persisted answers in different s
 - Local verification: 228/228 tests, TypeScript, and production build passed. `prisma db push` remains pending until the configured local PostgreSQL instance is running.
 
 ### Status
-Accepted, implemented locally; requires the additive Prisma schema push and authenticated UAT before deployment.
+Accepted, implemented and deployed to production 2026-08-18 in commit `ef0e28f`; the live app, database column, and HTTPS health endpoint were verified. Authenticated standard/Bathroom/Solar RFQ UAT remains a follow-up.
 
 ---
 

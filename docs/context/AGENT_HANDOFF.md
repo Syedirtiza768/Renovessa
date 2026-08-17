@@ -15,10 +15,10 @@
 - `npx tsc --noEmit`: clean.
 - `npm run build`: exit 0; static data pages logged only the expected unavailable-local-PostgreSQL warnings.
 - `npx prisma db push`: pending because PostgreSQL is not running at the configured local endpoint.
+- Production deployment: commit `ef0e28f` is live on Ubuntu; Docker `app` and `db` are healthy, `/api/health` returns `{"ok":true}`, and `ProjectRequest.estimatorSnapshotJson` exists in PostgreSQL.
 
-### Before deployment
+### Follow-up UAT
 
-- Start the configured PostgreSQL instance and run `npx prisma db push`.
 - Submit one standard, Bathroom, and Solar RFQ in UAT; verify the homeowner summary shows every answer, contact field, estimate assumption, layout, and photo without internal IDs.
 
 ## 2026-08-14 - Public 10-trade estimator catalog and logo refresh
