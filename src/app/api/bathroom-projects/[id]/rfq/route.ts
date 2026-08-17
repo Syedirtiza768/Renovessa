@@ -9,6 +9,7 @@ import { rfqPromotionSchema } from "@/lib/bathroom/schemas";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
 import { BATHROOM_CONTRACTOR_MATCHING_ENABLED } from "@/lib/feature-flags";
 import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
+import { briefAccessExpiresAt, buildBriefPdfUrl, generateBriefAccessToken } from "@/lib/bathroom/brief-access";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!BATHROOM_CONTRACTOR_MATCHING_ENABLED) {
@@ -22,6 +23,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (project.projectRequestId) {
       return NextResponse.json({ error: "This bathroom project has already been submitted as an RFQ." }, { status: 409 });
+    }
+
+    const latestBrief = await prisma.projectBrief.findFirst({
+      where: { projectId: id },
+      orderBy: { createdAt: "desc" },
+    });
+    const briefAccessToken = latestBrief
+      ? latestBrief.shareToken && latestBrief.shareExpiresAt && latestBrief.shareExpiresAt > new Date()
+        ? latestBrief.shareToken
+        : generateBriefAccessToken()
+      : null;
+    if (latestBrief && briefAccessToken !== latestBrief.shareToken) {
+      await prisma.projectBrief.update({
+        where: { id: latestBrief.id },
+        data: {
+          shareToken: briefAccessToken,
+          shareExpiresAt: briefAccessExpiresAt(),
+        },
+      });
     }
 
     const isLoggedInHomeowner = session?.role === "HOMEOWNER";
@@ -118,12 +138,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       zipCode: data.zipCode,
       projectRequestId: rfq.id,
       portalAccess,
+      briefAccessUrl: briefAccessToken ? buildBriefPdfUrl(id, briefAccessToken) : undefined,
     });
 
     return NextResponse.json({
       referenceNumber,
       rfqId: rfq.id,
       emailSent,
+      accountCreated: portalAccess.isNewAccount,
+      portalEmail: portalAccess.email,
+      briefAccessUrl: briefAccessToken ? buildBriefPdfUrl(id, briefAccessToken) : undefined,
+      temporaryPassword: !emailSent ? portalAccess.temporaryPassword : undefined,
     }, { status: 201 });
   } catch (e: any) {
     if (e instanceof HomeownerAccountConflictError) {

@@ -91,6 +91,7 @@ export async function sendRfqConfirmationEmail(params: {
     email: string;
     temporaryPassword?: string;
   };
+  briefAccessUrl?: string;
 }) {
   const loginUrl = `${appUrl()}/login`;
   const requestUrl = `${appUrl()}/portal/homeowner/projects/${params.projectRequestId}`;
@@ -112,6 +113,7 @@ Project type: ${params.trade}
 ZIP: ${params.zipCode}
 
 View your complete request here: [View my request](${requestUrl})
+${params.briefAccessUrl ? `Download your project brief here: [Download project brief](${params.briefAccessUrl})` : ""}
 
 What happens next:
 1. We review your request and check current trade and ZIP availability.

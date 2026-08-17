@@ -352,3 +352,23 @@
 - Linked promoted bathroom and solar planner projects to the homeowner account alongside the shared `ProjectRequest`.
 - Plain-text email links now retain their URLs, so the request link works in text-only email clients too.
 - Validation: full suite 221/221 green; `tsc --noEmit` clean.
+
+# 2026-08-17 — Bathroom planner continuity and post-submit brief access
+
+- Capture now keeps Bathroom type and Main goal visible after selection with a
+  highlighted selected state; Detailed Basics shows a summary instead of
+  repeating answers that were already captured.
+- Layout now has an explicit “Skip layout for now” action. It records the
+  choice in planner answers and advances to the next relevant step without
+  setting a diagram as complete or blocking estimates/briefs/RFPs.
+- Project briefs now receive a 14-day random download token. The tokenized PDF
+  link is returned in the planner, included in the RFP confirmation email, and
+  remains valid after the RFP claims the project for a homeowner account.
+- RFP responses now expose email delivery status, account-created status, and
+  portal email. New temporary passwords are only returned to the browser when
+  email delivery fails; normal delivery keeps credentials email-only, and
+  existing passwords are never revealed.
+- Post-RFP anonymous autosave is suppressed to avoid a false “couldn’t save”
+  state after the project becomes account-owned.
+- Added `brief-access.test.ts`; validation: 225/225 tests green and
+  `tsc --noEmit` clean. Pending production deploy and live smoke test.

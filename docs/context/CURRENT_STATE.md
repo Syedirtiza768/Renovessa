@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-08-14
+> Last updated: 2026-08-17
 
 ## Phase
 
@@ -133,7 +133,7 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - **Contractor Proposal Studio (2026-07-27)** — white-label tool at `/portal/contractor/proposal-studio`. `BathroomProject.contractorOwnerId`, letterhead + `studioPricingJson` on `ContractorProfile`, prompt-drafted proposal language (no AI price invention), contractor-letterhead PDF. **Commercial layer:** deterministic estimate seeds editable line items; contractor markup/overhead/contingency; internal cost vs customer price + gross margin; approve-before-client-PDF gate; draft PDF preview with watermark. **Share + acceptance:** tokenized `/proposal/[token]` client page; questions / revision requests; accept locks version with immutable snapshot; decline; view tracking. Homeowner planner unchanged. Flag: `BATHROOM_CONTRACTOR_STUDIO_ENABLED`.
 
 ### Implemented (2026-08-10) — UX/RFP conversion audit fixes
-- **Estimate → RFP conversion path rebuilt** — `POST /api/bathroom-projects/[id]/rfp` now takes a validated contact + consent payload (`rfpSubmissionSchema`), records clickwrap/compliance evidence (`recordProjectCompliance`), sends the RFQ confirmation email, stamps the project `RFQ_SUBMITTED`, and atomically claims the project (`updateMany WHERE projectRequestId IS NULL`) so retries/double-clicks cannot create duplicate RFPs. Estimate step UI: "Request contractor proposals" contact form → persistent success panel with next-steps (survives refresh via `answers.rfp_reference`).
+- **Estimate → RFP conversion path rebuilt** — `POST /api/bathroom-projects/[id]/rfp` now takes a validated contact + consent payload (`rfpSubmissionSchema`), records clickwrap/compliance evidence (`recordProjectCompliance`), sends the RFQ confirmation email, stamps the project `RFQ_SUBMITTED`, and atomically claims the project (`updateMany WHERE projectRequestId IS NULL`) so retries/double-clicks cannot create duplicate RFPs. Estimate step UI: "Request contractor proposals" contact form → persistent success panel with next-steps (survives refresh via `answers.rfp_reference`). The confirmation email includes new-account credentials and a short-lived tokenized project-brief PDF link; existing passwords are never emailed.
 - **Estimate persistence unblocked** — `BathroomEstimate.configurationId` nullable; estimates persist against the built-in default config when no `EstimatorConfiguration` is published (previously hard-failed on FK to `"default-internal"` in prod). Schema pushed to prod DB.
 - **Draft persistence fixed** — localStorage draft now stores `projectId`/`referenceNumber`/`clientGeneratedId`; refresh/multi-tab resumes the same server draft (server dedupes by `clientGeneratedId`); stale project ids validated on hydrate. Previously every refresh created a new `BathroomProject`.
 - **Dead-end/friction fixes** — estimate failure now offers Retry; autosave failure surfaces with a Retry action in the header; room-size-only selection satisfies `hasCaptureContent`; progress label is "Step X of Y".

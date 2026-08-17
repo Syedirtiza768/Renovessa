@@ -22,6 +22,15 @@ type EstimateResult = {
   locationMissing?: boolean;
 };
 
+type RfpSubmissionResult = {
+  referenceNumber: string;
+  emailSent: boolean;
+  accountCreated: boolean;
+  portalEmail: string;
+  briefAccessUrl?: string;
+  temporaryPassword?: string;
+};
+
 export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNumber }: StepProps) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<EstimateResult | null>(null);
@@ -34,6 +43,8 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [briefId, setBriefId] = useState<string | null>(null);
   const [briefGenerating, setBriefGenerating] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
+  const [briefDownloadUrl, setBriefDownloadUrl] = useState<string | null>(answers.brief_access_url ?? null);
+  const [rfpConfirmation, setRfpConfirmation] = useState<RfpSubmissionResult | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,8 +123,12 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
         });
         if (ctrl.signal.aborted) return;
         if (res.ok) {
-          const data = (await res.json()) as { saved: { id: string } };
+          const data = (await res.json()) as { saved: { id: string }; briefAccessUrl?: string };
           setBriefId(data.saved.id);
+          if (data.briefAccessUrl) {
+            setBriefDownloadUrl(data.briefAccessUrl);
+            setAnswer("brief_access_url", data.briefAccessUrl);
+          }
         } else {
           const data = await res.json().catch(() => ({}));
           setBriefError((data as { error?: string }).error ?? `Brief generation failed (${res.status}). You can retry below.`);
@@ -351,7 +366,7 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
             {briefId && (
               <>
                 <a
-                  href={`/api/bathroom-projects/${projectId}/brief/pdf`}
+                  href={briefDownloadUrl ?? `/api/bathroom-projects/${projectId}/brief/pdf`}
                   className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90"
                 >
                   Download my project brief
@@ -380,8 +395,12 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
                       const data = await res.json().catch(() => ({}));
                       throw new Error(data.error ?? `Failed (${res.status})`);
                     }
-                    const data = (await res.json()) as { saved: { id: string } };
+                    const data = (await res.json()) as { saved: { id: string }; briefAccessUrl?: string };
                     setBriefId(data.saved.id);
+                    if (data.briefAccessUrl) {
+                      setBriefDownloadUrl(data.briefAccessUrl);
+                      setAnswer("brief_access_url", data.briefAccessUrl);
+                    }
                   } catch (e) {
                     setBriefError(e instanceof Error ? e.message : "Unknown error");
                   } finally {
@@ -399,7 +418,15 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
       )}
 
       {submittedReference && (
-        <RfpSuccessPanel referenceNumber={submittedReference} projectId={projectId} />
+        <RfpSuccessPanel
+          referenceNumber={submittedReference}
+          projectId={projectId}
+          briefDownloadUrl={rfpConfirmation?.briefAccessUrl ?? answers.rfp_brief_access_url ?? briefDownloadUrl}
+          emailSent={rfpConfirmation?.emailSent ?? (answers.rfp_email_sent === "yes" ? true : answers.rfp_email_sent === "no" ? false : null)}
+          accountCreated={rfpConfirmation?.accountCreated ?? (answers.rfp_account_created === "yes" ? true : answers.rfp_account_created === "no" ? false : null)}
+          portalEmail={rfpConfirmation?.portalEmail ?? answers.rfp_portal_email}
+          temporaryPassword={rfpConfirmation?.temporaryPassword}
+        />
       )}
 
       {showRfqForm && !submittedReference && (
@@ -407,7 +434,17 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
           projectId={projectId!}
           defaultZip={getCanonical(answers, "zipCode") || ""}
           onBack={() => setShowRfqForm(false)}
-          onSubmitted={(ref) => setAnswer("rfp_reference", ref)}
+          onSubmitted={(submission) => {
+            setAnswer("rfp_reference", submission.referenceNumber);
+            setAnswer("rfp_email_sent", submission.emailSent ? "yes" : "no");
+            setAnswer("rfp_account_created", submission.accountCreated ? "yes" : "no");
+            setAnswer("rfp_portal_email", submission.portalEmail);
+            if (submission.briefAccessUrl) {
+              setAnswer("rfp_brief_access_url", submission.briefAccessUrl);
+              setBriefDownloadUrl(submission.briefAccessUrl);
+            }
+            setRfpConfirmation(submission);
+          }}
         />
       )}
 
@@ -474,7 +511,23 @@ function EstimateStatusBadge({ estimatePersisted, persistFailed, projectId }: { 
   );
 }
 
-function RfpSuccessPanel({ referenceNumber, projectId }: { referenceNumber: string; projectId: string | null }) {
+function RfpSuccessPanel({
+  referenceNumber,
+  projectId,
+  briefDownloadUrl,
+  emailSent,
+  accountCreated,
+  portalEmail,
+  temporaryPassword,
+}: {
+  referenceNumber: string;
+  projectId: string | null;
+  briefDownloadUrl?: string | null;
+  emailSent: boolean | null;
+  accountCreated: boolean | null;
+  portalEmail?: string;
+  temporaryPassword?: string;
+}) {
   return (
     <div className="rounded-lg border border-green-300 bg-green-50 p-5">
       <h3 className="font-semibold text-green-900">Your bathroom project has been submitted</h3>
@@ -491,17 +544,43 @@ function RfpSuccessPanel({ referenceNumber, projectId }: { referenceNumber: stri
         </ol>
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
-        {projectId && (
+        {(briefDownloadUrl || projectId) && (
           <a
-            href={`/api/bathroom-projects/${projectId}/brief/pdf`}
+            href={briefDownloadUrl ?? `/api/bathroom-projects/${projectId}/brief/pdf`}
             className="rounded-lg border border-green-400 bg-white px-4 py-2 text-sm font-medium text-green-900 transition hover:bg-green-100"
           >
             Download project brief PDF
           </a>
         )}
       </div>
+      <div className="mt-4 rounded-lg border border-green-200 bg-white/70 p-3 text-sm text-green-900">
+        {emailSent === true && portalEmail && (
+          <>
+            <p>
+              Account access details and your secure brief link were sent to <strong>{portalEmail}</strong>.
+            </p>
+            {accountCreated === true ? (
+              <p className="mt-1 text-xs text-green-800">Your email includes a temporary password. Change it after signing in.</p>
+            ) : (
+              <p className="mt-1 text-xs text-green-800">Use your existing homeowner portal password to sign in.</p>
+            )}
+          </>
+        )}
+        {emailSent === false && (
+          <>
+            <p>We created the request, but the confirmation email could not be delivered.</p>
+            {temporaryPassword && (
+              <p className="mt-1">Temporary password: <span className="font-mono font-semibold">{temporaryPassword}</span></p>
+            )}
+            {!temporaryPassword && <p className="mt-1 text-xs">Use your existing homeowner password or contact Renovessa for help.</p>}
+          </>
+        )}
+        {emailSent === null && (
+          <p>Your confirmation email contains the portal instructions and secure project-brief link.</p>
+        )}
+      </div>
       <p className="mt-3 text-xs text-green-800">
-        A confirmation email is on its way. Want to change something? Use the steps above to edit your project —
+        Want to change something? Use the steps above to edit your project —
         your RFP keeps the brief you submitted.
       </p>
     </div>
@@ -532,7 +611,7 @@ function RfpContactForm({
   projectId: string;
   defaultZip: string;
   onBack: () => void;
-  onSubmitted: (referenceNumber: string) => void;
+  onSubmitted: (submission: RfpSubmissionResult) => void;
 }) {
   const [form, setForm] = useState<RfpFormState>({
     firstName: "",
@@ -603,8 +682,8 @@ function RfpContactForm({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? `Submission failed (${res.status})`);
       }
-      const data = (await res.json()) as { referenceNumber: string };
-      onSubmitted(data.referenceNumber);
+      const data = (await res.json()) as RfpSubmissionResult;
+      onSubmitted(data);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Unknown error");
     } finally {

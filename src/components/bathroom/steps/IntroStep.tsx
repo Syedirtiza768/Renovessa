@@ -5,30 +5,49 @@ import type { StepProps } from "../planner-types";
 import { BATHROOM_TYPES, PROJECT_OBJECTIVES, PROPERTY_TYPES, OWNERSHIP_STATUS, OCCUPANCY_STATUS } from "@/lib/bathroom/config";
 
 export function IntroStep({ answers, setAnswer }: StepProps) {
+  const bathroomTypeLabel = BATHROOM_TYPES.find((option) => option.id === answers.bathroomType)?.label;
+  const objectiveLabel = PROJECT_OBJECTIVES.find((option) => option.id === answers.projectObjective)?.label;
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-ink-100">Let&apos;s start with the basics</h2>
-        <p className="mt-1 text-sm text-ink-70">These answers shape the questions and the planning range. You can change them later.</p>
+        <p className="mt-1 text-sm text-ink-70">
+          Add the details that weren&apos;t already captured. You can change your bathroom type or objective on Capture.
+        </p>
       </div>
 
-      <Field label="What kind of bathroom is this?">
-        <ChoiceList
-          name="bathroomType"
-          value={answers.bathroomType}
-          options={BATHROOM_TYPES}
-          onChange={(v) => setAnswer("bathroomType", v)}
-        />
-      </Field>
+      {(bathroomTypeLabel || objectiveLabel) && (
+        <div className="rounded-lg border border-accent/30 bg-accent/5 p-4 text-sm text-ink-70">
+          <p className="font-medium text-ink-100">Already selected on Capture</p>
+          <div className="mt-2 grid gap-1 sm:grid-cols-2">
+            {bathroomTypeLabel && <p>Bathroom: <span className="font-medium text-ink-100">{bathroomTypeLabel}</span></p>}
+            {objectiveLabel && <p>Objective: <span className="font-medium text-ink-100">{objectiveLabel}</span></p>}
+          </div>
+        </div>
+      )}
 
-      <Field label="What is your main objective?">
-        <ChoiceList
-          name="projectObjective"
-          value={answers.projectObjective}
-          options={PROJECT_OBJECTIVES}
-          onChange={(v) => setAnswer("projectObjective", v)}
-        />
-      </Field>
+      {!answers.bathroomType && (
+        <Field label="What kind of bathroom is this?">
+          <ChoiceList
+            name="bathroomType"
+            value={answers.bathroomType}
+            options={BATHROOM_TYPES}
+            onChange={(v) => setAnswer("bathroomType", v)}
+          />
+        </Field>
+      )}
+
+      {!answers.projectObjective && (
+        <Field label="What is your main objective?">
+          <ChoiceList
+            name="projectObjective"
+            value={answers.projectObjective}
+            options={PROJECT_OBJECTIVES}
+            onChange={(v) => setAnswer("projectObjective", v)}
+          />
+        </Field>
+      )}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Property type">

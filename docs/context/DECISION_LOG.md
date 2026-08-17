@@ -323,3 +323,37 @@ input, version stamp `solar-srec-2026-08-10-v1`.
 ### Status
 Accepted — implemented and tested (216/216 unit tests green, tsc clean);
 pending production deploy
+
+## 2026-08-17 — Bathroom planner continuity and post-submit brief access
+
+### Decision
+Bathroom type and project objective remain visible as selected chips on the
+Capture step. Detailed Basics no longer repeats either answer once Capture has
+already supplied it; it shows a compact summary instead. Layout is explicitly
+optional through a "Skip layout for now" action and does not block estimates,
+briefs, or RFP submission.
+
+After an anonymous bathroom brief is generated, its PDF receives a random,
+short-lived download token. The token is download-only and is included in the
+RFP success panel and confirmation email. Portal request data remains protected
+by homeowner authentication. New homeowner accounts continue to receive a
+temporary password by email; existing passwords are never emailed. If email
+delivery fails for a newly-created account, the one-time temporary password is
+shown only in the immediate success response as a recovery path.
+
+### Reason
+The former Capture controls disappeared after selection, Detailed Basics asked
+the same questions a second time, and Layout copy promised that users could
+skip without providing an explicit control. RFP submission claimed the project
+for the newly-created/reused homeowner account before the browser had a session,
+which made the immediate brief PDF link fail with an authentication error.
+
+### Impact
+No schema change is required: the existing `ProjectBrief.shareToken` and
+`shareExpiresAt` fields back the download-only brief link. Planner autosave is
+also suppressed after RFP promotion because the anonymous browser must not
+attempt to PATCH an account-owned project.
+
+### Status
+Implemented and locally verified: 225/225 unit tests green; `tsc --noEmit`
+clean. Pending production deploy and live smoke test.

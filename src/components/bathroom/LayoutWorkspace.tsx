@@ -17,10 +17,12 @@ export function LayoutWorkspace({
   projectId,
   answers,
   setAnswer,
+  onSkip,
 }: {
   projectId: string;
   answers: PlannerAnswers;
   setAnswer: (key: string, value: string) => void;
+  onSkip: () => void;
 }) {
   const wantsProposed = needsProposedLayout(answers);
   const [tab, setTab] = useState<LayoutTab>("EXISTING");
@@ -111,7 +113,7 @@ export function LayoutWorkspace({
       <div>
         <h2 className="text-xl font-semibold text-ink-100">Room layout</h2>
         <p className="mt-1 text-sm text-ink-70">
-          Rough sketch for planning — not a construction drawing. Drag to adjust, or skip ahead if the template is close enough.
+          Rough sketch for planning — not a construction drawing. Drag to adjust, or skip it if you do not want to draw the room.
         </p>
       </div>
 
@@ -144,6 +146,13 @@ export function LayoutWorkspace({
           className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-70 hover:border-ink-40"
         >
           Reset layout
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="rounded-full border border-ink-15 px-4 py-1.5 text-sm text-ink-70 hover:border-ink-40"
+        >
+          Skip layout for now
         </button>
         {wantsProposed && (
           <button

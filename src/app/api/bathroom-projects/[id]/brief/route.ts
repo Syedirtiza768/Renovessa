@@ -5,6 +5,7 @@ import { logAuditEvent } from "@/lib/audit";
 import { randomBytes } from "crypto";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
 import { buildProjectBrief } from "@/lib/bathroom/project-brief";
+import { briefAccessExpiresAt, buildBriefPdfUrl, generateBriefAccessToken } from "@/lib/bathroom/brief-access";
 import { BATHROOM_PROJECT_BRIEF_ENABLED } from "@/lib/feature-flags";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -123,11 +124,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       mediaCount: 0,
     });
 
+    const briefAccessToken = generateBriefAccessToken();
     const saved = await prisma.projectBrief.create({
       data: {
         projectId: id,
         version: 1,
         briefJson: brief as any,
+        shareToken: briefAccessToken,
+        shareExpiresAt: briefAccessExpiresAt(),
       },
     });
 
@@ -141,7 +145,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
 
-    return NextResponse.json({ brief, saved }, { status: 201 });
+    return NextResponse.json({
+      brief,
+      saved,
+      briefAccessUrl: buildBriefPdfUrl(id, briefAccessToken),
+    }, { status: 201 });
   } catch (e: any) {
     console.error("bathroom-brief POST", e);
     const status = e?.status || 500;
