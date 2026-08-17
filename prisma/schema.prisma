@@ -295,6 +295,10 @@ model ProjectRequest {
   status                      LeadStatus @default(NEW)
   source                      String     @default("organic")
   qualificationNotes          String?
+  /// Immutable, display-ready snapshot of the estimator answers, estimate
+  /// result, and proposal-contact form at RFQ submission time. The normalized
+  /// columns above remain the routing/reporting source of truth.
+  estimatorSnapshotJson       Json?
   disposition                 String?
   address                     String?
   ownershipAuthority          String?

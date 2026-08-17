@@ -8,6 +8,7 @@ import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { solarRfpSubmissionSchema } from "@/lib/solar/schemas";
 import { assertSolarProjectAccess } from "@/lib/solar/authorization";
 import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
+import { buildAnswerMapEstimatorSnapshot } from "@/lib/estimator-submission";
 
 /**
  * Promote a solar plan into the shared RFQ pipeline.
@@ -55,6 +56,54 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         ? `$${cost.installedCostLow.toLocaleString()}–$${cost.installedCostHigh.toLocaleString()}`
         : "withheld (no reviewed local pricing model published)";
 
+    const savedAnswers = project.answersJson && typeof project.answersJson === "object"
+      ? project.answersJson as Record<string, unknown>
+      : {};
+    const estimatorSnapshot = buildAnswerMapEstimatorSnapshot({
+      estimatorId: "solar",
+      estimatorLabel: "Solar",
+      source: "solar",
+      answers: {
+        ...savedAnswers,
+        propertyType: project.propertyType,
+        ownershipStatus: project.ownershipStatus,
+        occupancyStatus: project.occupancyStatus,
+        projectGoal: project.projectGoal,
+        timelineCategory: project.timelineCategory,
+        city: project.city,
+        state: project.state,
+        postalCode: project.postalCode,
+        buildingConfirmed: project.buildingConfirmed,
+      },
+      notes: data.notes,
+      contact: {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName?.trim() || null,
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone.replace(/\D/g, ""),
+        zipCode: data.zipCode,
+        timeline: data.timeline ?? project.timelineCategory ?? null,
+        preferredContact: data.preferredContact ?? "any",
+        maxContractors: data.maxContractors,
+        notes: data.notes ?? null,
+        tcpaConsent: data.tcpaConsent,
+        termsAccepted: data.termsAccepted,
+        privacyAcknowledged: data.privacyAcknowledged,
+      },
+      estimate: cost ? {
+        installedCostLow: cost.installedCostLow,
+        installedCostHigh: cost.installedCostHigh,
+        netCostLow: cost.netCostLow,
+        netCostHigh: cost.netCostHigh,
+        displayable: cost.displayable,
+        withheldReason: cost.withheldReason,
+        confidence: cost.confidenceLevel,
+        assumptions: cost.assumptionsJson,
+        exclusions: cost.exclusionsJson,
+        costDrivers: cost.costDriversJson,
+      } : null,
+    });
+
     const description = [
       `Residential solar RFP via Renovessa Solar Planner — ${project.referenceNumber}`,
       ``,
@@ -67,7 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       `Timeline: ${data.timeline ?? project.timelineCategory ?? "flexible"}`,
       `Planning range: ${planningRange}`,
       ``,
-      `Maximum installers requested: ${data.maxInstallers}`,
+      `Maximum installers requested: ${data.maxContractors}`,
       data.preferredContactTimes ? `Preferred contact times: ${data.preferredContactTimes}` : "",
       ``,
       `Structured Solar Project Brief v${latestBrief.version} attached (id ${latestBrief.id}).`,
@@ -110,8 +159,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
               : "Not specified",
           preferredContact: data.preferredContact ?? null,
           tcpaConsent: data.tcpaConsent,
+          termsAccepted: data.termsAccepted,
+          privacyAcknowledged: data.privacyAcknowledged,
           source: "solar_rfp",
           status: "NEW",
+          estimatorSnapshotJson: estimatorSnapshot as any,
         },
       });
 
@@ -150,7 +202,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         briefVersion: latestBrief.version,
         layoutId: layout?.id,
         costEstimateId: cost?.id,
-        maxInstallers: data.maxInstallers,
+        maxContractors: data.maxContractors,
         source: "solar_planner",
       },
     });

@@ -194,7 +194,9 @@ export const solarRfpSubmissionSchema = z.object({
   timeline: z.string().max(60).optional(),
   preferredContact: z.string().max(40).optional(),
   preferredContactTimes: z.string().max(120).optional(),
-  maxInstallers: z.number().int().min(1).max(5).default(3),
+  maxContractors: z.number().int().min(1).max(3).default(3),
+  termsAccepted: z.literal(true),
+  privacyAcknowledged: z.literal(true),
   notes: z.string().max(2000).optional(),
   tcpaConsent: z.boolean(),
 });

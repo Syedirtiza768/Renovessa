@@ -3,6 +3,9 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import { bathroomPlannerUsable } from "@/lib/feature-flags";
+import { HomeownerProjectVisuals } from "@/components/bathroom/HomeownerProjectVisuals";
+import { EstimatorSubmissionSummary } from "@/components/portal/EstimatorSubmissionSummary";
+import { buildAnswerMapEstimatorSnapshot, parseEstimatorSnapshot } from "@/lib/estimator-submission";
 
 export default async function HomeownerBathroomProjectDetailPage({
   params,
@@ -17,6 +20,7 @@ export default async function HomeownerBathroomProjectDetailPage({
   const project = await prisma.bathroomProject.findFirst({
     where: { id, homeownerId: session.id },
     include: {
+      projectRequest: { select: { estimatorSnapshotJson: true } },
       estimates: { orderBy: { createdAt: "desc" }, take: 1 },
       briefs: { orderBy: { createdAt: "desc" }, take: 1 },
       permitAssessments: { orderBy: { createdAt: "desc" }, take: 1 },
@@ -24,6 +28,8 @@ export default async function HomeownerBathroomProjectDetailPage({
         orderBy: { totalPrice: "asc" },
         include: { contractor: { select: { companyName: true, trade: true, tier: true, licenseVerified: true, insuranceVerified: true } } },
       },
+      layouts: { orderBy: [{ layoutType: "asc" }, { createdAt: "desc" }] },
+      media: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -32,6 +38,41 @@ export default async function HomeownerBathroomProjectDetailPage({
   const latestEstimate = project.estimates[0];
   const latestBrief = project.briefs[0];
   const proposals = project.proposals;
+  const savedAnswers = project.answersJson && typeof project.answersJson === "object"
+    ? project.answersJson as Record<string, unknown>
+    : {};
+  const estimatorSnapshot =
+    parseEstimatorSnapshot(project.projectRequest?.estimatorSnapshotJson) ??
+    buildAnswerMapEstimatorSnapshot({
+      estimatorId: "bathroom",
+      estimatorLabel: "Bathroom Remodeling",
+      source: "bathroom",
+      answers: {
+        ...savedAnswers,
+        bathroomType: project.bathroomType,
+        projectObjective: project.projectObjective,
+        propertyType: project.propertyType,
+        ownershipStatus: project.ownershipStatus,
+        occupancyStatus: project.occupancyStatus,
+        timelineCategory: project.timelineCategory,
+      },
+      contact: {},
+      estimate: latestEstimate ? {
+        low: latestEstimate.lowAmount,
+        mid: latestEstimate.expectedLowAmount,
+        high: latestEstimate.highComplexityAmount,
+        expectedLow: latestEstimate.expectedLowAmount,
+        expectedHigh: latestEstimate.expectedHighAmount,
+        confidence: latestEstimate.confidenceLevel,
+        assumptions: latestEstimate.assumptionsJson,
+        unknowns: latestEstimate.unknownsJson,
+        exclusions: latestEstimate.exclusionsJson,
+        costDrivers: latestEstimate.costDriversJson,
+      } : null,
+    });
+  const homeownerLayouts = Array.from(
+    new Map(project.layouts.map((layout) => [layout.layoutType, layout])).values(),
+  );
 
   return (
     <div>
@@ -85,6 +126,27 @@ export default async function HomeownerBathroomProjectDetailPage({
           <p className="mt-2 text-sm text-muted">No brief generated yet.</p>
         )}
       </section>
+
+      <HomeownerProjectVisuals
+        projectId={project.id}
+        layouts={homeownerLayouts.map((layout) => ({
+          layoutType: layout.layoutType,
+          name: layout.name,
+          geometryJson: layout.geometryJson,
+          createdAt: layout.createdAt.toISOString(),
+        }))}
+        media={project.media.map((photo) => ({
+          kind: photo.kind,
+          fileName: photo.fileName,
+          mimeType: photo.mimeType,
+          caption: photo.caption,
+          wallLabel: photo.wallLabel,
+          createdAt: photo.createdAt.toISOString(),
+          url: `/api/bathroom-projects/${project.id}/media/${photo.id}`,
+        }))}
+      />
+
+      <EstimatorSubmissionSummary snapshot={estimatorSnapshot} />
 
       <section className="mt-8">
         <h2 className="text-lg font-semibold">Contractor proposals ({proposals.length})</h2>

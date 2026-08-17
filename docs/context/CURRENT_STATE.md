@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-08-17
+> Last updated: 2026-08-18
 
 ## Phase
 
@@ -71,12 +71,14 @@
 - The launch set uses only the implemented planner, conceptual-layout, illustrative-planning-range, homeowner-control, and project-brief claims; it does not promise binding quotes or automatic contractor distribution
 
 ### Portals
-- **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only
+- **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only. Submitted estimator answers, estimate assumptions, contact preferences, layouts, and uploaded bathroom photos are available from the authenticated project detail pages; internal Brief ID and Estimate ID values are intentionally omitted.
 - **Contractor Portal** — appointments, accept/check-in, billing, profile
 - **Admin Operations Command Center** — KPI dashboard, lead pipeline, operations queues, appointments, contractors, capacity cells, finance, disputes
 
 ### Core Workflows
 - RFQ / project request submission with audit trail events + confirmation email
+- **Cross-estimator submission parity (2026-08-18)** — all ten public estimator paths use the shared Bathroom-style contractor-contact form at the end of the estimator. Every submitted answer is stored in the immutable `ProjectRequest.estimatorSnapshotJson` display snapshot, while existing normalized columns remain the routing/reporting source of truth. Standard, Bathroom, and Solar RFQs render the same complete answer/contact/estimate summary in the appropriate authenticated portal; legacy standard RFQs fall back to their stored qualification notes.
+- **Homeowner project visuals (2026-08-18)** — Bathroom homeowner project details show saved existing/proposed diagrams as read-only previews and authenticated uploaded photos in a gallery. Solar homeowner projects have a gated list/detail view for saved plan information.
 - Public RFQs provision or reuse a homeowner portal account so the confirmation email can link to the generated request; AI advisor submissions still create only RFQs, not appointments
 - Required versioned Terms/Privacy clickwrap plus optional, unchecked communication consent with immutable evidence
 - Durable email/phone/SMS suppressions enforced before bulk email and outbound calls

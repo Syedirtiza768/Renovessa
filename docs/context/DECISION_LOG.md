@@ -4,6 +4,29 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-18 — Cross-estimator submission snapshots and homeowner portal parity
+
+### Decision
+1. Every public estimator RFQ stores an immutable, versioned `ProjectRequest.estimatorSnapshotJson` containing all configured estimator answers, shared project context, estimate outputs, contact preferences, notes, and consent state. Existing normalized `ProjectRequest` columns remain the routing/reporting source of truth.
+2. Bathroom Remodeling, Solar, and the standard trade wizard use one Bathroom-style contractor-contact form and the same field names/options (`firstName`, `lastName`, `email`, `phone`, ZIP, timeline, preferred contact, contractor count, notes, and compliance fields).
+3. Authenticated homeowner and admin project views render the snapshot through one shared summary component. Internal brief, estimate, and database identifiers are not shown to homeowners; legacy standard requests use a qualification-notes fallback until a new submission creates a snapshot.
+4. Bathroom homeowner details render saved existing/proposed diagrams as read-only previews and authenticated uploaded photos. Solar homeowner details expose saved plan information through a feature-gated list/detail route.
+
+### Reason
+The estimators had different contact fields and persisted answers in different shapes, so the portal could not reliably show the homeowner exactly what they submitted. A versioned display snapshot preserves the submission as it was made, while keeping normalized fields available for matching and operations. Reusing the same contact component reduces compliance and field drift across estimator paths.
+
+### Impact
+- Prisma adds nullable `ProjectRequest.estimatorSnapshotJson`; it is additive and keeps old RFQs readable.
+- Standard `/api/project-requests`, Bathroom `/rfp`, and Solar `/rfp` persist the snapshot.
+- `EstimatorSubmissionSummary` is shared by homeowner and admin views.
+- Bathroom visual editing is disabled in the homeowner portal; the existing authenticated media routes remain the source for photo access.
+- Local verification: 228/228 tests, TypeScript, and production build passed. `prisma db push` remains pending until the configured local PostgreSQL instance is running.
+
+### Status
+Accepted, implemented locally; requires the additive Prisma schema push and authenticated UAT before deployment.
+
+---
+
 ## 2026-08-10 — Bathroom Remodeling: canonical answer schema, real location, and UX improvements
 
 ### Decision

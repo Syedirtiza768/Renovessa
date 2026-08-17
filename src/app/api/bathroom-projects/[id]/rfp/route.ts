@@ -8,6 +8,7 @@ import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { rfpSubmissionSchema } from "@/lib/bathroom/schemas";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
 import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
+import { buildAnswerMapEstimatorSnapshot } from "@/lib/estimator-submission";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -44,6 +45,51 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const planningRange = latestEstimate
       ? `$${latestEstimate.lowAmount.toLocaleString()}–$${latestEstimate.highComplexityAmount.toLocaleString()}`
       : "not generated";
+
+    const savedAnswers = project.answersJson && typeof project.answersJson === "object"
+      ? project.answersJson as Record<string, unknown>
+      : {};
+    const estimatorSnapshot = buildAnswerMapEstimatorSnapshot({
+      estimatorId: "bathroom",
+      estimatorLabel: "Bathroom Remodeling",
+      source: "bathroom",
+      answers: {
+        ...savedAnswers,
+        bathroomType: project.bathroomType,
+        projectObjective: project.projectObjective,
+        propertyType: project.propertyType,
+        ownershipStatus: project.ownershipStatus,
+        occupancyStatus: project.occupancyStatus,
+        timelineCategory: project.timelineCategory,
+      },
+      notes: data.notes,
+      contact: {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName?.trim() || null,
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone.replace(/\D/g, ""),
+        zipCode: data.zipCode,
+        timeline: data.timeline ?? project.timelineCategory ?? null,
+        preferredContact: data.preferredContact ?? "any",
+        maxContractors: data.maxContractors,
+        notes: data.notes ?? null,
+        tcpaConsent: data.tcpaConsent,
+        termsAccepted: data.termsAccepted,
+        privacyAcknowledged: data.privacyAcknowledged,
+      },
+      estimate: latestEstimate ? {
+        low: latestEstimate.lowAmount,
+        mid: latestEstimate.expectedLowAmount,
+        high: latestEstimate.highComplexityAmount,
+        expectedLow: latestEstimate.expectedLowAmount,
+        expectedHigh: latestEstimate.expectedHighAmount,
+        confidence: latestEstimate.confidenceLevel,
+        assumptions: latestEstimate.assumptionsJson,
+        unknowns: latestEstimate.unknownsJson,
+        exclusions: latestEstimate.exclusionsJson,
+        costDrivers: latestEstimate.costDriversJson,
+      } : null,
+    });
 
     const description = [
       `Bathroom remodeling RFP via Renovessa Bathroom Planner — ${project.referenceNumber}`,
@@ -91,8 +137,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             : "Not specified",
           preferredContact: data.preferredContact ?? null,
           tcpaConsent: data.tcpaConsent,
+          termsAccepted: data.termsAccepted,
+          privacyAcknowledged: data.privacyAcknowledged,
           source: "bathroom_rfp",
           status: "NEW",
+          estimatorSnapshotJson: estimatorSnapshot as any,
         },
       });
 

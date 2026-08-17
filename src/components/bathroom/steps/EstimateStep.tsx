@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import type { StepProps } from "../planner-types";
 import { PermitsStep } from "./PermitsStep";
-import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
+import {
+  EstimatorContactFields,
+  validateEstimatorContact,
+  type EstimatorContactState,
+} from "@/components/estimator/EstimatorContactFields";
 import { deriveEstimateInputs } from "@/lib/bathroom/estimate-input-derivation";
 import { getCanonical, hasLocation, resolveLocationId, isSupportedZip } from "@/lib/bathroom/answer-normalization";
 
@@ -562,20 +566,7 @@ function RfpSuccessPanel({
   );
 }
 
-type RfpFormState = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  zipCode: string;
-  preferredContact: string;
-  timeline: string;
-  tcpaConsent: boolean;
-  termsAccepted: boolean;
-  privacyAcknowledged: boolean;
-  maxContractors: number;
-  notes: string;
-};
+type RfpFormState = EstimatorContactState;
 
 function RfpContactForm({
   projectId,
@@ -606,29 +597,9 @@ function RfpContactForm({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const setField = <K extends keyof RfpFormState>(key: K, value: RfpFormState[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const validate = (): Record<string, string> => {
-    const next: Record<string, string> = {};
-    if (!form.firstName.trim()) next.firstName = "Required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) next.email = "Enter a valid email.";
-    if (!/^\d{10}$/.test(form.phone.replace(/\D/g, ""))) next.phone = "Enter a valid 10-digit US phone number.";
-    if (!/^\d{5}$/.test(form.zipCode)) next.zipCode = "Enter a 5-digit ZIP code.";
-    if (!form.termsAccepted) next.termsAccepted = "You must accept the Terms to continue.";
-    if (!form.privacyAcknowledged) next.privacyAcknowledged = "You must acknowledge the Privacy Policy.";
-    return next;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validation = validate();
+    const validation = validateEstimatorContact(form);
     setErrors(validation);
     if (Object.keys(validation).length > 0) return;
 
@@ -675,183 +646,12 @@ function RfpContactForm({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="rfp-first" className="text-xs font-medium text-ink-70">First name *</label>
-          <input
-            id="rfp-first"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.firstName}
-            onChange={(e) => setField("firstName", e.target.value)}
-            autoComplete="given-name"
-          />
-          {errors.firstName && <p className="mt-0.5 text-xs text-red-700">{errors.firstName}</p>}
-        </div>
-        <div>
-          <label htmlFor="rfp-last" className="text-xs font-medium text-ink-70">Last name</label>
-          <input
-            id="rfp-last"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.lastName}
-            onChange={(e) => setField("lastName", e.target.value)}
-            autoComplete="family-name"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="rfp-email" className="text-xs font-medium text-ink-70">Email *</label>
-        <input
-          id="rfp-email"
-          type="email"
-          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-          value={form.email}
-          onChange={(e) => setField("email", e.target.value)}
-          autoComplete="email"
-        />
-        {errors.email && <p className="mt-0.5 text-xs text-red-700">{errors.email}</p>}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="rfp-phone" className="text-xs font-medium text-ink-70">Mobile phone *</label>
-          <input
-            id="rfp-phone"
-            type="tel"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.phone}
-            onChange={(e) => setField("phone", e.target.value)}
-            placeholder="(555) 555-5555"
-            autoComplete="tel"
-            inputMode="tel"
-          />
-          {errors.phone && <p className="mt-0.5 text-xs text-red-700">{errors.phone}</p>}
-        </div>
-        <div>
-          <label htmlFor="rfp-zip" className="text-xs font-medium text-ink-70">Project ZIP code *</label>
-          <input
-            id="rfp-zip"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.zipCode}
-            onChange={(e) => setField("zipCode", e.target.value.replace(/\D/g, "").slice(0, 5))}
-            placeholder="20850"
-            inputMode="numeric"
-            maxLength={5}
-            autoComplete="postal-code"
-          />
-          {errors.zipCode && <p className="mt-0.5 text-xs text-red-700">{errors.zipCode}</p>}
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="rfp-timeline" className="text-xs font-medium text-ink-70">When do you want to start?</label>
-          <select
-            id="rfp-timeline"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.timeline}
-            onChange={(e) => setField("timeline", e.target.value)}
-          >
-            <option value="">Flexible / not sure</option>
-            <option value="ASAP">As soon as possible</option>
-            <option value="Within 1 month">Within 1 month</option>
-            <option value="1-3 months">1–3 months</option>
-            <option value="3-6 months">3–6 months</option>
-            <option value="Just planning">Just planning for now</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="rfp-contact" className="text-xs font-medium text-ink-70">Preferred contact</label>
-          <select
-            id="rfp-contact"
-            className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-            value={form.preferredContact}
-            onChange={(e) => setField("preferredContact", e.target.value)}
-          >
-            <option value="any">Any</option>
-            <option value="phone">Phone call</option>
-            <option value="text">Text message</option>
-            <option value="email">Email</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="rfp-contractors" className="text-xs font-medium text-ink-70">
-          How many contractors? ({form.maxContractors})
-        </label>
-        <div className="mt-1 flex gap-2">
-          {[1, 2, 3].map((n) => (
-            <button
-              key={n}
-              type="button"
-              onClick={() => setField("maxContractors", n)}
-              className={`rounded-lg border px-3 py-1 text-sm ${
-                form.maxContractors === n
-                  ? "border-accent bg-accent text-bone-0"
-                  : "border-ink-15 text-ink-70 hover:border-ink-40"
-              }`}
-            >
-              {n}
-            </button>
-          ))}
-        </div>
-        <p className="mt-1 text-xs text-ink-40">You control how many contractors receive your project brief.</p>
-      </div>
-
-      <div>
-        <label htmlFor="rfp-notes" className="text-xs font-medium text-ink-70">Notes for contractors (optional)</label>
-        <textarea
-          id="rfp-notes"
-          className="mt-1 w-full rounded-lg border border-ink-15 bg-bone-0 px-3 py-2 text-sm text-ink-100 outline-none focus:border-accent"
-          rows={3}
-          maxLength={4000}
-          value={form.notes}
-          onChange={(e) => setField("notes", e.target.value)}
-          placeholder="Access constraints, HOA rules, preferred brands, must-have dates…"
-        />
-      </div>
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.tcpaConsent}
-          onChange={(e) => setField("tcpaConsent", e.target.checked)}
-        />
-        <span className="text-xs">
-          {COMMUNICATION_CONSENT_TEXT}
-        </span>
-      </label>
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.termsAccepted}
-          onChange={(e) => setField("termsAccepted", e.target.checked)}
-        />
-        <span className="text-xs">
-          {LEGAL_CLICKWRAP_TEXT}{" "}
-          <a href="/terms" className="text-accent underline" target="_blank" rel="noopener noreferrer">Terms</a>{" "}
-          ·{" "}
-          <a href="/privacy" className="text-accent underline" target="_blank" rel="noopener noreferrer">Privacy</a>
-        </span>
-      </label>
-      {errors.termsAccepted && <p className="text-xs text-red-700">{errors.termsAccepted}</p>}
-
-      <label className="flex items-start gap-3 text-sm text-ink-70">
-        <input
-          type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0"
-          checked={form.privacyAcknowledged}
-          onChange={(e) => setField("privacyAcknowledged", e.target.checked)}
-        />
-        <span className="text-xs">
-          I acknowledge the Renovessa Privacy Policy and understand my project and contact information will be processed to coordinate this request.
-        </span>
-      </label>
-      {errors.privacyAcknowledged && <p className="text-xs text-red-700">{errors.privacyAcknowledged}</p>}
+      <EstimatorContactFields
+        form={form}
+        setForm={setForm}
+        errors={errors}
+        idPrefix="bathroom-rfq"
+      />
 
       {submitError && (
         <p className="text-sm text-red-700">

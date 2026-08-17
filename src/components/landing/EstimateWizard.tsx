@@ -14,7 +14,6 @@ import {
   getTradeEstimatorPath,
   isSpecializedEstimator,
   LANDING_CATEGORIES,
-  CONTACT_WINDOW_OPTIONS,
 } from "@/lib/landing-data";
 import {
   SHARED_CONTEXT_QUESTIONS,
@@ -32,7 +31,13 @@ import {
   type EstimateAnswers,
 } from "@/lib/estimate-pricing";
 import { FIRST_JOB_MODE, PILOT_ZIP_CLUSTERS } from "@/lib/first-job-config";
-import { COMMUNICATION_CONSENT_TEXT, LEGAL_CLICKWRAP_TEXT } from "@/lib/compliance-versions";
+import {
+  EstimatorContactFields,
+  createEstimatorContactState,
+  validateEstimatorContact,
+  type EstimatorContactState,
+} from "@/components/estimator/EstimatorContactFields";
+import { buildStandardEstimatorSnapshot } from "@/lib/estimator-submission";
 import { useOptionalCategories } from "./CategoryContext";
 
 type Phase =
@@ -60,14 +65,7 @@ const PHASE_LABELS: Record<Phase, string> = {
 
 const DRAFT_KEY = "renovessa_estimate_draft_v1";
 
-type ContactState = {
-  name: string;
-  email: string;
-  phone: string;
-  contactWindow: string;
-  consent: boolean;
-  legalAccepted: boolean;
-};
+type ContactState = EstimatorContactState;
 
 type DraftPayload = {
   phase: Phase;
@@ -95,23 +93,9 @@ function isMobileViewport() {
   return window.matchMedia("(max-width: 767px)").matches;
 }
 
-function splitName(full: string): { firstName: string; lastName: string } {
-  const parts = full.trim().split(/\s+/);
-  if (parts.length === 0) return { firstName: "", lastName: "" };
-  if (parts.length === 1) return { firstName: parts[0], lastName: "." };
-  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
-}
-
 function mapUrgency(u: string): string {
   if (u === "As soon as possible") return "ASAP";
   return u || "Just planning";
-}
-
-function mapContact(w: string): string {
-  if (w === "morning") return "Morning";
-  if (w === "afternoon") return "Afternoon";
-  if (w === "evening") return "Evening";
-  return "Any time";
 }
 
 function displayAnswer(tradeId: LandingCategoryId, id: string, value: string): string {
@@ -203,14 +187,7 @@ export function EstimateWizard({
   const [answers, setAnswers] = useState<EstimateAnswers>({});
   const [notes, setNotes] = useState("");
   const [zip, setZip] = useState("");
-  const [contact, setContact] = useState<ContactState>({
-    name: prefill?.name ?? "",
-    email: prefill?.email ?? "",
-    phone: prefill?.phone ?? "",
-    contactWindow: "any",
-    consent: false,
-    legalAccepted: false,
-  });
+  const [contact, setContact] = useState<ContactState>(() => createEstimatorContactState("", prefill));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [receiptId, setReceiptId] = useState("");
@@ -388,19 +365,19 @@ export function EstimateWizard({
     setPhase("estimate");
   }, []);
 
-  const goContact = useCallback(() => setPhase("contact"), []);
+  const goContact = useCallback(() => {
+    setContact((previous) => ({ ...previous, zipCode: zip }));
+    setPhase("contact");
+  }, [zip]);
 
   const goReview = useCallback(() => {
-    const next: Record<string, string> = {};
-    if (!contact.name.trim()) next.name = "Enter your full name.";
-    if (contact.phone.replace(/\D/g, "").length !== 10)
-      next.phone = "Enter a valid 10-digit US phone number.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) next.email = "Enter a valid email.";
-    if (!contact.legalAccepted) next.legalAccepted = "Accept the Terms and acknowledge the Privacy Policy to continue.";
+    const effectiveContact = contact.zipCode ? contact : { ...contact, zipCode: zip };
+    const next = validateEstimatorContact(effectiveContact);
+    setContact(effectiveContact);
     setErrors(next);
     if (Object.keys(next).length > 0) return;
     setPhase("review");
-  }, [contact]);
+  }, [contact, zip]);
 
   const advanceScope = useCallback(
     (answersOverride?: EstimateAnswers) => {
@@ -495,10 +472,20 @@ export function EstimateWizard({
     setLoading(true);
     setErrors({});
     try {
-      const { firstName, lastName } = splitName(contact.name);
       const digits = contact.phone.replace(/\D/g, "");
       const labelMap = buildQuestionLabelMap(trade);
-      const description = buildRfqDescription(tradeLabel, answers, estimate, labelMap, notes);
+      const submittedZip = contact.zipCode || zip;
+      const combinedNotes = [notes.trim(), contact.notes.trim()].filter(Boolean).join("\n\n");
+      const snapshot = buildStandardEstimatorSnapshot({
+        trade,
+        tradeLabel,
+        answers,
+        zip: submittedZip,
+        notes,
+        contact,
+        estimate,
+      });
+      const description = buildRfqDescription(tradeLabel, answers, estimate, labelMap, combinedNotes);
       const res = await fetch("/api/project-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -507,17 +494,19 @@ export function EstimateWizard({
           description,
           urgency: mapUrgency(answers.urgency || "Just planning"),
           budgetRange: estimateToBudgetRange(estimate),
-          firstName,
-          lastName,
+          firstName: contact.firstName.trim(),
+          lastName: contact.lastName.trim() || ".",
           phone: digits,
           email: contact.email.trim(),
-          zipCode: zip,
-          preferredContact: mapContact(contact.contactWindow),
-          tcpaConsent: contact.consent,
-          termsAccepted: contact.legalAccepted,
-          privacyAcknowledged: contact.legalAccepted,
+          zipCode: submittedZip,
+          preferredContact: contact.preferredContact,
+          tcpaConsent: contact.tcpaConsent,
+          termsAccepted: contact.termsAccepted,
+          privacyAcknowledged: contact.privacyAcknowledged,
           ownershipAuthority: answers.ownership || undefined,
           source: "estimate_wizard",
+          estimatorId: trade,
+          estimatorSnapshot: snapshot,
           qualificationNotes: JSON.stringify({
             ballparkLow: estimate.low,
             ballparkHigh: estimate.high,
@@ -529,6 +518,8 @@ export function EstimateWizard({
             substantiationStatus: estimate.substantiationStatus,
             answers,
             notes: notes.trim() || null,
+            contactNotes: contact.notes.trim() || null,
+            maxContractors: contact.maxContractors,
           }),
         }),
       });
@@ -556,14 +547,7 @@ export function EstimateWizard({
     setAnswers({});
     setNotes("");
     setZip("");
-    setContact({
-      name: prefill?.name ?? "",
-      email: prefill?.email ?? "",
-      phone: prefill?.phone ?? "",
-      contactWindow: "any",
-      consent: false,
-      legalAccepted: false,
-    });
+    setContact(createEstimatorContactState("", prefill));
     setErrors({});
     setReceiptId("");
     setProjectId("");
@@ -580,13 +564,29 @@ export function EstimateWizard({
     setAnswers(draft.answers || {});
     setNotes(draft.notes || "");
     setZip(draft.zip || "");
+    const legacyContact = (draft.contact ?? {}) as Partial<ContactState> & {
+      name?: string;
+      contactWindow?: string;
+      consent?: boolean;
+      legalAccepted?: boolean;
+    };
+    const restoredContact = legacyContact.firstName !== undefined
+      ? { ...createEstimatorContactState(draft.zip || "", prefill), ...legacyContact }
+      : createEstimatorContactState(draft.zip || "", {
+          name: legacyContact.name ?? prefill?.name,
+          email: legacyContact.email ?? prefill?.email,
+          phone: legacyContact.phone ?? prefill?.phone,
+        });
     setContact({
-      name: draft.contact?.name ?? prefill?.name ?? "",
-      email: draft.contact?.email ?? prefill?.email ?? "",
-      phone: draft.contact?.phone ?? prefill?.phone ?? "",
-      contactWindow: draft.contact?.contactWindow ?? "any",
-      consent: draft.contact?.consent ?? false,
-      legalAccepted: draft.contact?.legalAccepted ?? false,
+      ...restoredContact,
+      zipCode: legacyContact.zipCode ?? draft.zip ?? "",
+      timeline: legacyContact.timeline ?? "",
+      preferredContact: legacyContact.preferredContact ?? "any",
+      maxContractors: legacyContact.maxContractors ?? 3,
+      notes: legacyContact.notes ?? "",
+      tcpaConsent: legacyContact.tcpaConsent ?? legacyContact.consent ?? false,
+      termsAccepted: legacyContact.termsAccepted ?? legacyContact.legalAccepted ?? false,
+      privacyAcknowledged: legacyContact.privacyAcknowledged ?? legacyContact.legalAccepted ?? false,
     });
     setScopeStep(draft.scopeStep ?? 0);
     setContextStep(draft.contextStep ?? 0);
@@ -1312,126 +1312,20 @@ function PhaseContent(props: {
       <div className="space-y-5">
         <div>
           <h3 ref={titleRef} tabIndex={-1} className="text-lg font-semibold text-ink-100 outline-none">
-            Your contact details
+            Request contractor proposals
           </h3>
           <p className="mt-1 text-sm text-ink-70">
-            We&apos;ll use this to send your RFQ confirmation and follow up with bids for your{" "}
-            {tradeLabel.toLowerCase()} project in {zip}.
+            Your estimate is ready. Complete this form so Renovessa can send your {tradeLabel.toLowerCase()}{" "}
+            project to relevant contractors and send you the RFQ confirmation.
           </p>
         </div>
-        <div>
-          <label htmlFor="est-name" className="landing-label">
-            Full name <span className="text-danger-landing">*</span>
-          </label>
-          <input
-            id="est-name"
-            className="landing-input mt-1"
-            value={contact.name}
-            onChange={(e) => setContact((c) => ({ ...c, name: e.target.value }))}
-            autoComplete="name"
-          />
-          {errors.name && (
-            <p className="mt-1 text-sm text-danger-landing" role="alert">
-              {errors.name}
-            </p>
-          )}
-        </div>
-        <div>
-          <label htmlFor="est-email" className="landing-label">
-            Email <span className="text-danger-landing">*</span>
-          </label>
-          <input
-            id="est-email"
-            type="email"
-            className="landing-input mt-1"
-            value={contact.email}
-            onChange={(e) => setContact((c) => ({ ...c, email: e.target.value }))}
-            autoComplete="email"
-            readOnly={lockEmail}
-            disabled={lockEmail}
-          />
-          {lockEmail && <p className="mt-1 text-xs text-ink-40">Tied to your portal account.</p>}
-          {errors.email && (
-            <p className="mt-1 text-sm text-danger-landing" role="alert">
-              {errors.email}
-            </p>
-          )}
-        </div>
-        <div>
-          <label htmlFor="est-phone" className="landing-label">
-            Mobile phone <span className="text-danger-landing">*</span>
-          </label>
-          <input
-            id="est-phone"
-            type="tel"
-            className="landing-input mt-1"
-            value={contact.phone}
-            onChange={(e) => setContact((c) => ({ ...c, phone: e.target.value }))}
-            autoComplete="tel"
-            inputMode="tel"
-            placeholder="(555) 555-5555"
-          />
-          {errors.phone && (
-            <p className="mt-1 text-sm text-danger-landing" role="alert">
-              {errors.phone}
-            </p>
-          )}
-        </div>
-        <div>
-          <label htmlFor="est-window" className="landing-label">
-            Best time to reach you
-          </label>
-          <select
-            id="est-window"
-            className="landing-input mt-1"
-            value={contact.contactWindow}
-            onChange={(e) => setContact((c) => ({ ...c, contactWindow: e.target.value }))}
-          >
-            {CONTACT_WINDOW_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <label className="flex items-start gap-3 text-sm text-ink-70">
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 shrink-0"
-            checked={contact.consent}
-            onChange={(e) => setContact((c) => ({ ...c, consent: e.target.checked }))}
-          />
-          <span>
-            Optional: I agree that Renovessa may call or text me about this project request.
-            <details className="mt-1">
-              <summary className="cursor-pointer text-xs text-ink-40">Read full consent</summary>
-              <span className="mt-1 block text-xs leading-relaxed text-ink-40">
-                {COMMUNICATION_CONSENT_TEXT} <a href="/tcpa" className="text-accent underline">Read the calls and texts disclosure.</a>
-              </span>
-            </details>
-          </span>
-        </label>
-        {errors.consent && (
-          <p className="text-sm text-danger-landing" role="alert">
-            {errors.consent}
-          </p>
-        )}
-        <label className="flex items-start gap-3 text-sm text-ink-70">
-          <input
-            type="checkbox"
-            className="mt-1 h-4 w-4 shrink-0"
-            checked={contact.legalAccepted}
-            onChange={(e) => setContact((c) => ({ ...c, legalAccepted: e.target.checked }))}
-          />
-          <span>
-            {LEGAL_CLICKWRAP_TEXT} <a href="/terms" className="text-accent underline">Terms</a> · <a href="/privacy" className="text-accent underline">Privacy</a>
-          </span>
-        </label>
-        {errors.legalAccepted && (
-          <p className="text-sm text-danger-landing" role="alert">
-            {errors.legalAccepted}
-          </p>
-        )}
+        <EstimatorContactFields
+          form={contact}
+          setForm={setContact}
+          errors={errors}
+          idPrefix="standard-rfq"
+          lockEmail={lockEmail}
+        />
       </div>
     );
   }
@@ -1463,7 +1357,7 @@ function PhaseContent(props: {
           </div>
           <dl className="mt-3 space-y-2 text-sm">
             <ReviewRow label="Trade" value={tradeLabel} />
-            <ReviewRow label="ZIP" value={zip} />
+            <ReviewRow label="ZIP" value={contact.zipCode || zip} />
             <ReviewRow
               label="Ballpark shown"
               value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
@@ -1472,7 +1366,7 @@ function PhaseContent(props: {
               label="Contact"
               value={
                 <>
-                  {contact.name}
+                  {contact.firstName} {contact.lastName}
                   <br />
                   <span className="font-normal text-ink-70">
                     {contact.email} · {contact.phone}
@@ -1480,6 +1374,9 @@ function PhaseContent(props: {
                 </>
               }
             />
+            <ReviewRow label="Timeline" value={contact.timeline || "Flexible / not sure"} />
+            <ReviewRow label="Preferred contact" value={contact.preferredContact} />
+            <ReviewRow label="Contractors requested" value={String(contact.maxContractors)} />
           </dl>
         </div>
         {answerRows.length > 0 && (
@@ -1544,7 +1441,7 @@ function PhaseContent(props: {
             {receiptId}
           </p>
           <p className="mt-2 text-sm text-ink-70">
-            Thanks{contact.name.trim() ? `, ${contact.name.trim().split(/\s+/)[0]}` : ""}. Your{" "}
+            Thanks{contact.firstName.trim() ? `, ${contact.firstName.trim()}` : ""}. Your{" "}
             {tradeLabel.toLowerCase()} RFQ is in our queue.
           </p>
           <p className="mt-2 text-sm text-ink-70">
@@ -1557,7 +1454,7 @@ function PhaseContent(props: {
           <p className="text-sm font-semibold text-ink-100">Your submitted RFQ</p>
           <dl className="mt-3 space-y-2 text-sm">
             <ReviewRow label="Trade" value={tradeLabel} />
-            <ReviewRow label="ZIP" value={zip} />
+            <ReviewRow label="ZIP" value={contact.zipCode || zip} />
             <ReviewRow
               label="Ballpark"
               value={`${formatMoney(estimate.low)} – ${formatMoney(estimate.high)}`}
@@ -1574,6 +1471,12 @@ function PhaseContent(props: {
             <div className="mt-4 border-t border-ink-15 pt-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">Notes</p>
               <p className="mt-1 whitespace-pre-wrap text-sm text-ink-70">{notes.trim()}</p>
+            </div>
+          )}
+          {contact.notes.trim() && (
+            <div className="mt-4 border-t border-ink-15 pt-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-40">Notes for contractors</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm text-ink-70">{contact.notes.trim()}</p>
             </div>
           )}
         </div>

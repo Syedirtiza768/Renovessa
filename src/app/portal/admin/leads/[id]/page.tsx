@@ -16,6 +16,8 @@ import { BillingProofPanel } from "@/components/admin/BillingProofPanel";
 import { FeedbackForm } from "@/components/admin/FeedbackForm";
 import { CaseStudyForm } from "@/components/admin/CaseStudyForm";
 import { NoShowPanel } from "@/components/admin/NoShowPanel";
+import { EstimatorSubmissionSummary } from "@/components/portal/EstimatorSubmissionSummary";
+import { parseEstimatorSnapshot, snapshotFromLegacyQualificationNotes } from "@/lib/estimator-submission";
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -42,6 +44,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const showFeedback = appt && ["HOMEOWNER_CONFIRMED", "BILLED"].includes(appt.status);
   const showCaseStudy = ["HOMEOWNER_CONFIRMED", "BILLING_PENDING", "BILLING_APPROVED", "CLOSED"].includes(lead.status);
   const showReassign = appt && ["ACCEPTED", "SCHEDULED", "REMINDER_SENT", "CHECKED_IN"].includes(appt.status);
+  const estimatorSnapshot =
+    parseEstimatorSnapshot(lead.estimatorSnapshotJson) ??
+    snapshotFromLegacyQualificationNotes(lead.qualificationNotes, lead.trade);
 
   // Offer history for the OpportunityPanel
   const offerHistory = lead.auditEvents.filter(
@@ -86,6 +91,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div><dt className="text-muted">Source</dt><dd>{lead.source}</dd></div>
           </dl>
         </div>
+
+        {estimatorSnapshot && <EstimatorSubmissionSummary snapshot={estimatorSnapshot} />}
 
         {appt && (
           <div className="card-accent p-4">

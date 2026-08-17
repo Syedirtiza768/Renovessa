@@ -382,3 +382,12 @@
   sign in with the supplied portal credentials.
 - Brief PDFs remain available from the authenticated homeowner portal; explicit
   portal-created share links remain separate.
+
+# 2026-08-18 — Cross-estimator field persistence and homeowner portal parity
+
+- Added nullable `ProjectRequest.estimatorSnapshotJson`, a versioned display snapshot that preserves every configured estimator answer, shared context, estimate result, contact preference, note, and consent value at RFQ submission time.
+- Added one shared Bathroom-style contact form and validation to the standard trade wizard, Bathroom Remodeling, and Solar RFQ flows. Specialized schemas now persist contractor count plus terms/privacy evidence consistently.
+- Added shared snapshot rendering to homeowner standard requests, Bathroom project details, Solar project details, and admin lead details. Homeowner-facing summaries intentionally omit internal Brief ID, Estimate ID, and database IDs.
+- Bathroom homeowner project details now show read-only existing/proposed layout previews and authenticated uploaded photos. Added a feature-gated Solar homeowner plans list/detail view.
+- Added snapshot/legacy-fallback tests and the Bathroom contractor-count schema assertion. Validation: 228/228 tests green, `npx tsc --noEmit` clean, `npm run build` exit 0.
+- `npx prisma db push` could not run because the configured local PostgreSQL instance at `localhost:5436` is unavailable; run it before deployment.

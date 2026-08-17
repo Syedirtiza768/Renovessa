@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { NotificationBell } from "@/components/NotificationBell";
+import { solarPlannerUsable } from "@/lib/feature-flags";
 
 export default async function HomeownerLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -10,6 +11,7 @@ export default async function HomeownerLayout({ children }: { children: React.Re
   const navItems = [
     { href: "/portal/homeowner", label: "My Projects" },
     { href: "/portal/homeowner/bathroom-projects", label: "Bathroom Plans" },
+    ...(solarPlannerUsable() ? [{ href: "/portal/homeowner/solar-projects", label: "Solar Plans" }] : []),
     { href: "/portal/homeowner/submit", label: "Submit RFQ" },
     { href: "/portal/homeowner/settings", label: "Account" },
   ];

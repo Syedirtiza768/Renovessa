@@ -7,6 +7,11 @@ import { formatDate } from "@/lib/utils";
 import { ConfirmAppointmentButton } from "@/components/ConfirmAppointmentButton";
 import { HomeownerFeedbackForm } from "@/components/HomeownerFeedbackForm";
 import { isHomeownerVisibleAuditEvent } from "@/lib/homeowner-audit";
+import { EstimatorSubmissionSummary } from "@/components/portal/EstimatorSubmissionSummary";
+import {
+  parseEstimatorSnapshot,
+  snapshotFromLegacyQualificationNotes,
+} from "@/lib/estimator-submission";
 
 export default async function HomeownerProjectDetailPage({
   params,
@@ -41,6 +46,9 @@ export default async function HomeownerProjectDetailPage({
     appt &&
     ["HOMEOWNER_CONFIRMED", "BILLED"].includes(appt.status) &&
     !hasSubmittedFeedback;
+  const estimatorSnapshot =
+    parseEstimatorSnapshot(project.estimatorSnapshotJson) ??
+    snapshotFromLegacyQualificationNotes(project.qualificationNotes, project.trade);
 
   return (
     <div>
@@ -158,6 +166,8 @@ export default async function HomeownerProjectDetailPage({
           </div>
         )}
       </div>
+
+      {estimatorSnapshot && <EstimatorSubmissionSummary snapshot={estimatorSnapshot} />}
 
       {canLeaveFeedback && appt && (
         <div className="mt-6">

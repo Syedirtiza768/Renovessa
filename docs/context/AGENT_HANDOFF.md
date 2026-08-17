@@ -1,5 +1,26 @@
 # Agent Handoff
 
+## 2026-08-18 - Cross-estimator field persistence and homeowner portal parity
+
+### Done
+
+- Added `ProjectRequest.estimatorSnapshotJson` and snapshot helpers for standard, Bathroom, and Solar submissions so all estimator fields are retained exactly at RFQ submission time.
+- Unified the final contractor-contact form across all public estimator paths on the Bathroom Remodeling field set and consent rules.
+- Added shared estimator-response summaries to homeowner and admin views, hiding internal Brief ID / Estimate ID values from homeowners while retaining operational data server-side.
+- Added Bathroom read-only layout previews and authenticated photo gallery rendering to the homeowner project detail; added the gated Solar plans list/detail pages.
+
+### Verification
+
+- `npm test`: 228/228 passing.
+- `npx tsc --noEmit`: clean.
+- `npm run build`: exit 0; static data pages logged only the expected unavailable-local-PostgreSQL warnings.
+- `npx prisma db push`: pending because PostgreSQL is not running at the configured local endpoint.
+
+### Before deployment
+
+- Start the configured PostgreSQL instance and run `npx prisma db push`.
+- Submit one standard, Bathroom, and Solar RFQ in UAT; verify the homeowner summary shows every answer, contact field, estimate assumption, layout, and photo without internal IDs.
+
 ## 2026-08-14 - Public 10-trade estimator catalog and logo refresh
 
 ### Done

@@ -1,5 +1,12 @@
 # Next Steps
 
+## Cross-estimator RFQ and homeowner portal parity — UAT / deployment
+
+1. Start the configured PostgreSQL instance and run `npx prisma db push` for the additive `ProjectRequest.estimatorSnapshotJson` column.
+2. Run one authenticated/anonymous UAT submission for a standard estimator, Bathroom Remodeling, and Solar; confirm all answers and shared contact fields appear in the homeowner portal.
+3. Confirm Bathroom existing/proposed diagrams render read-only and uploaded photos open through authenticated media routes.
+4. Deploy only after the UAT check and verify that homeowner pages do not expose internal Brief ID, Estimate ID, or database IDs.
+
 ## Solar — switch on the planner (blocked on API keys)
 
 Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live**; `/solar/planner` is deliberately 404 until the three provider keys exist. Full context: `docs/planning/SOLAR_IMPLEMENTATION_NOTE.md`.

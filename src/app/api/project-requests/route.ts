@@ -28,6 +28,8 @@ const schema = z.object({
   preferredAppointmentWindows: z.string().optional(),
   source: z.enum(["organic", "homeowner_portal", "estimate_wizard", "ai_advisor"]).optional(),
   qualificationNotes: z.string().max(12000).optional(),
+  estimatorId: z.string().max(80).optional(),
+  estimatorSnapshot: z.record(z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -82,7 +84,9 @@ export async function POST(req: NextRequest) {
           urgency: data.urgency,
           budgetRange: data.budgetRange,
           preferredContact: data.preferredContact,
-          tcpaConsent: false,
+          tcpaConsent: data.tcpaConsent,
+          termsAccepted: data.termsAccepted,
+          privacyAcknowledged: data.privacyAcknowledged,
           address: data.address,
           ownershipAuthority: data.ownershipAuthority,
           preferredAppointmentWindows: data.preferredAppointmentWindows,
@@ -90,6 +94,7 @@ export async function POST(req: NextRequest) {
           status: "NEW",
           source,
           serviceCellMatch,
+          estimatorSnapshotJson: data.estimatorSnapshot as any,
         },
       });
       await recordProjectCompliance(tx, {
