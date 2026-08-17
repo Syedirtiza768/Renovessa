@@ -372,3 +372,13 @@
   state after the project becomes account-owned.
 - Added `brief-access.test.ts`; validation: 225/225 tests green and
   `tsc --noEmit` clean. Pending production deploy and live smoke test.
+
+# 2026-08-17 — Restored account-gated bathroom brief access
+
+- Removed the anonymous "Download my project brief" and post-RFP "Download
+  project brief PDF" controls from the planner Results step.
+- Removed automatic brief download URLs from bathroom brief/RFP responses and
+  from the homeowner confirmation email. The email now directs homeowners to
+  sign in with the supplied portal credentials.
+- Brief PDFs remain available from the authenticated homeowner portal; explicit
+  portal-created share links remain separate.

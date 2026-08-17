@@ -27,7 +27,6 @@ type RfpSubmissionResult = {
   emailSent: boolean;
   accountCreated: boolean;
   portalEmail: string;
-  briefAccessUrl?: string;
   temporaryPassword?: string;
 };
 
@@ -43,7 +42,6 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
   const [briefId, setBriefId] = useState<string | null>(null);
   const [briefGenerating, setBriefGenerating] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
-  const [briefDownloadUrl, setBriefDownloadUrl] = useState<string | null>(answers.brief_access_url ?? null);
   const [rfpConfirmation, setRfpConfirmation] = useState<RfpSubmissionResult | null>(null);
 
   useEffect(() => {
@@ -123,12 +121,8 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
         });
         if (ctrl.signal.aborted) return;
         if (res.ok) {
-          const data = (await res.json()) as { saved: { id: string }; briefAccessUrl?: string };
+          const data = (await res.json()) as { saved: { id: string } };
           setBriefId(data.saved.id);
-          if (data.briefAccessUrl) {
-            setBriefDownloadUrl(data.briefAccessUrl);
-            setAnswer("brief_access_url", data.briefAccessUrl);
-          }
         } else {
           const data = await res.json().catch(() => ({}));
           setBriefError((data as { error?: string }).error ?? `Brief generation failed (${res.status}). You can retry below.`);
@@ -360,25 +354,19 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
             </div>
           )}
           {briefId && (
-            <p className="mt-2 text-xs text-green-700">Project brief ready.</p>
+            <p className="mt-2 text-xs text-green-700">
+              Project brief ready. It will be available in your homeowner portal after you sign in.
+            </p>
           )}
           <div className="mt-3 flex flex-wrap gap-3">
             {briefId && (
-              <>
-                <a
-                  href={briefDownloadUrl ?? `/api/bathroom-projects/${projectId}/brief/pdf`}
-                  className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-bone-0 transition hover:opacity-90"
-                >
-                  Download my project brief
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setShowRfqForm(true)}
-                  className="rounded-lg border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent/5"
-                >
-                  Request contractor proposals
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => setShowRfqForm(true)}
+                className="rounded-lg border border-accent px-4 py-2 text-sm font-medium text-accent transition hover:bg-accent/5"
+              >
+                Request contractor proposals
+              </button>
             )}
             {!briefId && !briefGenerating && (
               <button
@@ -395,12 +383,8 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
                       const data = await res.json().catch(() => ({}));
                       throw new Error(data.error ?? `Failed (${res.status})`);
                     }
-                    const data = (await res.json()) as { saved: { id: string }; briefAccessUrl?: string };
+                    const data = (await res.json()) as { saved: { id: string } };
                     setBriefId(data.saved.id);
-                    if (data.briefAccessUrl) {
-                      setBriefDownloadUrl(data.briefAccessUrl);
-                      setAnswer("brief_access_url", data.briefAccessUrl);
-                    }
                   } catch (e) {
                     setBriefError(e instanceof Error ? e.message : "Unknown error");
                   } finally {
@@ -420,8 +404,6 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
       {submittedReference && (
         <RfpSuccessPanel
           referenceNumber={submittedReference}
-          projectId={projectId}
-          briefDownloadUrl={rfpConfirmation?.briefAccessUrl ?? answers.rfp_brief_access_url ?? briefDownloadUrl}
           emailSent={rfpConfirmation?.emailSent ?? (answers.rfp_email_sent === "yes" ? true : answers.rfp_email_sent === "no" ? false : null)}
           accountCreated={rfpConfirmation?.accountCreated ?? (answers.rfp_account_created === "yes" ? true : answers.rfp_account_created === "no" ? false : null)}
           portalEmail={rfpConfirmation?.portalEmail ?? answers.rfp_portal_email}
@@ -439,10 +421,6 @@ export function EstimateStep({ answers, setAnswer, flags, projectId, referenceNu
             setAnswer("rfp_email_sent", submission.emailSent ? "yes" : "no");
             setAnswer("rfp_account_created", submission.accountCreated ? "yes" : "no");
             setAnswer("rfp_portal_email", submission.portalEmail);
-            if (submission.briefAccessUrl) {
-              setAnswer("rfp_brief_access_url", submission.briefAccessUrl);
-              setBriefDownloadUrl(submission.briefAccessUrl);
-            }
             setRfpConfirmation(submission);
           }}
         />
@@ -513,16 +491,12 @@ function EstimateStatusBadge({ estimatePersisted, persistFailed, projectId }: { 
 
 function RfpSuccessPanel({
   referenceNumber,
-  projectId,
-  briefDownloadUrl,
   emailSent,
   accountCreated,
   portalEmail,
   temporaryPassword,
 }: {
   referenceNumber: string;
-  projectId: string | null;
-  briefDownloadUrl?: string | null;
   emailSent: boolean | null;
   accountCreated: boolean | null;
   portalEmail?: string;
@@ -543,24 +517,25 @@ function RfpSuccessPanel({
           <li>You are notified when a contractor is interested — you stay in control of your contact details.</li>
         </ol>
       </div>
-      <div className="mt-4 flex flex-wrap gap-3">
-        {(briefDownloadUrl || projectId) && (
-          <a
-            href={briefDownloadUrl ?? `/api/bathroom-projects/${projectId}/brief/pdf`}
-            className="rounded-lg border border-green-400 bg-white px-4 py-2 text-sm font-medium text-green-900 transition hover:bg-green-100"
-          >
-            Download project brief PDF
-          </a>
-        )}
+      <div className="mt-4 rounded-lg border border-green-200 bg-white/70 p-3 text-sm text-green-900">
+        <p>
+          Sign in to your homeowner portal to view and download your project brief.
+        </p>
+        <a
+          href="/login"
+          className="mt-3 inline-flex rounded-lg border border-green-400 bg-white px-4 py-2 text-sm font-medium text-green-900 transition hover:bg-green-100"
+        >
+          Sign in to homeowner portal
+        </a>
       </div>
       <div className="mt-4 rounded-lg border border-green-200 bg-white/70 p-3 text-sm text-green-900">
         {emailSent === true && portalEmail && (
           <>
             <p>
-              Account access details and your secure brief link were sent to <strong>{portalEmail}</strong>.
+              Account access details were sent to <strong>{portalEmail}</strong>.
             </p>
             {accountCreated === true ? (
-              <p className="mt-1 text-xs text-green-800">Your email includes a temporary password. Change it after signing in.</p>
+              <p className="mt-1 text-xs text-green-800">Your email includes a temporary password. Use it to sign in, then change it.</p>
             ) : (
               <p className="mt-1 text-xs text-green-800">Use your existing homeowner portal password to sign in.</p>
             )}
@@ -576,7 +551,7 @@ function RfpSuccessPanel({
           </>
         )}
         {emailSent === null && (
-          <p>Your confirmation email contains the portal instructions and secure project-brief link.</p>
+          <p>Your confirmation email contains the portal instructions and your account access details.</p>
         )}
       </div>
       <p className="mt-3 text-xs text-green-800">

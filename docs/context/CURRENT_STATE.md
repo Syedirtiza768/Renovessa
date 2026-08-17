@@ -121,7 +121,7 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 
 ### Implemented (Phase 2)
 - **Analytics + audit logging** — anonymous project creation logged; `BATHROOM_LAYOUT_SAVED`, `BATHROOM_PERMIT_ASSESSED`, `BATHROOM_SHARE_LINK_CREATED`, `BATHROOM_SHARE_LINK_REVOKED`, `BATHROOM_PHOTO_UPLOADED`, `BATHROOM_DIAGRAM_SAVED` event types added; enhanced analytics endpoint with bathroom type distribution and recent audit events.
-- **Project brief PDF** — `src/lib/bathroom/brief-pdf.ts` renders structured brief to PDF via `pdfkit`; `GET /api/bathroom-projects/[id]/brief/pdf` endpoint; "Generate brief + Download PDF" in planner estimate step.
+- **Project brief PDF** — `src/lib/bathroom/brief-pdf.ts` renders the structured brief via `pdfkit`; the planner generates it for the project, and homeowners view/download it from the authenticated homeowner portal after signing in.
 - **Admin screens** — `/portal/admin/bathroom/projects` (project list), `/portal/admin/bathroom/estimator-config` (publish/retire/clone/seed), `/portal/admin/bathroom/content` (content version CRUD), `/portal/admin/bathroom/analytics` (funnel + distributions + audit events). Nav items gated by feature flag.
 - **2D diagram builder** — `src/components/bathroom/DiagramBuilder.tsx` with SVG preview, fixture palette, position editing, live geometry calculations, validation issues, save to layouts API. Integrated as existing/proposed layout steps in planner (gated by `diagramBuilder` flag).
 - **Contractor proposal comparison** — `/portal/homeowner/bathroom-projects` (list) + `/[id]` (detail with proposal table, price spread, credential badges). Homeowner nav updated.

@@ -357,3 +357,35 @@ attempt to PATCH an account-owned project.
 ### Status
 Implemented and locally verified: 225/225 unit tests green; `tsc --noEmit`
 clean. Pending production deploy and live smoke test.
+
+Superseded by the account-gated brief decision below: automatic public brief
+links are no longer issued or shown in the planner.
+
+## 2026-08-17 — Bathroom brief requires homeowner portal sign-in
+
+### Decision
+
+The anonymous bathroom planner and RFP confirmation email must not expose a
+project-brief download link. Results may confirm that the brief is ready and
+offer the contractor-proposal action, but the brief PDF is accessed through the
+authenticated homeowner portal after sign-in. The confirmation email contains
+the portal URL and account credentials (new temporary password or existing
+account-password instruction), not a direct brief URL.
+
+Explicit share links created from an authenticated portal remain a separate,
+intentional sharing feature.
+
+### Reason
+
+The prior tokenized-link change conflicted with the agreed account-gated
+experience and left a "Download project brief" control at the end of Results.
+
+### Impact
+
+Planner brief-generation responses and bathroom RFP responses no longer return
+an automatic brief URL or mint an automatic share token. Existing portal PDF
+authorization remains unchanged.
+
+### Status
+
+Implemented locally; pending validation and production deployment.

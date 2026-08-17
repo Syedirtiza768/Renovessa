@@ -8,7 +8,6 @@ import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { rfpSubmissionSchema } from "@/lib/bathroom/schemas";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
 import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
-import { briefAccessExpiresAt, buildBriefPdfUrl, generateBriefAccessToken } from "@/lib/bathroom/brief-access";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -26,20 +25,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
     if (!latestBrief) {
       return NextResponse.json({ error: "Generate a brief before submitting an RFP." }, { status: 409 });
-    }
-
-    const briefAccessToken =
-      latestBrief.shareToken && latestBrief.shareExpiresAt && latestBrief.shareExpiresAt > new Date()
-        ? latestBrief.shareToken
-        : generateBriefAccessToken();
-    if (briefAccessToken !== latestBrief.shareToken) {
-      await prisma.projectBrief.update({
-        where: { id: latestBrief.id },
-        data: {
-          shareToken: briefAccessToken,
-          shareExpiresAt: briefAccessExpiresAt(),
-        },
-      });
     }
 
     const data = rfpSubmissionSchema.parse(await req.json());
@@ -151,7 +136,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       zipCode: data.zipCode,
       projectRequestId: rfp.id,
       portalAccess,
-      briefAccessUrl: buildBriefPdfUrl(id, briefAccessToken),
     });
 
     return NextResponse.json({
@@ -160,7 +144,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       emailSent,
       accountCreated: portalAccess.isNewAccount,
       portalEmail: portalAccess.email,
-      briefAccessUrl: buildBriefPdfUrl(id, briefAccessToken),
       // Only reveal a newly-created temporary password when delivery failed;
       // otherwise it is sent through the confirmation email.
       temporaryPassword: !emailSent ? portalAccess.temporaryPassword : undefined,
