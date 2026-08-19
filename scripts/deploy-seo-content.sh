@@ -1,5 +1,5 @@
 #!/bin/bash
-# Deploy SEO content system and publish articles on Renovessa server
+# Deploy SEO content system and publish ALL articles on Renovessa server
 # Run this script on the Ubuntu server at /opt/renovessa
 
 set -euo pipefail
@@ -34,24 +34,11 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app npx 
 echo "=== 5. Verify seeded content ==="
 docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c "SELECT slug, title, \"applicableTrade\", status FROM \"BathroomContentVersion\" ORDER BY \"applicableTrade\", slug;"
 
-echo "=== 6. Publish HVAC guides (recommended first wedge) ==="
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c "
-UPDATE \"BathroomContentVersion\" SET status = 'published', \"lastReviewedAt\" = NOW()
-WHERE slug IN (
-  'dmv/hvac-replacement-cost',
-  'fairfax-va/ac-replacement-cost',
-  'northern-virginia/heat-pump-replacement-cost',
-  'dmv/hvac-repair-vs-replace',
-  'fairfax-va/hvac-permits',
-  'dmv/compare-hvac-quotes',
-  'northern-virginia/ac-blowing-warm-air',
-  'dmv/heat-pump-not-heating',
-  'dmv/hvac-permits-comparison'
-);
-"
+echo "=== 6. Publish ALL drafts at once ==="
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c "UPDATE \"BathroomContentVersion\" SET status = 'published', \"lastReviewedAt\" = NOW() WHERE status = 'draft';"
 
 echo "=== 7. Verify published content ==="
-docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c "SELECT slug, title, status FROM \"BathroomContentVersion\" WHERE status = 'published' ORDER BY \"applicableTrade\", slug;"
+docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c "SELECT slug, title, \"applicableTrade\", status FROM \"BathroomContentVersion\" WHERE status = 'published' ORDER BY \"applicableTrade\", slug;"
 
 echo "=== 8. Smoke test public routes ==="
 echo "--- /cost-guides ---"
@@ -65,9 +52,8 @@ curl -sI http://127.0.0.1:7090/sitemap.xml | head -3
 
 echo ""
 echo "=== DONE ==="
-echo "Published HVAC guides are now live at:"
+echo "All 28 articles are now live. Sample URLs:"
 echo "  https://renovessa.com/cost-guides/dmv/hvac-replacement-cost"
-echo "  https://renovessa.com/resources/dmv/compare-hvac-quotes"
+echo "  https://renovessa.com/cost-guides/dmv/bathroom-remodel-cost"
+echo "  https://renovessa.com/resources/dmv/solar-panel-cost"
 echo ""
-echo "To publish more guides, run:"
-echo "  docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T db psql -U renovessa -d renovessa -c \"UPDATE \\\"BathroomContentVersion\\\" SET status = 'published' WHERE slug = 'YOUR-SLUG';\""
