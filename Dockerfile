@@ -26,6 +26,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/src/lib/content-templates ./src/lib/content-templates
 COPY --from=builder /app/data/contractor_enrichment/prospects.json ./data/contractor_enrichment/prospects.json
 COPY --from=builder /app/data/contractor_enrichment/rfq_pilot_15_campaign.json ./data/contractor_enrichment/rfq_pilot_15_campaign.json
 COPY package.json package-lock.json ./
@@ -38,7 +40,7 @@ RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
 RUN npm install --omit=dev --no-save prisma bcryptjs && \
     npm install --no-save --include=dev tsx && \
     sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh && \
-    chown -R nextjs:nodejs /app/node_modules /app/prisma /app/data docker-entrypoint.sh
+    chown -R nextjs:nodejs /app/node_modules /app/prisma /app/data /app/scripts /app/src docker-entrypoint.sh
 
 USER nextjs
 ENV UPLOAD_ROOT=/app/uploads
