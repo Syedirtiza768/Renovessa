@@ -398,3 +398,26 @@
 - Ubuntu `/opt/renovessa` now tracks that branch and rebuilt with `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
 - Production verification: app and database containers healthy, `https://renovessa.com/api/health` returned `{"ok":true}`, and PostgreSQL contains `ProjectRequest.estimatorSnapshotJson`.
 - The server's pre-existing `scripts/enable-solar.sh` executable-bit change and environment backup files were preserved; they were not included in the release commit.
+
+# 2026-08-19 — SEO content templates for Bathroom | Solar | Roofing | HVAC
+
+- Authored `docs/marketing/CONTENT_STRATEGY_BATHROOM_SOLAR_ROOFING_HVAC.md`: strategic understanding of all four verticals, cross-vertical bridge content, keyword architecture by cluster, 6-month production roadmap, content quality standards, measurement framework, and URL architecture.
+- Created `src/lib/content-templates/types.ts` — shared `ContentTemplate` interface for all verticals.
+- Created `src/lib/content-templates/bathroom.ts` — 7 DMV-wide templates expanding Rockville-only content: cost guide, permit guide, process guide, tub-to-shower, small bathroom, aging-in-place, compare bids.
+- Created `src/lib/content-templates/solar.ts` — 6 templates: cost/payback, equipment guide, roof readiness, compare quotes, HOA rules, battery backup.
+- Created `src/lib/content-templates/roofing.ts` — 6 templates: replacement cost, repair vs replace, storm damage/insurance, flat roofs, compare bids, historic districts.
+- Created `src/lib/content-templates/hvac.ts` — 9 templates (priority vertical): DMV replacement cost, Fairfax AC cost, Northern Virginia heat pump cost, repair vs replace, Fairfax permit guide, compare quotes, AC warm air troubleshooting, heat pump not heating, DMV permit comparison (DC/MD/VA).
+- Created `scripts/seed-content-templates.ts` — unified seed script for all 28 templates into `BathroomContentVersion`.
+- Added `npm run content:seed-all` to `package.json`.
+- All templates follow the existing content system: deterministic estimates, required disclaimers, jurisdiction-specific permit guidance, no unverified claims, no exact prices, no "best contractor" language. Status is `draft` pending editorial review.
+
+# 2026-08-19 — Public content routes for cost-guides and resources
+
+- Built `src/lib/content.ts` — content fetching utilities (`getPublishedContentBySlug`, `getAllPublishedContent`, `getPublishedContentByTrade`), URL path mapping (`publicPathForContent`), trade label/estimator resolution, and a `bodyTextToHtml` converter that turns plain-text templates into semantic HTML with heading detection, bold lead-ins, and paragraph splitting.
+- Built `src/components/marketing/ContentArticle.tsx` — reusable article renderer with `PublicPage` shell, `Article` JSON-LD structured data (headline, author, publisher, dates), byline block (author, reviewer, last reviewed, coverage, trade, methodology), and contextual CTA mapped to the trade estimator.
+- Built `src/app/cost-guides/[[...slug]]/page.tsx` — catch-all route for cost guides. Index page lists all published cost-focused content as cards. Article pages render the full `ContentArticle` with breadcrumbs, metadata, and canonical URLs.
+- Built `src/app/resources/[[...slug]]/page.tsx` — catch-all route for resources. Same pattern as cost-guides but for permit guides, comparison checklists, troubleshooting, and decision guides.
+- Updated `src/app/sitemap.ts` — now async, queries published content from the database, and includes their public URLs (`/cost-guides/*` and `/resources/*`) with appropriate priority (0.8).
+- Added `.prose-content` styles to `src/app/globals.css` — heading typography, paragraph spacing, bold lead-ins, and list styling for rendered authority content.
+- TypeScript clean (`tsc --noEmit` passes). Next.js build compiles successfully. New routes appear as dynamic (ƒ) in the build output: `/cost-guides/[[...slug]]` and `/resources/[[...slug]]`.
+- All 28 drafted templates remain `draft` status — they will not appear on the public site until status is changed to `published` in the database.

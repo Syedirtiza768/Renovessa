@@ -412,3 +412,40 @@ authorization remains unchanged.
 ### Status
 
 Implemented locally; pending validation and production deployment.
+
+---
+
+## 2026-08-19 — Unified SEO content template system for four verticals
+
+### Decision
+
+Created a unified authority-content template system spanning Bathroom Remodeling, Solar, Roofing, and HVAC:
+
+1. **Shared interface** — `src/lib/content-templates/types.ts` defines `ContentTemplate` (slug, title, bodyText, author, reviewer, methodology, applicableLocation, applicableTrade, status). All verticals use the same shape.
+
+2. **Vertical-specific template files** — Each vertical exports its own `*_CONTENT_TEMPLATES` array:
+   - `src/lib/content-templates/bathroom.ts` — 7 templates (DMV cost, permits, process, tub-to-shower, small bath, aging-in-place, compare bids)
+   - `src/lib/content-templates/solar.ts` — 6 templates (cost/payback, equipment, roof readiness, compare quotes, HOA rules, battery backup)
+   - `src/lib/content-templates/roofing.ts` — 6 templates (replacement cost, repair vs replace, storm/insurance, flat roofs, compare bids, historic districts)
+   - `src/lib/content-templates/hvac.ts` — 9 templates (DMV cost, Fairfax AC cost, NOVA heat pump, repair vs replace, Fairfax permits, compare quotes, AC warm air, heat pump cold weather, DMV permit comparison)
+
+3. **Unified seed script** — `scripts/seed-content-templates.ts` imports all four arrays and upserts into `BathroomContentVersion` (the existing content table, which has generic `applicableTrade`/`applicableLocation` fields). Added `npm run content:seed-all`.
+
+4. **Content quality rules enforced in authoring** — Every template includes required disclaimers, distinguishes planning estimates from contractor quotes, references jurisdiction-specific permit sources, and avoids unverified claims. All templates are seeded as `draft` pending editorial review.
+
+5. **Strategy document** — `docs/marketing/CONTENT_STRATEGY_BATHROOM_SOLAR_ROOFING_HVAC.md` documents market understanding, keyword clusters by vertical, 6-month production roadmap, content tier architecture (Hub/Pillar/Cluster), cross-vertical bridge topics, and measurement framework.
+
+### Reason
+
+The 2026-07-23 SEO strategy identified HVAC as the first wedge and outlined a 12-month editorial program, but no content production system existed beyond the 5 Rockville bathroom templates. Creating templates for all four priority verticals at once ensures consistent voice, quality gates, and seedability. Using the existing `BathroomContentVersion` table avoids schema changes; the generic `applicableTrade`/`applicableLocation` fields already support multi-vertical content.
+
+### Impact
+
+- 28 new content templates ready for editorial review and database seeding.
+- `BathroomContentVersion` now serves as the cross-vertical authority content table.
+- `docs/marketing/SEO_STRATEGY_DMV.md` has a companion execution document.
+- Next step: build Next.js public routes that read these templates and render them with `Article` JSON-LD, unique metadata, and estimator CTAs.
+
+### Status
+
+Accepted — templates authored and seed script ready. Pending editorial review, database seed, and public page implementation.

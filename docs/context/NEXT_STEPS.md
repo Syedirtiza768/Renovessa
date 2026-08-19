@@ -36,7 +36,7 @@ Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live*
 2. **Add UTMs and conversion events** — use channel/campaign/creative identifiers from the manifest and verify estimate-start plus qualified-RFQ measurement
 3. **Run native platform previews** — check Instagram Story/Reels safe areas, Facebook/LinkedIn cover crops, and Google Display legibility before publishing
 4. **Produce the 15-second motion cut** — animate the included storyboard/script using the supplied master photography and Renovessa end card
-5. **Launch with a controlled test matrix** — test “Estimate first” versus “Clearer scope” messaging, then promote winners based on qualified-RFQ outcomes rather than click-through rate alone
+5. **Launch with a controlled test matrix** — test "Estimate first" versus "Clearer scope" messaging, then promote winners based on qualified-RFQ outcomes rather than click-through rate alone
 
 ## Proposal Studio — immediate follow-up
 
@@ -57,43 +57,14 @@ Deployed to production 2026-08-10. `/solar` and `/solar/methodology` are **live*
 - **Client-side analytics funnel events** for the bathroom planner (server-side audit events exist for major transitions)
 - **SMS OTP phone verification** at RFP submission (contact capture + consent is live; OTP deferred until SMS provider routing is configured)
 
-## Bathroom Remodeling Experience — Recently shipped (2026-08-10)
-
-- **Canonical answer schema + real location** — `answer-normalization.ts` with canonical keys and legacy migration; ZIP → `locationId` resolution; `inRockville` fully removed; preview API fails closed on missing location
-- **Landing page improvements** — "What you'll receive" 4-step flow, example results card, homeowner CTAs on both generic and Rockville pages
-- **Planner UX improvements** — Homeowner-friendly photo labels (fixture-context instead of compass), ZIP collected early, room-size floor-area chips, draft v1 migration
-- **Results page improvements** — Location displayed, cost drivers/assumptions/exclusions surfaced, auto-brief, mobile stacked cards, contractor count choice (1/2/3)
-- **Build + tests** — 167/167 tests pass, Next.js 15.5.21 build clean
-
-## Bathroom Remodeling Experience — Previously shipped
-
-- **RFP conversion path + funnel fixes (2026-08-10)** — contact capture, compliance evidence, atomic claim, draft dedupe, estimate retry, success panel
-- **Proposal Studio share + acceptance (2026-07-27)** — `/proposal/[token]`, accept/decline/questions, version lock
-- **Proposal Studio commercial layer (2026-07-27)** — priced line items, markup vs margin, approve-before-PDF
-- **Quick path + unified layout (2026-07-27)** — Capture → Layout → Results; templates + proposed generation
-- **Requirements prompt + photo uploads (2026-07-27)** — Describe step, interpret API, `BathroomMedia`, Docker upload volume
-- **Interactive diagram builder** — drag/drop, resize, rotate fixtures on existing/proposed layouts
-
-- **Migrate photo storage to S3/R2** — local `UPLOAD_ROOT` / Docker volume is live; move to object storage for multi-instance durability
-- **Background job processing** — move brief generation, PDF rendering, and email notifications to a job queue
-- **Production-grade rate limiting** — replace in-memory rate limiting with a shared store (Redis) for multi-instance deployments
-- **Search Console verification** — submit bathroom sitemap, track organic conversions for bathroom pages
-- **Logo upload for contractor letterhead**
-
-## Bathroom Remodeling Experience — Recently shipped
-
-- **Proposal Studio share + acceptance (2026-07-27)** — `/proposal/[token]`, accept/decline/questions, version lock
-- **Proposal Studio commercial layer (2026-07-27)** — priced line items, markup vs margin, approve-before-PDF
-- **Quick path + unified layout (2026-07-27)** — Capture → Layout → Results; templates + proposed generation
-- **Requirements prompt + photo uploads (2026-07-27)** — Describe step, interpret API, `BathroomMedia`, Docker upload volume
-- **Interactive diagram builder** — drag/drop, resize, rotate fixtures on existing/proposed layouts
-
 ## SEO next phase
 
-- **Connect measurement** - verify Search Console, submit `/sitemap.xml`, and add privacy-safe organic estimate/RFQ/qualified-RFQ attribution
-- **Publish the first evidence-rich cluster** - Northern Virginia HVAC cost guide, Fairfax HVAC permit guide, and bid-comparison tool linked to the implemented HVAC and Fairfax hubs
-- **Earn proof before case studies** - keep `/case-studies` noindexed until real, consented, specific project evidence is available
-- **Expand only with fulfillment** - add trades and ZIP clusters only when contractor capacity and unique local evidence meet the strategy quality gate
+- **Editorial review of drafted templates** — 28 content templates are drafted in `src/lib/content-templates/` (Bathroom 7, Solar 6, Roofing 6, HVAC 9). Review for accuracy, tone, and local specificity; update status from `draft` to `published` only after review.
+- **Seed content to database** — run `npm run content:seed-all` after local PostgreSQL is available; verify all 28 slugs are written to `BathroomContentVersion`.
+- **Publish selected guides** — change status of reviewed templates to `published` so they appear on `/cost-guides/` and `/resources/`. The public routes (`ContentArticle`, `Article` JSON-LD, metadata, sitemap integration) are already implemented.
+- **Connect measurement** — verify Search Console, submit `/sitemap.xml`, and add privacy-safe organic estimate/RFQ/qualified-RFQ attribution
+- **Earn proof before case studies** — keep `/case-studies` noindexed until real, consented, specific project evidence is available
+- **Expand only with fulfillment** — add trades and ZIP clusters only when contractor capacity and unique local evidence meet the strategy quality gate
 
 ## Product and operations
 
