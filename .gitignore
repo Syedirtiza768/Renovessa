@@ -3,6 +3,7 @@ node_modules
 .env
 .env.local
 .env*.local
+.railway/
 docs/blueprint_extracted.txt
 # Local outreach scraper — contains scraped third-party contact data (PII).
 # Do NOT commit to this public repo.

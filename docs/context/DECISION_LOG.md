@@ -4,6 +4,24 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-20 — Railway deployment workflow
+
+### Decision
+Support Railway as a first-class deployment target for the Dockerized Next.js app. The app deploys as one Railway service from the root `Dockerfile`; PostgreSQL is a separate Railway service connected through a Railway reference variable such as `${{Postgres.DATABASE_URL}}`. The root `Makefile` wraps the Railway CLI for linking, deployment, health verification, logs, and routine service operations. `railway.json` keeps the Dockerfile builder, `/api/health` deploy healthcheck, and restart policy under version control.
+
+### Reason
+Railway does not execute the repository's Docker Compose file directly. The previous Compose and Ubuntu/Nginx workflow therefore needed a platform-native command path while preserving the existing Docker image and runtime entrypoint.
+
+### Impact
+- Railway supplies the runtime `PORT`; no Railway port mapping is required.
+- `RUN_SEED=false` remains the production default; schema setup continues through the existing container entrypoint.
+- Railway project links are ignored via `.railway/` and secrets remain in Railway Variables.
+
+### Status
+Accepted and implemented in repository configuration; production cutover remains an operational deployment step.
+
+---
+
 ## 2026-08-18 — Cross-estimator submission snapshots and homeowner portal parity
 
 ### Decision
