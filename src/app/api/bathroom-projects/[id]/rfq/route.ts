@@ -8,6 +8,7 @@ import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { rfqPromotionSchema } from "@/lib/bathroom/schemas";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
 import { BATHROOM_CONTRACTOR_MATCHING_ENABLED } from "@/lib/feature-flags";
+import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!BATHROOM_CONTRACTOR_MATCHING_ENABLED) {
@@ -23,12 +24,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "This bathroom project has already been submitted as an RFQ." }, { status: 409 });
     }
 
+    const latestBrief = await prisma.projectBrief.findFirst({
+      where: { projectId: id },
+      orderBy: { createdAt: "desc" },
+    });
     const isLoggedInHomeowner = session?.role === "HOMEOWNER";
     if (isLoggedInHomeowner && data.email.trim().toLowerCase() !== session.email.toLowerCase()) {
       return NextResponse.json({ error: "Email must match your portal account" }, { status: 400 });
     }
-    const homeownerId = isLoggedInHomeowner ? session.id : null;
-
     const evidence = requestEvidence(req);
     const referenceNumber = generateReferenceNumber();
 
@@ -47,11 +50,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data.notes ? `Notes: ${data.notes}` : "",
     ].filter(Boolean).join("\n");
 
-    const rfq = await prisma.$transaction(async (tx) => {
+    const { rfq, portalAccess } = await prisma.$transaction(async (tx) => {
+      const access = isLoggedInHomeowner && session
+        ? {
+            userId: session.id,
+            email: session.email,
+            isNewAccount: false,
+          }
+        : await ensureHomeownerAccount(tx, {
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            phone: data.phone.replace(/\D/g, ""),
+          });
       const created = await tx.projectRequest.create({
         data: {
           referenceNumber,
-          homeownerId: homeownerId ?? null,
+          homeownerId: access.userId,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email.trim().toLowerCase(),
@@ -73,7 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       await recordProjectCompliance(tx, {
         projectRequestId: created.id,
-        userId: homeownerId ?? undefined,
+        userId: access.userId,
         email: data.email,
         phone: data.phone,
         source: "bathroom_planner",
@@ -84,11 +98,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Link the bathroom project to the RFQ.
       await tx.bathroomProject.update({
         where: { id: id },
-        data: { projectRequestId: created.id, status: "RFQ_SUBMITTED" },
+        data: { projectRequestId: created.id, homeownerId: access.userId, status: "RFQ_SUBMITTED" },
       });
 
-      return created;
+      return { rfq: created, portalAccess: access };
     });
+    const homeownerId = portalAccess.userId;
 
     await logAuditEvent({
       eventType: "FORM_SUBMITTED",
@@ -105,19 +120,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       referenceNumber,
       trade: "Bathroom Remodeling",
       zipCode: data.zipCode,
-      urgency: "Just planning",
-      budgetRange: project.budgetMinimum && project.budgetMaximum ? `$${project.budgetMinimum}-$${project.budgetMaximum}` : "Not specified",
-      description,
       projectRequestId: rfq.id,
-      hasPortalAccess: isLoggedInHomeowner,
+      portalAccess,
     });
 
     return NextResponse.json({
       referenceNumber,
       rfqId: rfq.id,
       emailSent,
+      accountCreated: portalAccess.isNewAccount,
+      portalEmail: portalAccess.email,
+      temporaryPassword: !emailSent ? portalAccess.temporaryPassword : undefined,
     }, { status: 201 });
   } catch (e: any) {
+    if (e instanceof HomeownerAccountConflictError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
     if (e?.name === "ZodError") {
       return NextResponse.json({ error: e.errors?.[0]?.message ?? "Invalid input" }, { status: 400 });
     }

@@ -170,6 +170,7 @@ export const rfpSubmissionSchema = z.object({
   zipCode: z.string().regex(/^\d{5}$/, "ZIP code must be 5 digits"),
   preferredContact: z.string().max(40).optional(),
   timeline: z.string().max(40).optional(),
+  maxContractors: z.number().int().min(1).max(3).default(3),
   tcpaConsent: z.boolean().default(false),
   termsAccepted: z.literal(true),
   privacyAcknowledged: z.literal(true),

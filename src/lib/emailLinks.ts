@@ -1,6 +1,6 @@
 /**
  * One-word markdown links in email bodies: [Portal](https://...), [Apply](...), [Renovessa](...).
- * HTML clients get a real hyperlink; plain-text fallback keeps just the label (no long URL).
+ * HTML clients get a real hyperlink; plain-text fallback keeps the label and URL.
  */
 
 const MD_LINK = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
@@ -15,7 +15,7 @@ export function escapeHtml(s: string): string {
 
 /** Plain-text part: [Portal](url) → Portal */
 export function linksToPlainText(body: string): string {
-  return body.replace(MD_LINK, "$1");
+  return body.replace(MD_LINK, "$1 ($2)");
 }
 
 /** Escape body text and turn [Label](url) into <a>Label</a>. */

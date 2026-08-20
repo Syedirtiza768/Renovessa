@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { LandingCategoryId } from "@/lib/landing-data";
-import { LANDING_CATEGORIES } from "@/lib/landing-data";
+import { getTradeEstimatorPath, isSpecializedEstimator, LANDING_CATEGORIES } from "@/lib/landing-data";
 
 export type AdvisorPrefill = {
   description?: string;
@@ -76,6 +76,10 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startWizardWithTrade = useCallback((id: LandingCategoryId) => {
+    if (isSpecializedEstimator(id)) {
+      window.location.assign(getTradeEstimatorPath(id));
+      return;
+    }
     setSelected([id]);
     setWizardEntry((prev) => ({ trade: id, token: (prev?.token ?? 0) + 1 }));
     if (isMobileViewport()) {

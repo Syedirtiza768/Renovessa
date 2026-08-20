@@ -1,4 +1,12 @@
 
+# 2026-08-14 — Public 10-trade estimator catalog and logo refresh
+
+- Narrowed the public trade source of truth to the requested 10 trades: Bathroom Remodeling, Solar, Kitchen Remodeling, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Legacy categories remain out of the public website catalog.
+- Added dedicated `/estimate/{trade}` routes for Kitchen, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Added Siding-specific scope questions and DMV planning-range logic.
+- Routed Bathroom Remodeling and Solar catalog entries to their existing dedicated experiences; corrected the interactive house selector so Solar and Siding map to their own estimators.
+- Replaced the ascending-bar logo with a roofline-and-doorway mark across the inline wordmark, public header/footer, and reusable SVG asset.
+- Verification: `npx.cmd tsc --noEmit` clean; `npm.cmd test` 223/223 passing. `npm.cmd run build` compiles and generates pages but cannot complete in this workspace because the configured local PostgreSQL server is not running.
+
 # 2026-08-10 — Bathroom Remodeling: canonical schema, real location, landing + planner UX improvements
 
 - **Canonical answer schema** — Added `src/lib/bathroom/answer-normalization.ts` with canonical keys (`lengthFt`, `widthFt`, `ceilingFt`, `measurementMethod`, `zipCode`, `city`, `locationId`) and bidirectional legacy migration. All ingress points (planner-types on load, preview API, RequirementsPromptStep, estimator input derivation) normalize before use.
@@ -337,3 +345,79 @@
 - Added `segmentPlaneCorners()` in `src/lib/solar/geo.ts`: recovers the across-slope × down-slope dimensions by inverting the exact bbox↔azimuth 2×2 system and redraws the face outline rotated about the bbox centre — exact for rectangular planes, same-centre axis-aligned fallback near 45°+k·90° (W/H inseparable) and for degenerate inputs
 - `RoofVisualizer` now draws every roof-face polygon (sunlight ramp, hover, excluded) in the azimuth-aligned frame the panels use; hover/click targets follow the roof edges too
 - 5 new geometry tests (`segment-plane.test.ts`): dimension/orientation recovery across 7 azimuths, centre preservation, exact bbox match at due-south, 45° fallback, no collapse/inversion; full suite 221/221 green, tsc clean
+# 2026-08-14 - RFQ confirmation email and homeowner portal access
+
+- Changed the homeowner RFQ confirmation email to include only initial request information (reference, project type, ZIP), the direct generated-request link, and portal login details instead of the full request description.
+- Added transactional homeowner account provisioning for anonymous standard, advisor, bathroom, and solar RFQ submissions. New accounts receive a random temporary password in the email; existing accounts are reused without password reset.
+- Linked promoted bathroom and solar planner projects to the homeowner account alongside the shared `ProjectRequest`.
+- Plain-text email links now retain their URLs, so the request link works in text-only email clients too.
+- Validation: full suite 221/221 green; `tsc --noEmit` clean.
+
+# 2026-08-17 — Bathroom planner continuity and post-submit brief access
+
+- Capture now keeps Bathroom type and Main goal visible after selection with a
+  highlighted selected state; Detailed Basics shows a summary instead of
+  repeating answers that were already captured.
+- Layout now has an explicit “Skip layout for now” action. It records the
+  choice in planner answers and advances to the next relevant step without
+  setting a diagram as complete or blocking estimates/briefs/RFPs.
+- Project briefs now receive a 14-day random download token. The tokenized PDF
+  link is returned in the planner, included in the RFP confirmation email, and
+  remains valid after the RFP claims the project for a homeowner account.
+- RFP responses now expose email delivery status, account-created status, and
+  portal email. New temporary passwords are only returned to the browser when
+  email delivery fails; normal delivery keeps credentials email-only, and
+  existing passwords are never revealed.
+- Post-RFP anonymous autosave is suppressed to avoid a false “couldn’t save”
+  state after the project becomes account-owned.
+- Added `brief-access.test.ts`; validation: 225/225 tests green and
+  `tsc --noEmit` clean. Pending production deploy and live smoke test.
+
+# 2026-08-17 — Restored account-gated bathroom brief access
+
+- Removed the anonymous "Download my project brief" and post-RFP "Download
+  project brief PDF" controls from the planner Results step.
+- Removed automatic brief download URLs from bathroom brief/RFP responses and
+  from the homeowner confirmation email. The email now directs homeowners to
+  sign in with the supplied portal credentials.
+- Brief PDFs remain available from the authenticated homeowner portal; explicit
+  portal-created share links remain separate.
+
+# 2026-08-18 — Cross-estimator field persistence and homeowner portal parity
+
+- Added nullable `ProjectRequest.estimatorSnapshotJson`, a versioned display snapshot that preserves every configured estimator answer, shared context, estimate result, contact preference, note, and consent value at RFQ submission time.
+- Added one shared Bathroom-style contact form and validation to the standard trade wizard, Bathroom Remodeling, and Solar RFQ flows. Specialized schemas now persist contractor count plus terms/privacy evidence consistently.
+- Added shared snapshot rendering to homeowner standard requests, Bathroom project details, Solar project details, and admin lead details. Homeowner-facing summaries intentionally omit internal Brief ID, Estimate ID, and database IDs.
+- Bathroom homeowner project details now show read-only existing/proposed layout previews and authenticated uploaded photos. Added a feature-gated Solar homeowner plans list/detail view.
+- Added snapshot/legacy-fallback tests and the Bathroom contractor-count schema assertion. Validation: 228/228 tests green, `npx tsc --noEmit` clean, `npm run build` exit 0.
+- `npx prisma db push` could not run because the configured local PostgreSQL instance at `localhost:5436` is unavailable; run it before deployment.
+
+# 2026-08-18 — Deployed cross-estimator persistence and homeowner portal parity
+
+- Committed `ef0e28f` (`unify estimator submissions and homeowner portal`) and pushed `agent/deploy-latest-2026-08-14` to GitHub.
+- Ubuntu `/opt/renovessa` now tracks that branch and rebuilt with `docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build`.
+- Production verification: app and database containers healthy, `https://renovessa.com/api/health` returned `{"ok":true}`, and PostgreSQL contains `ProjectRequest.estimatorSnapshotJson`.
+- The server's pre-existing `scripts/enable-solar.sh` executable-bit change and environment backup files were preserved; they were not included in the release commit.
+
+# 2026-08-19 — SEO content templates for Bathroom | Solar | Roofing | HVAC
+
+- Authored `docs/marketing/CONTENT_STRATEGY_BATHROOM_SOLAR_ROOFING_HVAC.md`: strategic understanding of all four verticals, cross-vertical bridge content, keyword architecture by cluster, 6-month production roadmap, content quality standards, measurement framework, and URL architecture.
+- Created `src/lib/content-templates/types.ts` — shared `ContentTemplate` interface for all verticals.
+- Created `src/lib/content-templates/bathroom.ts` — 7 DMV-wide templates expanding Rockville-only content: cost guide, permit guide, process guide, tub-to-shower, small bathroom, aging-in-place, compare bids.
+- Created `src/lib/content-templates/solar.ts` — 6 templates: cost/payback, equipment guide, roof readiness, compare quotes, HOA rules, battery backup.
+- Created `src/lib/content-templates/roofing.ts` — 6 templates: replacement cost, repair vs replace, storm damage/insurance, flat roofs, compare bids, historic districts.
+- Created `src/lib/content-templates/hvac.ts` — 9 templates (priority vertical): DMV replacement cost, Fairfax AC cost, Northern Virginia heat pump cost, repair vs replace, Fairfax permit guide, compare quotes, AC warm air troubleshooting, heat pump not heating, DMV permit comparison (DC/MD/VA).
+- Created `scripts/seed-content-templates.ts` — unified seed script for all 28 templates into `BathroomContentVersion`.
+- Added `npm run content:seed-all` to `package.json`.
+- All templates follow the existing content system: deterministic estimates, required disclaimers, jurisdiction-specific permit guidance, no unverified claims, no exact prices, no "best contractor" language. Status is `draft` pending editorial review.
+
+# 2026-08-19 — Public content routes for cost-guides and resources
+
+- Built `src/lib/content.ts` — content fetching utilities (`getPublishedContentBySlug`, `getAllPublishedContent`, `getPublishedContentByTrade`), URL path mapping (`publicPathForContent`), trade label/estimator resolution, and a `bodyTextToHtml` converter that turns plain-text templates into semantic HTML with heading detection, bold lead-ins, and paragraph splitting.
+- Built `src/components/marketing/ContentArticle.tsx` — reusable article renderer with `PublicPage` shell, `Article` JSON-LD structured data (headline, author, publisher, dates), byline block (author, reviewer, last reviewed, coverage, trade, methodology), and contextual CTA mapped to the trade estimator.
+- Built `src/app/cost-guides/[[...slug]]/page.tsx` — catch-all route for cost guides. Index page lists all published cost-focused content as cards. Article pages render the full `ContentArticle` with breadcrumbs, metadata, and canonical URLs.
+- Built `src/app/resources/[[...slug]]/page.tsx` — catch-all route for resources. Same pattern as cost-guides but for permit guides, comparison checklists, troubleshooting, and decision guides.
+- Updated `src/app/sitemap.ts` — now async, queries published content from the database, and includes their public URLs (`/cost-guides/*` and `/resources/*`) with appropriate priority (0.8).
+- Added `.prose-content` styles to `src/app/globals.css` — heading typography, paragraph spacing, bold lead-ins, and list styling for rendered authority content.
+- TypeScript clean (`tsc --noEmit` passes). Next.js build compiles successfully. New routes appear as dynamic (ƒ) in the build output: `/cost-guides/[[...slug]]` and `/resources/[[...slug]]`.
+- All 28 drafted templates remain `draft` status — they will not appear on the public site until status is changed to `published` in the database.

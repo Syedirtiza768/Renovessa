@@ -1,6 +1,6 @@
 # Current State
 
-> Last updated: 2026-08-10
+> Last updated: 2026-08-18
 
 ## Phase
 
@@ -13,11 +13,12 @@
 - PostgreSQL schema via Prisma (`prisma/schema.prisma`)
 - Demo seed data (`prisma/seed.ts`) aligned with blueprint demo accounts
 - Docker deployment on port **7090** (`docker-compose.yml`, `Dockerfile`)
-- Reusable public SVG logo at `public/renovessa-logo.svg`, aligned to the existing architectural-bar brand motif
+- Reusable public SVG logo at `public/renovessa-logo.svg`, using the current roofline-and-doorway Renovessa mark
 
 ### Public Website
 - Home landing page with service selector, how-it-works, trust pillars
 - **Estimate wizard** — sole homeowner request path: trade scoping → DMV ballpark → RFQ preview → submit → contractor bids
+- **Public trade scope (2026-08-14)** — the website now presents only 10 trades: Bathroom Remodeling, Solar, Kitchen Remodeling, Roofing, Siding, Windows & Doors, Flooring, HVAC, Electrical, and Plumbing. Bathroom and Solar route to their dedicated experiences; the other eight have dedicated `/estimate/{trade}` entry routes backed by the shared scoped wizard.
 - **Mobile:** fullscreen immersive RFQ wizard (&lt;768px) with sticky progress/footer, one-question sub-steps, session draft resume
 - RFQ submit sends **homeowner confirmation email** (SendGrid); contractor apply sends **application confirmation email**
 - Ops phone: **(571) 460-0006**
@@ -70,13 +71,15 @@
 - The launch set uses only the implemented planner, conceptual-layout, illustrative-planning-range, homeowner-control, and project-brief claims; it does not promise binding quotes or automatic contractor distribution
 
 ### Portals
-- **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only
+- **Homeowner Portal** — RFQ status, verification trail, appointment confirmation; submit via estimate wizard only. Submitted estimator answers, estimate assumptions, contact preferences, layouts, and uploaded bathroom photos are available from the authenticated project detail pages; internal Brief ID and Estimate ID values are intentionally omitted.
 - **Contractor Portal** — appointments, accept/check-in, billing, profile
 - **Admin Operations Command Center** — KPI dashboard, lead pipeline, operations queues, appointments, contractors, capacity cells, finance, disputes
 
 ### Core Workflows
 - RFQ / project request submission with audit trail events + confirmation email
-- Public RFQs never create/reset accounts; AI advisor submissions create only unassigned RFQs, not appointments
+- **Cross-estimator submission parity (2026-08-18)** — all ten public estimator paths use the shared Bathroom-style contractor-contact form at the end of the estimator. Every submitted answer is stored in the immutable `ProjectRequest.estimatorSnapshotJson` display snapshot, while existing normalized columns remain the routing/reporting source of truth. Standard, Bathroom, and Solar RFQs render the same complete answer/contact/estimate summary in the appropriate authenticated portal; legacy standard RFQs fall back to their stored qualification notes.
+- **Homeowner project visuals (2026-08-18)** — Bathroom homeowner project details show saved existing/proposed diagrams as read-only previews and authenticated uploaded photos in a gallery. Solar homeowner projects have a gated list/detail view for saved plan information.
+- Public RFQs provision or reuse a homeowner portal account so the confirmation email can link to the generated request; AI advisor submissions still create only RFQs, not appointments
 - Required versioned Terms/Privacy clickwrap plus optional, unchecked communication consent with immutable evidence
 - Durable email/phone/SMS suppressions enforced before bulk email and outbound calls
 - Public estimator numeric ranges fail closed until the exact claim-evidence model version is approved
@@ -120,7 +123,7 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 
 ### Implemented (Phase 2)
 - **Analytics + audit logging** — anonymous project creation logged; `BATHROOM_LAYOUT_SAVED`, `BATHROOM_PERMIT_ASSESSED`, `BATHROOM_SHARE_LINK_CREATED`, `BATHROOM_SHARE_LINK_REVOKED`, `BATHROOM_PHOTO_UPLOADED`, `BATHROOM_DIAGRAM_SAVED` event types added; enhanced analytics endpoint with bathroom type distribution and recent audit events.
-- **Project brief PDF** — `src/lib/bathroom/brief-pdf.ts` renders structured brief to PDF via `pdfkit`; `GET /api/bathroom-projects/[id]/brief/pdf` endpoint; "Generate brief + Download PDF" in planner estimate step.
+- **Project brief PDF** — `src/lib/bathroom/brief-pdf.ts` renders the structured brief via `pdfkit`; the planner generates it for the project, and homeowners view/download it from the authenticated homeowner portal after signing in.
 - **Admin screens** — `/portal/admin/bathroom/projects` (project list), `/portal/admin/bathroom/estimator-config` (publish/retire/clone/seed), `/portal/admin/bathroom/content` (content version CRUD), `/portal/admin/bathroom/analytics` (funnel + distributions + audit events). Nav items gated by feature flag.
 - **2D diagram builder** — `src/components/bathroom/DiagramBuilder.tsx` with SVG preview, fixture palette, position editing, live geometry calculations, validation issues, save to layouts API. Integrated as existing/proposed layout steps in planner (gated by `diagramBuilder` flag).
 - **Contractor proposal comparison** — `/portal/homeowner/bathroom-projects` (list) + `/[id]` (detail with proposal table, price spread, credential badges). Homeowner nav updated.
@@ -132,7 +135,7 @@ A specialized Rockville, MD bathroom remodeling planner layered on the existing 
 - **Contractor Proposal Studio (2026-07-27)** — white-label tool at `/portal/contractor/proposal-studio`. `BathroomProject.contractorOwnerId`, letterhead + `studioPricingJson` on `ContractorProfile`, prompt-drafted proposal language (no AI price invention), contractor-letterhead PDF. **Commercial layer:** deterministic estimate seeds editable line items; contractor markup/overhead/contingency; internal cost vs customer price + gross margin; approve-before-client-PDF gate; draft PDF preview with watermark. **Share + acceptance:** tokenized `/proposal/[token]` client page; questions / revision requests; accept locks version with immutable snapshot; decline; view tracking. Homeowner planner unchanged. Flag: `BATHROOM_CONTRACTOR_STUDIO_ENABLED`.
 
 ### Implemented (2026-08-10) — UX/RFP conversion audit fixes
-- **Estimate → RFP conversion path rebuilt** — `POST /api/bathroom-projects/[id]/rfp` now takes a validated contact + consent payload (`rfpSubmissionSchema`), records clickwrap/compliance evidence (`recordProjectCompliance`), sends the RFQ confirmation email, stamps the project `RFQ_SUBMITTED`, and atomically claims the project (`updateMany WHERE projectRequestId IS NULL`) so retries/double-clicks cannot create duplicate RFPs. Estimate step UI: "Request contractor proposals" contact form → persistent success panel with next-steps (survives refresh via `answers.rfp_reference`).
+- **Estimate → RFP conversion path rebuilt** — `POST /api/bathroom-projects/[id]/rfp` now takes a validated contact + consent payload (`rfpSubmissionSchema`), records clickwrap/compliance evidence (`recordProjectCompliance`), sends the RFQ confirmation email, stamps the project `RFQ_SUBMITTED`, and atomically claims the project (`updateMany WHERE projectRequestId IS NULL`) so retries/double-clicks cannot create duplicate RFPs. Estimate step UI: "Request contractor proposals" contact form → persistent success panel with next-steps (survives refresh via `answers.rfp_reference`). The confirmation email includes new-account credentials and a short-lived tokenized project-brief PDF link; existing passwords are never emailed.
 - **Estimate persistence unblocked** — `BathroomEstimate.configurationId` nullable; estimates persist against the built-in default config when no `EstimatorConfiguration` is published (previously hard-failed on FK to `"default-internal"` in prod). Schema pushed to prod DB.
 - **Draft persistence fixed** — localStorage draft now stores `projectId`/`referenceNumber`/`clientGeneratedId`; refresh/multi-tab resumes the same server draft (server dedupes by `clientGeneratedId`); stale project ids validated on hydrate. Previously every refresh created a new `BathroomProject`.
 - **Dead-end/friction fixes** — estimate failure now offers Retry; autosave failure surfaces with a Retry action in the header; room-size-only selection satisfies `hasCaptureContent`; progress label is "Step X of Y".

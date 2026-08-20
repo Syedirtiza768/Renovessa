@@ -1,9 +1,33 @@
-# Deployment — Ubuntu + Docker + Nginx + Certbot
+# Deployment — Railway or Ubuntu + Docker
 
 > **Domain:** `renovessa.com`  
-> **Status:** Implemented (manual server deploy)
+> **Status:** Railway workflow implemented; manual Ubuntu server deploy retained
 
-## Architecture
+## Railway deployment
+
+Railway does not run this repository's Docker Compose stack directly. Deploy the Next.js app as one Railway service using the root `Dockerfile`, and add PostgreSQL as a separate Railway service in the same project. `railway.json` sets the Dockerfile builder, `/api/health` deploy healthcheck, and restart policy.
+
+The root `Makefile` wraps the Railway CLI. Install and authenticate the CLI first, then link this checkout to the target project/environment:
+
+```bash
+make railway-check
+make railway-link RAILWAY_PROJECT=<project-name-or-id> RAILWAY_ENVIRONMENT=production
+make railway-add-db                  # one-time: creates PostgreSQL
+```
+
+In the app service's Railway Variables, set `DATABASE_URL` to a reference to the actual PostgreSQL service, for example `${{Postgres.DATABASE_URL}}`, and configure the required production secrets from `.env.production.example`. At minimum, set a strong `AUTH_SECRET`, `NEXT_PUBLIC_APP_URL` to the public Railway/custom domain, and `RUN_SEED=false`. Do not upload `.env`; Railway injects variables at runtime.
+
+Deploy and verify:
+
+```bash
+make deploy RAILWAY_SERVICE=<app-service-name> RAILWAY_ENVIRONMENT=production
+make health APP_URL=https://<railway-or-custom-domain>
+make logs-last RAILWAY_SERVICE=<app-service-name> LOG_LINES=100
+```
+
+For CI, use a Railway project token and `make deploy-ci`; the CLI supports `RAILWAY_TOKEN`/`RAILWAY_API_TOKEN`. For a Railway-provided domain, run `make railway-domain` once. The deployed app uses Railway's injected `PORT`; Compose's local `7090` mapping is not used by Railway.
+
+## Legacy Ubuntu architecture
 
 ```text
 Internet → Nginx (80/443, TLS) → 127.0.0.1:7090 → Docker app

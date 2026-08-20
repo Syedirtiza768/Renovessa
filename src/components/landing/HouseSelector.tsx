@@ -7,8 +7,8 @@ import { useCategories } from "./CategoryContext";
 
 const ZONE_TO_CATEGORY: Record<string, LandingCategoryId> = {
   roofing: "roofing",
-  solar: "roofing",
-  siding: "handyman",
+  solar: "solar",
+  siding: "siding",
   windows: "windows",
   kitchen: "kitchen",
   bathroom: "bathroom",

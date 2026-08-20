@@ -1,7 +1,7 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import type { Metadata } from "next";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -20,7 +20,6 @@ export default async function ThankYouPage({
   const ref = params.ref || "RNV-2026-00000";
   const name = params.name || "there";
   const email = params.email;
-
   const steps = ["Reviewing", "Qualifying", "Scheduling", "Confirmed"];
 
   return (
@@ -47,9 +46,11 @@ export default async function ThankYouPage({
           {email && (
             <div className="mt-6 rounded-lg border border-rule bg-blueprint p-4 text-left text-sm">
               <p className="font-semibold">Your homeowner portal account</p>
-              <p className="mt-1 text-muted">Use these credentials to track your project status.</p>
+              <p className="mt-1 text-muted">
+                Your request link and homeowner portal login details are in the confirmation email.
+              </p>
               <p className="mt-3"><span className="text-muted">Email:</span> <span className="font-mono">{email}</span></p>
-              <p className="mt-1"><span className="text-muted">Password:</span> <span className="font-mono">shown on the form — check back on that page</span></p>
+              <p className="mt-1"><span className="text-muted">Password:</span> <span className="font-mono">see your confirmation email</span></p>
             </div>
           )}
 

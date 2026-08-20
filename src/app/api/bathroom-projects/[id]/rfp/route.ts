@@ -7,6 +7,8 @@ import { requestEvidence, recordProjectCompliance } from "@/lib/compliance";
 import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { rfpSubmissionSchema } from "@/lib/bathroom/schemas";
 import { assertBathroomProjectAccess } from "@/lib/bathroom/authorization";
+import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
+import { buildAnswerMapEstimatorSnapshot } from "@/lib/estimator-submission";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -32,8 +34,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (isLoggedInHomeowner && session.email && data.email.trim().toLowerCase() !== session.email.toLowerCase()) {
       return NextResponse.json({ error: "Email must match your portal account" }, { status: 400 });
     }
-    const homeownerId = isLoggedInHomeowner ? session.id : null;
-
     const latestEstimate = await prisma.bathroomEstimate.findFirst({
       where: { projectId: id },
       orderBy: { createdAt: "desc" },
@@ -45,6 +45,51 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const planningRange = latestEstimate
       ? `$${latestEstimate.lowAmount.toLocaleString()}–$${latestEstimate.highComplexityAmount.toLocaleString()}`
       : "not generated";
+
+    const savedAnswers = project.answersJson && typeof project.answersJson === "object"
+      ? project.answersJson as Record<string, unknown>
+      : {};
+    const estimatorSnapshot = buildAnswerMapEstimatorSnapshot({
+      estimatorId: "bathroom",
+      estimatorLabel: "Bathroom Remodeling",
+      source: "bathroom",
+      answers: {
+        ...savedAnswers,
+        bathroomType: project.bathroomType,
+        projectObjective: project.projectObjective,
+        propertyType: project.propertyType,
+        ownershipStatus: project.ownershipStatus,
+        occupancyStatus: project.occupancyStatus,
+        timelineCategory: project.timelineCategory,
+      },
+      notes: data.notes,
+      contact: {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName?.trim() || null,
+        email: data.email.trim().toLowerCase(),
+        phone: data.phone.replace(/\D/g, ""),
+        zipCode: data.zipCode,
+        timeline: data.timeline ?? project.timelineCategory ?? null,
+        preferredContact: data.preferredContact ?? "any",
+        maxContractors: data.maxContractors,
+        notes: data.notes ?? null,
+        tcpaConsent: data.tcpaConsent,
+        termsAccepted: data.termsAccepted,
+        privacyAcknowledged: data.privacyAcknowledged,
+      },
+      estimate: latestEstimate ? {
+        low: latestEstimate.lowAmount,
+        mid: latestEstimate.expectedLowAmount,
+        high: latestEstimate.highComplexityAmount,
+        expectedLow: latestEstimate.expectedLowAmount,
+        expectedHigh: latestEstimate.expectedHighAmount,
+        confidence: latestEstimate.confidenceLevel,
+        assumptions: latestEstimate.assumptionsJson,
+        unknowns: latestEstimate.unknownsJson,
+        exclusions: latestEstimate.exclusionsJson,
+        costDrivers: latestEstimate.costDriversJson,
+      } : null,
+    });
 
     const description = [
       `Bathroom remodeling RFP via Renovessa Bathroom Planner — ${project.referenceNumber}`,
@@ -63,11 +108,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       data.notes ? `Notes: ${data.notes}` : "",
     ].filter(Boolean).join("\n");
 
-    const rfp = await prisma.$transaction(async (tx) => {
+    const { rfp, portalAccess } = await prisma.$transaction(async (tx) => {
+      const access = isLoggedInHomeowner && session
+        ? {
+            userId: session.id,
+            email: session.email,
+            isNewAccount: false,
+          }
+        : await ensureHomeownerAccount(tx, {
+            email: data.email,
+            name: `${data.firstName} ${data.lastName ?? ""}`,
+            phone: data.phone.replace(/\D/g, ""),
+          });
       const created = await tx.projectRequest.create({
         data: {
           referenceNumber,
-          homeownerId: homeownerId ?? null,
+          homeownerId: access.userId,
           firstName: data.firstName.trim(),
           lastName: data.lastName?.trim() ?? "",
           email: data.email.trim().toLowerCase(),
@@ -81,14 +137,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             : "Not specified",
           preferredContact: data.preferredContact ?? null,
           tcpaConsent: data.tcpaConsent,
+          termsAccepted: data.termsAccepted,
+          privacyAcknowledged: data.privacyAcknowledged,
           source: "bathroom_rfp",
           status: "NEW",
+          estimatorSnapshotJson: estimatorSnapshot as any,
         },
       });
 
       await recordProjectCompliance(tx, {
         projectRequestId: created.id,
-        userId: homeownerId ?? undefined,
+        userId: access.userId,
         email: data.email,
         phone: data.phone,
         source: "bathroom_rfp",
@@ -99,14 +158,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       // Atomic claim: only the first submission wins; concurrent retries roll back.
       const claimed = await tx.bathroomProject.updateMany({
         where: { id, projectRequestId: null },
-        data: { projectRequestId: created.id, status: "RFQ_SUBMITTED" },
+        data: { projectRequestId: created.id, homeownerId: access.userId, status: "RFQ_SUBMITTED" },
       });
       if (claimed.count === 0) {
         throw Object.assign(new Error("This project has already been submitted as an RFP."), { status: 409 });
       }
 
-      return created;
+      return { rfp: created, portalAccess: access };
     });
+    const homeownerId = portalAccess.userId;
 
     await logAuditEvent({
       eventType: "BATHROOM_RFP_SUBMITTED",
@@ -123,21 +183,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       referenceNumber,
       trade: "Bathroom Remodeling",
       zipCode: data.zipCode,
-      urgency: data.timeline ?? project.timelineCategory ?? "Just planning",
-      budgetRange: project.budgetMinimum && project.budgetMaximum
-        ? `$${project.budgetMinimum}-$${project.budgetMaximum}`
-        : "Not specified",
-      description,
       projectRequestId: rfp.id,
-      hasPortalAccess: isLoggedInHomeowner,
+      portalAccess,
     });
 
     return NextResponse.json({
       referenceNumber,
       rfpId: rfp.id,
       emailSent,
+      accountCreated: portalAccess.isNewAccount,
+      portalEmail: portalAccess.email,
+      // Only reveal a newly-created temporary password when delivery failed;
+      // otherwise it is sent through the confirmation email.
+      temporaryPassword: !emailSent ? portalAccess.temporaryPassword : undefined,
     }, { status: 201 });
   } catch (e: any) {
+    if (e instanceof HomeownerAccountConflictError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
+    }
     if (e?.name === "ZodError") {
       return NextResponse.json({ error: e.errors?.[0]?.message ?? "Invalid input" }, { status: 400 });
     }

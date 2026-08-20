@@ -180,6 +180,41 @@
     @apply inline-block h-1.5 w-1.5 rounded-full bg-ink-40;
     animation: advisor-blink 1s infinite ease-in-out;
   }
+
+  /* Authority content article rendering */
+  .prose-content {
+    @apply max-w-none;
+  }
+
+  .prose-content h2 {
+    font-family: var(--font-serif);
+    @apply text-ink-100 leading-tight mt-10 mb-4;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
+  }
+
+  .prose-content h2:first-child {
+    @apply mt-0;
+  }
+
+  .prose-content p {
+    @apply text-sm leading-relaxed text-ink-70 mb-4;
+  }
+
+  .prose-content p strong {
+    @apply text-ink-100 font-medium;
+  }
+
+  .prose-content ul {
+    @apply list-disc pl-5 mb-4 space-y-1;
+  }
+
+  .prose-content ul li {
+    @apply text-sm leading-relaxed text-ink-70;
+  }
+
+  .prose-content br {
+    @apply block content-[''] mb-2;
+  }
 }
 
 @keyframes advisor-blink {

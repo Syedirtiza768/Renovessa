@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/seo";
 import { bathroomRockvilleEnabled, bathroomLandingEnabled, solarLandingEnabled } from "@/lib/feature-flags";
+import { STANDARD_ESTIMATOR_IDS } from "@/lib/landing-data";
+import { getAllPublishedContent, publicPathForContent } from "@/lib/content";
 
 /**
  * Generated per request, not prerendered.
@@ -16,6 +18,7 @@ export const dynamic = "force-dynamic";
 const routes = [
   "/",
   "/estimate",
+  ...STANDARD_ESTIMATOR_IDS.map((trade) => `/estimate/${trade}`),
   "/how-it-works",
   "/for-homeowners",
   "/for-contractors",
@@ -63,22 +66,33 @@ const solarRoutes = [
   "/solar/methodology",
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+function routePriority(route: string): number {
+  if (route === "/") return 1;
+  if (route === "/estimate") return 0.9;
+  if (route.startsWith("/bathroom-remodeling") || route.startsWith("/solar")) return 0.85;
+  if (route.startsWith("/cost-guides/") || route.startsWith("/resources/")) return 0.8;
+  return 0.7;
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let allRoutes = [...routes];
   if (bathroomRockvilleEnabled()) allRoutes = [...allRoutes, ...bathroomRoutes];
   if (bathroomLandingEnabled()) allRoutes = [...allRoutes, ...genericBathroomRoutes];
   if (solarLandingEnabled()) allRoutes = [...allRoutes, ...solarRoutes];
+
+  // Add published authority content routes
+  try {
+    const published = await getAllPublishedContent();
+    const contentRoutes = published.map((c) => publicPathForContent(c.slug, c.title));
+    allRoutes = [...allRoutes, ...contentRoutes];
+  } catch {
+    // If database is unavailable during build, skip content routes
+  }
+
   return allRoutes.map((route) => ({
     url: absoluteUrl(route),
-    lastModified: new Date("2026-07-26"),
+    lastModified: new Date(),
     changeFrequency: route === "/" ? "weekly" : "monthly",
-    priority:
-      route === "/"
-        ? 1
-        : route === "/estimate"
-        ? 0.9
-        : route.startsWith("/bathroom-remodeling") || route.startsWith("/solar")
-        ? 0.85
-        : 0.7,
+    priority: routePriority(route),
   }));
 }

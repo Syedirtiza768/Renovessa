@@ -13,6 +13,11 @@ import { useState } from "react";
 import Link from "next/link";
 import type { PlanPayload } from "../planner-types";
 import { formatKw, formatKwhPerYear } from "@/lib/solar/formatters";
+import {
+  EstimatorContactFields,
+  validateEstimatorContact,
+  type EstimatorContactState,
+} from "@/components/estimator/EstimatorContactFields";
 
 export function RfpStep({
   projectId,
@@ -25,28 +30,31 @@ export function RfpStep({
   plan: PlanPayload | null;
   onBack: () => void;
 }) {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<EstimatorContactState>({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
     zipCode: defaultZip,
     timeline: "",
-    preferredContact: "",
-    preferredContactTimes: "",
-    maxInstallers: 3,
+    preferredContact: "any",
+    maxContractors: 3,
     notes: "",
     tcpaConsent: false,
+    termsAccepted: false,
+    privacyAcknowledged: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ referenceNumber: string } | null>(null);
 
-  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
-
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const validation = validateEstimatorContact(form);
+    if (Object.keys(validation).length > 0) {
+      setError(Object.values(validation)[0]);
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -111,135 +119,11 @@ export function RfpStep({
       </section>
 
       <form onSubmit={submit} className="mt-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="First name" required>
-            <input
-              className="landing-input"
-              value={form.firstName}
-              onChange={(e) => set("firstName", e.target.value)}
-              autoComplete="given-name"
-              required
-            />
-          </Field>
-          <Field label="Last name">
-            <input
-              className="landing-input"
-              value={form.lastName}
-              onChange={(e) => set("lastName", e.target.value)}
-              autoComplete="family-name"
-            />
-          </Field>
-          <Field label="Email" required>
-            <input
-              type="email"
-              className="landing-input"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </Field>
-          <Field label="Phone" required>
-            <input
-              type="tel"
-              className="landing-input"
-              value={form.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              autoComplete="tel"
-              required
-            />
-          </Field>
-          <Field label="ZIP code" required>
-            <input
-              className="landing-input"
-              value={form.zipCode}
-              onChange={(e) => set("zipCode", e.target.value)}
-              inputMode="numeric"
-              autoComplete="postal-code"
-              required
-            />
-          </Field>
-          <Field label="When would you like this done?">
-            <select
-              className="landing-input"
-              value={form.timeline}
-              onChange={(e) => set("timeline", e.target.value)}
-            >
-              <option value="">Select…</option>
-              <option>As soon as possible</option>
-              <option>Within 3 months</option>
-              <option>Within 6 months</option>
-              <option>Within a year</option>
-              <option>Just planning</option>
-            </select>
-          </Field>
-          <Field label="How should they contact you?">
-            <select
-              className="landing-input"
-              value={form.preferredContact}
-              onChange={(e) => set("preferredContact", e.target.value)}
-            >
-              <option value="">Select…</option>
-              <option>Email</option>
-              <option>Phone</option>
-              <option>Text</option>
-            </select>
-          </Field>
-          <Field label="Best times to reach you">
-            <input
-              className="landing-input"
-              placeholder="Weekday evenings"
-              value={form.preferredContactTimes}
-              onChange={(e) => set("preferredContactTimes", e.target.value)}
-            />
-          </Field>
-        </div>
-
-        <Field label="How many installers may receive this?">
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => set("maxInstallers", n)}
-                aria-pressed={form.maxInstallers === n}
-                className={`h-11 w-11 rounded-lg border text-sm transition ${
-                  form.maxInstallers === n
-                    ? "border-accent bg-accent text-bone-0"
-                    : "border-ink-15 text-ink-70 hover:border-ink-40"
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </Field>
-
-        <Field label="Anything else installers should know?">
-          <textarea
-            className="landing-input min-h-[6rem]"
-            value={form.notes}
-            onChange={(e) => set("notes", e.target.value)}
-          />
-        </Field>
-
-        {/* Affirmative, never pre-checked — matches the existing consent policy. */}
-        <label className="flex items-start gap-3 rounded-lg border border-ink-15 bg-white p-4 text-sm text-ink-70">
-          <input
-            type="checkbox"
-            checked={form.tcpaConsent}
-            onChange={(e) => set("tcpaConsent", e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-[#c17a2a]"
-          />
-          <span>
-            I agree that Renovessa and matched installers may contact me about this project by phone, text or email.
-            Consent isn&rsquo;t a condition of purchase. See our{" "}
-            <Link href="/tcpa" className="underline">
-              calls and texts disclosure
-            </Link>
-            .
-          </span>
-        </label>
+        <EstimatorContactFields
+          form={form}
+          setForm={setForm}
+          idPrefix="solar-rfq"
+        />
 
         {error && (
           <p role="alert" className="text-sm text-red-700">
@@ -257,17 +141,5 @@ export function RfpStep({
         </div>
       </form>
     </div>
-  );
-}
-
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="landing-label">
-        {label}
-        {required && <span className="text-accent"> *</span>}
-      </span>
-      {children}
-    </label>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Wordmark } from "@/components/landing/Wordmark";
 
 const groups = [
   {
@@ -38,7 +39,7 @@ export function SiteFooter() {
     <footer className="border-t border-rule bg-slate text-white">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-5">
         <div className="sm:col-span-2 lg:col-span-2">
-          <p className="text-lg font-bold">Renovessa</p>
+          <Wordmark compact inverse />
           <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/70">
             Home-improvement planning ranges and managed RFQs for Washington, DC, Maryland, and Northern Virginia. Availability varies by trade and ZIP.
           </p>

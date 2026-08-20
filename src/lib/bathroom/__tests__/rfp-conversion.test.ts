@@ -48,6 +48,7 @@ describe("rfpSubmissionSchema", () => {
     expect(parsed.firstName).toBe("Jane");
     expect(parsed.lastName).toBeUndefined();
     expect(parsed.tcpaConsent).toBe(false);
+    expect(parsed.maxContractors).toBe(3);
   });
 
   it("accepts the full payload with optional fields", () => {

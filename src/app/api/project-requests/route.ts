@@ -7,6 +7,7 @@ import { getSession, canAccessAdmin } from "@/lib/auth";
 import { matchesPilotCell, matchesPilotTrade } from "@/lib/first-job-config";
 import { sendRfqConfirmationEmail } from "@/lib/confirmationEmails";
 import { recordProjectCompliance, requestEvidence } from "@/lib/compliance";
+import { ensureHomeownerAccount, HomeownerAccountConflictError } from "@/lib/homeowner-account";
 
 const schema = z.object({
   trade: z.string().min(1),
@@ -27,6 +28,8 @@ const schema = z.object({
   preferredAppointmentWindows: z.string().optional(),
   source: z.enum(["organic", "homeowner_portal", "estimate_wizard", "ai_advisor"]).optional(),
   qualificationNotes: z.string().max(12000).optional(),
+  estimatorId: z.string().max(80).optional(),
+  estimatorSnapshot: z.record(z.unknown()).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -46,10 +49,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Public submissions never create, link, or reset an account based only on
-    // an email address. Only an already-authenticated homeowner owns the RFQ.
-    const homeownerId = isLoggedInHomeowner ? session.id : undefined;
-
     const source = isLoggedInHomeowner
       ? "homeowner_portal"
       : data.source === "estimate_wizard"
@@ -59,11 +58,22 @@ export async function POST(req: NextRequest) {
           : "organic";
 
     const evidence = requestEvidence(req);
-    const project = await prisma.$transaction(async (tx) => {
+    const { project, portalAccess } = await prisma.$transaction(async (tx) => {
+      const access = isLoggedInHomeowner && session
+        ? {
+            userId: session.id,
+            email: session.email,
+            isNewAccount: false,
+          }
+        : await ensureHomeownerAccount(tx, {
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            phone: data.phone.replace(/\D/g, ""),
+          });
       const created = await tx.projectRequest.create({
         data: {
           referenceNumber,
-          homeownerId: homeownerId ?? null,
+          homeownerId: access.userId,
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email.trim().toLowerCase(),
@@ -74,7 +84,9 @@ export async function POST(req: NextRequest) {
           urgency: data.urgency,
           budgetRange: data.budgetRange,
           preferredContact: data.preferredContact,
-          tcpaConsent: false,
+          tcpaConsent: data.tcpaConsent,
+          termsAccepted: data.termsAccepted,
+          privacyAcknowledged: data.privacyAcknowledged,
           address: data.address,
           ownershipAuthority: data.ownershipAuthority,
           preferredAppointmentWindows: data.preferredAppointmentWindows,
@@ -82,19 +94,21 @@ export async function POST(req: NextRequest) {
           status: "NEW",
           source,
           serviceCellMatch,
+          estimatorSnapshotJson: data.estimatorSnapshot as any,
         },
       });
       await recordProjectCompliance(tx, {
         projectRequestId: created.id,
-        userId: homeownerId,
+        userId: access.userId,
         email: data.email,
         phone: data.phone,
         source,
         communicationConsent: data.tcpaConsent,
         evidence,
       });
-      return created;
+      return { project: created, portalAccess: access };
     });
+    const homeownerId = portalAccess.userId;
 
     const sourceLabel =
       source === "estimate_wizard"
@@ -109,7 +123,7 @@ export async function POST(req: NextRequest) {
       eventType: "FORM_SUBMITTED",
       description: `Project request ${referenceNumber} submitted via ${sourceLabel}`,
       projectRequestId: project.id,
-      actorId: isLoggedInHomeowner ? session.id : undefined,
+      actorId: isLoggedInHomeowner ? session?.id : undefined,
     });
 
     await logAuditEvent({
@@ -128,11 +142,8 @@ export async function POST(req: NextRequest) {
       referenceNumber,
       trade: data.trade,
       zipCode: data.zipCode,
-      urgency: data.urgency,
-      budgetRange: data.budgetRange,
-      description: data.description,
       projectRequestId: project.id,
-      hasPortalAccess: isLoggedInHomeowner,
+      portalAccess,
     });
 
     return NextResponse.json({
@@ -144,6 +155,9 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     if (e instanceof z.ZodError) {
       return NextResponse.json({ error: e.errors[0].message }, { status: 400 });
+    }
+    if (e instanceof HomeownerAccountConflictError) {
+      return NextResponse.json({ error: e.message }, { status: e.status });
     }
     console.error(e);
     return NextResponse.json({ error: "Failed to submit project request" }, { status: 500 });

@@ -179,7 +179,11 @@ export function BathroomPlanner({ flags, backHref = "/bathroom-remodeling/rockvi
         referenceNumber: state.referenceNumber,
         clientId: state.clientId,
       });
-      if (state.projectId) {
+      // Once an anonymous draft has been promoted to an RFP it is owned by
+      // the homeowner account. The browser is not automatically signed in,
+      // so do not turn the post-submit success state into a misleading
+      // autosave failure.
+      if (state.projectId && !state.answers.rfp_reference) {
         setState((prev) => ({ ...prev, saving: true }));
         try {
           const res = await fetch(`/api/bathroom-projects/${state.projectId}`, {
@@ -257,6 +261,19 @@ export function BathroomPlanner({ flags, backHref = "/bathroom-remodeling/rockvi
   };
   const goTo = (id: string) => {
     setState((prev) => ({ ...prev, currentStep: id, error: null }));
+  };
+
+  const skipLayout = () => {
+    setState((prev) => {
+      const index = steps.findIndex((step) => step.id === "layout");
+      const nextStep = index >= 0 ? steps[index + 1]?.id : undefined;
+      return {
+        ...prev,
+        answers: { ...prev.answers, layoutSkipped: "yes" },
+        currentStep: nextStep ?? prev.currentStep,
+        error: null,
+      };
+    });
   };
 
   const reset = () => {
@@ -369,12 +386,26 @@ export function BathroomPlanner({ flags, backHref = "/bathroom-remodeling/rockvi
           {state.currentStep === "location" && <IntroStep {...stepProps} />}
           {state.currentStep === "measurements" && <MeasurementsStep {...stepProps} />}
           {state.currentStep === "layout" && state.projectId && (
-            <LayoutWorkspace projectId={state.projectId} answers={state.answers} setAnswer={setAnswer} />
+            <LayoutWorkspace
+              projectId={state.projectId}
+              answers={state.answers}
+              setAnswer={setAnswer}
+              onSkip={skipLayout}
+            />
           )}
           {state.currentStep === "layout" && !state.projectId && (
-            <p className="text-sm text-ink-70">
-              Add a short description or room size on Capture so we can create your draft, then open Layout.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-ink-70">
+                Add a short description or room size on Capture so we can create your draft, then open Layout.
+              </p>
+              <button
+                type="button"
+                onClick={skipLayout}
+                className="rounded-lg border border-ink-15 px-4 py-2 text-sm text-ink-70 hover:border-ink-40"
+              >
+                Skip layout for now
+              </button>
+            </div>
           )}
           {state.currentStep === "fixtures_finishes" && <ScopeStep {...stepProps} />}
           {state.currentStep === "existing_conditions" && <ConditionsStep {...stepProps} />}

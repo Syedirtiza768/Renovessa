@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicPage, PageCta } from "@/components/marketing/PublicPage";
-import { LANDING_CATEGORIES } from "@/lib/landing-data";
+import { getTradeEstimatorPath, LANDING_CATEGORIES } from "@/lib/landing-data";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
   title: "Home Improvement Project Types and Estimates in the DMV",
   description:
-    "Explore the HVAC, roofing, remodeling, plumbing, electrical, and repair projects Renovessa can help homeowners scope and estimate.",
+    "Explore Renovessa's 10 dedicated home-improvement estimators for bathroom remodeling, solar, kitchens, roofing, siding, windows and doors, flooring, HVAC, electrical, and plumbing.",
   path: "/services",
 });
 
@@ -27,7 +27,7 @@ export default function ServicesPage() {
             <p className="mt-2 text-sm leading-relaxed text-ink-70">{category.description}</p>
             <div className="mt-5 flex flex-wrap gap-3 text-sm font-medium">
               {category.id === "hvac" && <Link href="/services/hvac" className="text-ink-100 underline underline-offset-4">HVAC planning guide</Link>}
-              <Link href="/estimate" className="text-accent">Start estimate →</Link>
+              <Link href={getTradeEstimatorPath(category.id)} className="text-accent">Open estimator →</Link>
             </div>
           </article>
         ))}

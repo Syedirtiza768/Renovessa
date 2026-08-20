@@ -6,7 +6,7 @@
 
 - Passwords are bcrypt-hashed; JWT sessions use HTTP-only cookies with secure production settings.
 - Admin-only password resets require an authenticated admin-capable session.
-- Public RFQ endpoints never find a user by submitted email to create, link, or reset an account and never return credentials.
+- Public RFQ endpoints provision or reuse a HOMEOWNER account inside the request transaction so the homeowner can access the generated RFQ link. New accounts receive a random temporary password only in the confirmation email; existing passwords are never reset or emailed.
 - A submitted RFQ is linked to a homeowner only when that homeowner already has a valid session and the normalized email matches the session.
 - Public account recovery remains deferred until a single-use, expiring, hashed-token email flow with rate limits and session invalidation is implemented.
 

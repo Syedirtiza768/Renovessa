@@ -74,12 +74,15 @@ export function DiagramBuilder({
   projectId,
   initialGeometry,
   compactHeader = false,
+  readOnly = false,
 }: {
   layoutType: "EXISTING" | "PROPOSED";
   projectId: string;
   initialGeometry?: LayoutGeometry;
   /** When true, omit the big step title (parent LayoutWorkspace provides it). */
   compactHeader?: boolean;
+  /** Render a homeowner-safe preview without drag, edit, or save controls. */
+  readOnly?: boolean;
 }) {
   const initialFeet = feetFromGeometry(initialGeometry);
   const [lengthFt, setLengthFt] = useState(initialFeet.lengthFt);
@@ -193,6 +196,7 @@ export function DiagramBuilder({
   };
 
   const startDrag = (mode: Exclude<DragMode, null>, index: number, e: React.PointerEvent) => {
+    if (readOnly) return;
     e.preventDefault();
     e.stopPropagation();
     const f = fixtures[index];
@@ -286,6 +290,7 @@ export function DiagramBuilder({
 
   // Keyboard nudging
   useEffect(() => {
+    if (readOnly) return;
     const onKey = (e: KeyboardEvent) => {
       if (selected === null) return;
       const target = e.target as HTMLElement | null;
@@ -330,15 +335,17 @@ export function DiagramBuilder({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, snapEnabled, roomLengthIn, roomWidthIn]);
+  }, [readOnly, selected, snapEnabled, roomLengthIn, roomWidthIn]);
 
   const onCanvasPointerDown = (e: React.PointerEvent) => {
+    if (readOnly) return;
     if (e.target === svgRef.current || (e.target as Element).getAttribute("data-floor") === "1") {
       setSelected(null);
     }
   };
 
   const onCanvasDrop = (e: React.DragEvent) => {
+    if (readOnly) return;
     e.preventDefault();
     const type = e.dataTransfer.getData("text/fixture-type");
     if (!type) return;
@@ -373,13 +380,13 @@ export function DiagramBuilder({
 
   // Auto-save sketches so users don’t hunt for a Save button
   useEffect(() => {
-    if (!projectId || fixtures.length === 0) return;
+    if (readOnly || !projectId || fixtures.length === 0) return;
     const t = setTimeout(() => {
       void save(true);
     }, 2500);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometry, projectId]);
+  }, [geometry, projectId, readOnly]);
 
   const gridLines = useMemo(() => {
     if (!showGrid) return null;
@@ -433,7 +440,7 @@ export function DiagramBuilder({
             </p>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 text-sm">
+        {!readOnly && <div className="flex flex-wrap gap-3 text-sm">
           <label>
             <span className="text-muted">Length (ft)</span>
             <input type="number" min="3" max="30" step="0.5" value={lengthFt} onChange={(e) => setLengthFt(Number(e.target.value))} className="ml-2 w-16 rounded border border-ink-15 p-1" />
@@ -446,10 +453,10 @@ export function DiagramBuilder({
             <span className="text-muted">Ceiling (ft)</span>
             <input type="number" min="6" max="12" step="0.5" value={ceilingFt} onChange={(e) => setCeilingFt(Number(e.target.value))} className="ml-2 w-16 rounded border border-ink-15 p-1" />
           </label>
-        </div>
+        </div>}
       </div>
 
-      <div className="flex flex-wrap gap-3 text-xs">
+      {!readOnly && <div className="flex flex-wrap gap-3 text-xs">
         <label className="flex items-center gap-2 rounded-full border border-ink-15 px-3 py-1">
           <input type="checkbox" checked={snapEnabled} onChange={(e) => setSnapEnabled(e.target.checked)} />
           Snap to {SNAP_IN}&quot; grid
@@ -468,12 +475,12 @@ export function DiagramBuilder({
             </button>
           </>
         )}
-      </div>
+      </div>}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
         <div
           className="overflow-auto rounded-xl border border-ink-15 bg-[#f5f5f4] p-3 touch-none"
-          onDragOver={(e) => e.preventDefault()}
+          onDragOver={(e) => !readOnly && e.preventDefault()}
           onDrop={onCanvasDrop}
         >
           <svg
@@ -523,8 +530,8 @@ export function DiagramBuilder({
                 <g
                   key={i}
                   transform={`rotate(${rot} ${cx} ${cy})`}
-                  onPointerDown={(e) => startDrag("move", i, e)}
-                  style={{ cursor: dragging && selected === i ? "grabbing" : "grab" }}
+                  onPointerDown={(e) => !readOnly && startDrag("move", i, e)}
+                  style={{ cursor: readOnly ? "default" : dragging && selected === i ? "grabbing" : "grab" }}
                 >
                   <rect
                     x={PAD + f.x * scale}
@@ -559,7 +566,7 @@ export function DiagramBuilder({
                     {labelFor(f.type)}
                   </text>
 
-                  {isSel && (
+                  {isSel && !readOnly && (
                     <>
                       {/* Resize handles */}
                       <circle
@@ -624,7 +631,7 @@ export function DiagramBuilder({
           )}
         </div>
 
-        <div className="space-y-3">
+        {!readOnly && <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Fixture palette</p>
           <p className="text-xs text-ink-40">Drag onto the canvas or tap to add.</p>
           <div className="grid grid-cols-1 gap-1.5">
@@ -651,10 +658,10 @@ export function DiagramBuilder({
               </button>
             ))}
           </div>
-        </div>
+        </div>}
       </div>
 
-      {selected !== null && fixtures[selected] && (
+      {!readOnly && selected !== null && fixtures[selected] && (
         <div className="rounded-xl border border-ink-15 bg-white p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-semibold">
@@ -698,13 +705,13 @@ export function DiagramBuilder({
               ? "Sketch looks fine — continue when ready."
               : summaryFriendly(validationIssues)}
           </p>
-          <button
+          {!readOnly && <button
             type="button"
             onClick={() => setShowDetails((v) => !v)}
             className="text-xs font-medium text-accent"
           >
             {showDetails ? "Hide details" : "Show area details"}
-          </button>
+          </button>}
         </div>
         {validationIssues.length > 0 && (
           <ul className="mt-2 space-y-1 text-sm text-ink-70">
@@ -729,7 +736,7 @@ export function DiagramBuilder({
         )}
       </div>
 
-      <div className="flex items-center gap-3 text-sm text-ink-40">
+      {!readOnly && <div className="flex items-center gap-3 text-sm text-ink-40">
         <span>{saving ? "Saving…" : msg ?? "Changes save automatically"}</span>
         <button
           type="button"
@@ -739,7 +746,7 @@ export function DiagramBuilder({
         >
           Save now
         </button>
-      </div>
+      </div>}
     </div>
   );
 }

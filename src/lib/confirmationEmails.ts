@@ -15,7 +15,7 @@ function replyTo() {
 }
 
 function appUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || "https://renovessa.com";
+  return (process.env.NEXT_PUBLIC_APP_URL || "https://renovessa.com").replace(/\/$/, "");
 }
 
 async function sendConfirmation(params: {
@@ -86,43 +86,44 @@ export async function sendRfqConfirmationEmail(params: {
   referenceNumber: string;
   trade: string;
   zipCode: string;
-  urgency: string;
-  budgetRange: string;
-  description: string;
   projectRequestId: string;
-  hasPortalAccess?: boolean;
+  portalAccess: {
+    email: string;
+    temporaryPassword?: string;
+  };
 }) {
   const loginUrl = `${appUrl()}/login`;
-  const portalBlock = params.hasPortalAccess
-    ? `
-
-Track this RFQ in your existing account: [Portal](${loginUrl})
-`
-    : `
-
-For security, submitting an RFQ does not create or reset an account. Reply to this email with questions and keep the reference number below.
-`;
+  const requestUrl = `${appUrl()}/portal/homeowner/projects/${params.projectRequestId}`;
+  const passwordLine = params.portalAccess.temporaryPassword
+    ? `Temporary password: ${params.portalAccess.temporaryPassword}`
+    : "Password: Use your existing homeowner portal password (we never send existing passwords by email).";
+  const passwordInstruction = params.portalAccess.temporaryPassword
+    ? "Please change your temporary password after your first login."
+    : "If you need help signing in, reply to this email.";
 
   const subject = `Your Renovessa RFQ is in — ${params.referenceNumber}`;
   const body = `Hi ${params.firstName},
 
-Thanks for submitting your RFQ with Renovessa. We've received it and it's in our queue.
+Thanks for submitting your request with Renovessa. We've received it and it's in our queue.
 
+Initial information:
 Reference: ${params.referenceNumber}
-Trade: ${params.trade}
+Project type: ${params.trade}
 ZIP: ${params.zipCode}
-Timing: ${params.urgency}
-Planning range you saw: ${params.budgetRange}
 
-—— Your RFQ ——
-${params.description.trim() || "(See portal for full details)"}
-——
+View your complete request here: [View my request](${requestUrl})
 
 What happens next:
-1. We review your scoped RFQ (trade, ZIP, ballpark, notes).
-2. We check current trade and ZIP availability and request responses from relevant contractors.
+1. We review your request and check current trade and ZIP availability.
+2. We request responses from relevant contractors.
 3. We get back to you with available bid options and next steps. Timing varies with capacity.
-${portalBlock}
+
+Homeowner portal login:
+[Sign in](${loginUrl})
+Email: ${params.portalAccess.email}
+${passwordLine}
+${passwordInstruction}
+
 Questions? Just reply to this email.
 
 Ray Cooper
@@ -184,7 +185,7 @@ export async function sendContractorWelcomeEmail(params: {
   contractorId?: string;
 }) {
   const loginUrl = `${appUrl()}/login`;
-  const subject = `Welcome to Renovessa — your contractor portal is ready`;
+  const subject = "Welcome to Renovessa — your contractor portal is ready";
   const body = `Hi ${params.name},
 
 You're confirmed on Renovessa. Your contractor portal for ${params.companyName} (${params.trade}) is ready.

@@ -1,0 +1,19 @@
+# Keep Railway uploads small. The Dockerfile copies the runtime/build inputs
+# it needs; generated campaign assets and local-only data do not belong in a
+# service deployment archive.
+outputs/
+scraper/
+docs/
+.git/
+.commandcode/
+.kilo/
+.codex/
+.agents/
+node_modules/
+.next/
+*.log
+*.pyc
+.env
+.env.*
+!.env.example
+!.env.production.example

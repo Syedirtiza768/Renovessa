@@ -310,43 +310,55 @@ export function RequirementsPromptStep({ answers, setAnswer, projectId }: StepPr
         </div>
       </div>
 
-      {!answers.bathroomType && (
-        <div>
-          <p className="text-sm font-medium text-ink-100">Bathroom type</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {BATHROOM_TYPES.filter((t) => t.id !== "other" && t.id !== "new_addition").map((t) => (
+      <div>
+        <p className="text-sm font-medium text-ink-100">Bathroom type</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {BATHROOM_TYPES.filter((t) => t.id !== "other" && t.id !== "new_addition").map((t) => {
+            const selected = answers.bathroomType === t.id;
+            return (
               <button
                 key={t.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => setAnswer("bathroomType", t.id)}
-                className="rounded-full border border-ink-15 px-3 py-1.5 text-sm text-ink-70 hover:border-ink-40"
+                className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                  selected
+                    ? "border-accent bg-accent text-bone-0"
+                    : "border-ink-15 text-ink-70 hover:border-ink-40"
+                }`}
               >
                 {t.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      {!answers.projectObjective && (
-        <div>
-          <p className="text-sm font-medium text-ink-100">Main goal</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {PROJECT_OBJECTIVES.filter((o) =>
-              ["tub_to_shower", "remodel_same_layout", "cosmetic_refresh", "curbless_shower", "full_gut", "accessibility_upgrade"].includes(o.id),
-            ).map((o) => (
+      <div>
+        <p className="text-sm font-medium text-ink-100">Main goal</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {PROJECT_OBJECTIVES.filter((o) =>
+            ["tub_to_shower", "remodel_same_layout", "cosmetic_refresh", "curbless_shower", "full_gut", "accessibility_upgrade"].includes(o.id),
+          ).map((o) => {
+            const selected = answers.projectObjective === o.id;
+            return (
               <button
                 key={o.id}
                 type="button"
+                aria-pressed={selected}
                 onClick={() => setAnswer("projectObjective", o.id)}
-                className="rounded-full border border-ink-15 px-3 py-1.5 text-sm text-ink-70 hover:border-ink-40"
+                className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                  selected
+                    ? "border-accent bg-accent text-bone-0"
+                    : "border-ink-15 text-ink-70 hover:border-ink-40"
+                }`}
               >
                 {o.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       <textarea
         value={prompt}

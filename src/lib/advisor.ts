@@ -17,7 +17,8 @@ import { FIRST_JOB_MODE, PILOT_TRADE } from "@/lib/first-job-config";
  *
  * 2. [[BOOK]] — a legacy wire-format name. It replaces [[SUGGEST]] once the
  *    homeowner has provided RFQ details and opens a review/clickwrap step. It
- *    never books an appointment or creates an account.
+ *    never books an appointment; a homeowner portal account is provisioned
+ *    when the request is submitted so the homeowner can access the RFQ.
  */
 
 export const SUGGEST_OPEN = "[[SUGGEST]]";

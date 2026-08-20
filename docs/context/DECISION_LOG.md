@@ -4,6 +4,47 @@ Record product, architecture, and technical decisions here.
 
 ---
 
+## 2026-08-20 — Railway deployment workflow
+
+### Decision
+Support Railway as a first-class deployment target for the Dockerized Next.js app. The app deploys as one Railway service from the root `Dockerfile`; PostgreSQL is a separate Railway service connected through a Railway reference variable such as `${{Postgres.DATABASE_URL}}`. The root `Makefile` wraps the Railway CLI for linking, deployment, health verification, logs, and routine service operations. `railway.json` keeps the Dockerfile builder, `/api/health` deploy healthcheck, and restart policy under version control.
+
+### Reason
+Railway does not execute the repository's Docker Compose file directly. The previous Compose and Ubuntu/Nginx workflow therefore needed a platform-native command path while preserving the existing Docker image and runtime entrypoint.
+
+### Impact
+- Railway supplies the runtime `PORT`; no Railway port mapping is required.
+- `RUN_SEED=false` remains the production default; schema setup continues through the existing container entrypoint.
+- Railway project links are ignored via `.railway/` and secrets remain in Railway Variables.
+
+### Status
+Accepted and implemented in repository configuration; production cutover remains an operational deployment step.
+
+---
+
+## 2026-08-18 — Cross-estimator submission snapshots and homeowner portal parity
+
+### Decision
+1. Every public estimator RFQ stores an immutable, versioned `ProjectRequest.estimatorSnapshotJson` containing all configured estimator answers, shared project context, estimate outputs, contact preferences, notes, and consent state. Existing normalized `ProjectRequest` columns remain the routing/reporting source of truth.
+2. Bathroom Remodeling, Solar, and the standard trade wizard use one Bathroom-style contractor-contact form and the same field names/options (`firstName`, `lastName`, `email`, `phone`, ZIP, timeline, preferred contact, contractor count, notes, and compliance fields).
+3. Authenticated homeowner and admin project views render the snapshot through one shared summary component. Internal brief, estimate, and database identifiers are not shown to homeowners; legacy standard requests use a qualification-notes fallback until a new submission creates a snapshot.
+4. Bathroom homeowner details render saved existing/proposed diagrams as read-only previews and authenticated uploaded photos. Solar homeowner details expose saved plan information through a feature-gated list/detail route.
+
+### Reason
+The estimators had different contact fields and persisted answers in different shapes, so the portal could not reliably show the homeowner exactly what they submitted. A versioned display snapshot preserves the submission as it was made, while keeping normalized fields available for matching and operations. Reusing the same contact component reduces compliance and field drift across estimator paths.
+
+### Impact
+- Prisma adds nullable `ProjectRequest.estimatorSnapshotJson`; it is additive and keeps old RFQs readable.
+- Standard `/api/project-requests`, Bathroom `/rfp`, and Solar `/rfp` persist the snapshot.
+- `EstimatorSubmissionSummary` is shared by homeowner and admin views.
+- Bathroom visual editing is disabled in the homeowner portal; the existing authenticated media routes remain the source for photo access.
+- Local verification: 228/228 tests, TypeScript, and production build passed. `prisma db push` remains pending until the configured local PostgreSQL instance is running.
+
+### Status
+Accepted, implemented and deployed to production 2026-08-18 in commit `ef0e28f`; the live app, database column, and HTTPS health endpoint were verified. Authenticated standard/Bathroom/Solar RFQ UAT remains a follow-up.
+
+---
+
 ## 2026-08-10 — Bathroom Remodeling: canonical answer schema, real location, and UX improvements
 
 ### Decision
@@ -208,6 +249,20 @@ pending production deploy
 
 ---
 
+## 2026-08-14 - RFQ confirmation email and homeowner portal access
+
+### Decision
+RFQ confirmation emails now carry only initial request information (reference, project type, and ZIP), a direct link to the generated homeowner request, and portal login instructions. Anonymous RFQ submissions provision a HOMEOWNER account in the same transaction as the request and email a random temporary password for a new account. Existing homeowner accounts are reused without resetting or emailing their password. The shared behavior applies to the standard RFQ, advisor, bathroom, and solar request-promotion paths.
+
+### Reason
+The prior confirmation email duplicated the complete request description and public requests had no portal account, so the homeowner could not use the request link or receive portal credentials.
+
+### Impact
+Added `src/lib/homeowner-account.ts`; linked `ProjectRequest` (and promoted bathroom/solar projects) to the homeowner account; changed `sendRfqConfirmationEmail` to render the short confirmation, request link, and account access block; plain-text email links now retain their URLs. Temporary passwords are hashed before persistence and existing account passwords are never changed.
+
+### Status
+Accepted and implemented. Full suite: 221/221 tests pass; TypeScript clean.
+
 ## 2026-08-10 — Share-Based Estimator Decomposition (Consistency Rewrite)
 
 ### Decision
@@ -309,3 +364,106 @@ input, version stamp `solar-srec-2026-08-10-v1`.
 ### Status
 Accepted — implemented and tested (216/216 unit tests green, tsc clean);
 pending production deploy
+
+## 2026-08-17 — Bathroom planner continuity and post-submit brief access
+
+### Decision
+Bathroom type and project objective remain visible as selected chips on the
+Capture step. Detailed Basics no longer repeats either answer once Capture has
+already supplied it; it shows a compact summary instead. Layout is explicitly
+optional through a "Skip layout for now" action and does not block estimates,
+briefs, or RFP submission.
+
+After an anonymous bathroom brief is generated, its PDF receives a random,
+short-lived download token. The token is download-only and is included in the
+RFP success panel and confirmation email. Portal request data remains protected
+by homeowner authentication. New homeowner accounts continue to receive a
+temporary password by email; existing passwords are never emailed. If email
+delivery fails for a newly-created account, the one-time temporary password is
+shown only in the immediate success response as a recovery path.
+
+### Reason
+The former Capture controls disappeared after selection, Detailed Basics asked
+the same questions a second time, and Layout copy promised that users could
+skip without providing an explicit control. RFP submission claimed the project
+for the newly-created/reused homeowner account before the browser had a session,
+which made the immediate brief PDF link fail with an authentication error.
+
+### Impact
+No schema change is required: the existing `ProjectBrief.shareToken` and
+`shareExpiresAt` fields back the download-only brief link. Planner autosave is
+also suppressed after RFP promotion because the anonymous browser must not
+attempt to PATCH an account-owned project.
+
+### Status
+Implemented and locally verified: 225/225 unit tests green; `tsc --noEmit`
+clean. Pending production deploy and live smoke test.
+
+Superseded by the account-gated brief decision below: automatic public brief
+links are no longer issued or shown in the planner.
+
+## 2026-08-17 — Bathroom brief requires homeowner portal sign-in
+
+### Decision
+
+The anonymous bathroom planner and RFP confirmation email must not expose a
+project-brief download link. Results may confirm that the brief is ready and
+offer the contractor-proposal action, but the brief PDF is accessed through the
+authenticated homeowner portal after sign-in. The confirmation email contains
+the portal URL and account credentials (new temporary password or existing
+account-password instruction), not a direct brief URL.
+
+Explicit share links created from an authenticated portal remain a separate,
+intentional sharing feature.
+
+### Reason
+
+The prior tokenized-link change conflicted with the agreed account-gated
+experience and left a "Download project brief" control at the end of Results.
+
+### Impact
+
+Planner brief-generation responses and bathroom RFP responses no longer return
+an automatic brief URL or mint an automatic share token. Existing portal PDF
+authorization remains unchanged.
+
+### Status
+
+Implemented locally; pending validation and production deployment.
+
+---
+
+## 2026-08-19 — Unified SEO content template system for four verticals
+
+### Decision
+
+Created a unified authority-content template system spanning Bathroom Remodeling, Solar, Roofing, and HVAC:
+
+1. **Shared interface** — `src/lib/content-templates/types.ts` defines `ContentTemplate` (slug, title, bodyText, author, reviewer, methodology, applicableLocation, applicableTrade, status). All verticals use the same shape.
+
+2. **Vertical-specific template files** — Each vertical exports its own `*_CONTENT_TEMPLATES` array:
+   - `src/lib/content-templates/bathroom.ts` — 7 templates (DMV cost, permits, process, tub-to-shower, small bath, aging-in-place, compare bids)
+   - `src/lib/content-templates/solar.ts` — 6 templates (cost/payback, equipment, roof readiness, compare quotes, HOA rules, battery backup)
+   - `src/lib/content-templates/roofing.ts` — 6 templates (replacement cost, repair vs replace, storm/insurance, flat roofs, compare bids, historic districts)
+   - `src/lib/content-templates/hvac.ts` — 9 templates (DMV cost, Fairfax AC cost, NOVA heat pump, repair vs replace, Fairfax permits, compare quotes, AC warm air, heat pump cold weather, DMV permit comparison)
+
+3. **Unified seed script** — `scripts/seed-content-templates.ts` imports all four arrays and upserts into `BathroomContentVersion` (the existing content table, which has generic `applicableTrade`/`applicableLocation` fields). Added `npm run content:seed-all`.
+
+4. **Content quality rules enforced in authoring** — Every template includes required disclaimers, distinguishes planning estimates from contractor quotes, references jurisdiction-specific permit sources, and avoids unverified claims. All templates are seeded as `draft` pending editorial review.
+
+5. **Strategy document** — `docs/marketing/CONTENT_STRATEGY_BATHROOM_SOLAR_ROOFING_HVAC.md` documents market understanding, keyword clusters by vertical, 6-month production roadmap, content tier architecture (Hub/Pillar/Cluster), cross-vertical bridge topics, and measurement framework.
+
+### Reason
+
+The 2026-07-23 SEO strategy identified HVAC as the first wedge and outlined a 12-month editorial program, but no content production system existed beyond the 5 Rockville bathroom templates. Creating templates for all four priority verticals at once ensures consistent voice, quality gates, and seedability. Using the existing `BathroomContentVersion` table avoids schema changes; the generic `applicableTrade`/`applicableLocation` fields already support multi-vertical content.
+
+### Impact
+
+- 28 new content templates ready for editorial review and database seeding.
+- `BathroomContentVersion` now serves as the cross-vertical authority content table.
+- `docs/marketing/SEO_STRATEGY_DMV.md` has a companion execution document.
+- Next step: build Next.js public routes that read these templates and render them with `Article` JSON-LD, unique metadata, and estimator CTAs.
+
+### Status
+
+Accepted — templates authored and seed script ready. Pending editorial review, database seed, and public page implementation.
